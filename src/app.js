@@ -906,7 +906,7 @@ function renderMake(el) {
       h('div', { class: 'make-setup' },
         selectField('Cutting machine', kit.machine, Object.entries(MACHINES).map(([k, m]) => [k, m.name]), (v) => { kit.machine = v; changed(); }),
         Object.assign(selectField('Scale', kit.scale, SCALES.map((sc) => [sc, `1:${sc}`]), (v) => { kit.scale = Number(v); changed(); }), { className: 'field narrow' }),
-        allMachinesField(() => kit, () => saveKit())), // T3
+        allMachinesField(() => kit, changed)), // T3: changed() so the toggle is an undo step
       h('div', { id: 'make-calib' }),
       h('section', { class: 'calib' }, h('h3', {}, 'Sheets'), h('div', { id: 'make-legend' }), h('div', { id: 'make-sheets', class: 'sheets-grid' })),
       h('details', { class: 'more' }, h('summary', {}, ic('sliders'), 'Advanced'), h('div', {},
