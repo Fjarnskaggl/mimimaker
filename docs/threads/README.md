@@ -33,7 +33,7 @@ without a coordinator note on #1.
    `test: add failing test for …`, then `feat: …`) so the history shows the
    order. Pure refactors may say `No-behaviour-change: <why>` in a commit
    message; the full suite still has to pass. Run it locally with
-   `npm run check:test-first`. `npm test` and `npm run test:e2e` must pass,
+   `npm run check:test-first`. `npm test` and `npm run test:e2e` (every `test/e2e/*.e2e.cjs` file) must pass,
    and UI work needs a browser test.
 3. **Stay in your lane.** Change only the files your thread owns. When you need
    something from another thread's files, open an issue titled `[Tn → Tm] …`
