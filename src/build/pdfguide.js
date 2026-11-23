@@ -19,11 +19,11 @@ import { explodedViewSVG, faceParts } from './exploded.js';
 const MARGIN = 15;
 const PT = 25.4 / 72; // mm per point
 // Helvetica (WinAnsi) has no €, ₹, ₩ or ł: spell them out rather than print "?"
-const SPELL = { '€': 'EUR ', '₹': 'Rs ', '₩': 'KRW ', 'ł': 'l', '→': '->', '✓': 'v' };
-const clean = (s) => String(s ?? '').replace(/[€₹₩ł→✓]/g, (c) => SPELL[c]).replace(/ {2,}/g, ' ');
+const SPELL = { '€': 'EUR ', '₹': 'Rs ', '₩': 'KRW ', 'ł': 'l', '→': '->', '✓': 'v', '≥': '>= ', '≤': '<= ' };
+const clean = (s) => String(s ?? '').replace(/[€₹₩ł→✓≥≤]/g, (c) => SPELL[c]).replace(/ {2,}/g, ' ');
 
 /** Rough Helvetica advance per character, in mm, at `size` points. */
-const charW = (size) => size * 0.5 * PT;
+const charW = (size) => size * 0.56 * PT; // a little wide: capitals run past 0.5 em
 
 /** Words wrapped to lines of at most `width` mm. */
 export function wrap(str, width, size) {
@@ -69,13 +69,21 @@ export function drawSVG(c, svg, x, y, w, h) {
     const fill = rgb(attr(tag, 'fill'));
     if (!d || !fill) continue;
     const op = Number(attr(tag, 'fill-opacity') ?? 1);
-    const [r, g, b] = fill.map((v) => 1 - op * (1 - v / 255)); // over white paper
-    c.save().fillColor(r, g, b);
-    for (const sub of d.split('M').filter(Boolean)) {
-      const pts = sub.replace(/Z/g, '').split('L').map((p) => p.trim().split(/\s+/).map(Number));
-      c.polyline(pts.map(([px, py]) => [ox + px * k, oy + py * k]), true);
+    // The writer has no transparency. Nearly see-through faces (ghosted walls,
+    // light halos) would hide what's behind them, so they're only outlined;
+    // the rest are blended over white paper.
+    if (/class="halo"/.test(tag)) continue; // night-glow halos need real transparency
+    const ghost = op < 0.2;
+    const [r, g, b] = fill.map((v) => 1 - op * (1 - v / 255));
+    c.save();
+    if (!ghost) {
+      c.fillColor(r, g, b);
+      for (const sub of d.split('M').filter(Boolean)) {
+        const pts = sub.replace(/Z/g, '').split('L').map((p) => p.trim().split(/\s+/).map(Number));
+        c.polyline(pts.map(([px, py]) => [ox + px * k, oy + py * k]), true);
+      }
+      c.fill();
     }
-    c.fill();
     const stroke = rgb(attr(tag, 'stroke'));
     if (stroke) {
       const sop = Number((attr(tag, 'stroke') || '').match(/rgba\([^)]*,\s*([\d.]+)\)/)?.[1] ?? 1);
@@ -106,7 +114,9 @@ class Flow {
   }
   finish() {
     const n = this.pages.length + 1;
-    this.c.fillColor(0.45, 0.42, 0.4).text(this.W - MARGIN - 40, this.H - 8, 8, clean(`${this.footer} · page ${n}`).slice(0, 70));
+    const room = Math.floor((this.width * 0.6) / charW(8));
+    const name = this.footer.length + 10 > room ? `${this.footer.slice(0, Math.max(4, room - 13))}...` : this.footer;
+    this.c.fillColor(0.45, 0.42, 0.4).text(this.W - MARGIN, this.H - 8, 8, `${name} · page ${n}`, { align: 'right' });
     this.pages.push(this.c.page());
     this.c = null;
   }
@@ -118,8 +128,14 @@ class Flow {
     for (const line of lines) {
       this.room(lh);
       this.y += lh;
-      this.c.fillColor(...color).text(x, this.y - lh * 0.25, size, line);
-      if (bold) this.c.text(x + 0.12, this.y - lh * 0.25, size, line); // a cheap bold
+      if (bold) {
+        // fill + thin stroke in the same colour: bold without a second font, and the text isn't doubled
+        this.c.save().fillColor(...color).strokeColor(...color).lineWidth(size * 0.012);
+        this.c.ops.push('2 Tr');
+        this.c.text(x, this.y - lh * 0.25, size, line);
+        this.c.ops.push('0 Tr');
+        this.c.restore();
+      } else this.c.fillColor(...color).text(x, this.y - lh * 0.25, size, line);
     }
     this.y += gap;
     return lines.length * lh + gap;
