@@ -42,7 +42,12 @@ export function shellRoom(kit) {
     if (kit.lighting?.enabled && kit.lighting.leds?.length) setAside.push('the room LEDs');
     out.items = [];
     out.openings = [];
-    out.lighting = { ...kit.lighting, enabled: false, leds: [] };
+    if (def.wiredLights) {
+      // the shell's own LEDs replace the room's; the power box goes on the back wall
+      out.lighting = { ...kit.lighting, leds: [], power: shellPower(kit.lighting?.power, room) };
+    } else {
+      out.lighting = { ...kit.lighting, enabled: false, leds: [] };
+    }
     room.wallpaper = { ...room.wallpaper, enabled: false };
     room.floor = { ...room.floor, enabled: false };
     if (setAside.length) {
@@ -51,6 +56,34 @@ export function shellRoom(kit) {
     }
   }
   return { kit: out, room, spec: { ...spec, material: mat.id }, def, notes };
+}
+
+/**
+ * Where the power box goes on a shell that wires its own LEDs: always the
+ * back wall (the wire holes are there); a position off the wall moves to its
+ * middle, one on it is kept so the Power fields still move the box.
+ */
+export function shellPower(power = {}, room) {
+  const ok = (v, max) => Number.isFinite(v) && v >= 0 && v <= max;
+  return {
+    ...power,
+    wall: 'back',
+    pos: ok(power.pos, room.width) ? power.pos : room.width / 2,
+    elev: ok(power.elev, room.height) ? power.elev : room.height / 2,
+  };
+}
+
+/**
+ * The LED spots the shell wires itself (#16), for the LED planner. Empty
+ * unless the shell type has wired lights and the kit's lighting is on.
+ */
+export function shellLights(prep, { t }) {
+  if (!prep?.def.wiredLights || !prep.kit.lighting?.enabled) return [];
+  try {
+    return buildShell(prep.spec, { t, materials: prep.kit.materials }).lights.filter((l) => l.wire);
+  } catch {
+    return []; // compileShell reports the problem
+  }
 }
 
 /** shellRoom for the compiler: reports problems as warnings instead of throwing. */
@@ -87,7 +120,7 @@ export function compileShell(prep, { t, fingerWidth, holes, getMat, newGroup, ad
     add3d(0, p.polys, p.plane, xf, mat.color, { thickness: mat.thickness }); // solid: material runs along −n
   }
   for (const s of sh.steps) groups.get(s.group)?.steps.push(s.text);
-  // suggested LED spots glow in the preview until T5 plans their wiring (#16)
+  // LED spots glow in the preview; wired ones are on the LED map too (#16)
   for (const l of sh.lights) {
     const hex = LED_COLORS[l.color]?.hex || LED_COLORS.warm.hex;
     const plane = { o: l.p, U: [1, 0, 0], V: [0, 0, 1], n: [0, -1, 0] };

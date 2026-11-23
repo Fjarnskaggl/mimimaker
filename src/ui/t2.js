@@ -6,7 +6,7 @@
 // switching the shell off puts the room's own size back.
 
 import { SHELLS } from '../shells/index.js';
-import { shellRoom } from '../shells/kit.js';
+import { shellRoom, shellPower } from '../shells/kit.js';
 
 export const DEFAULT_GAP = { w: 90, h: 230, d: 180 };
 
@@ -16,7 +16,12 @@ export function syncShellRoom(kit) {
   try { prep = shellRoom(kit); } catch { return; } // the compiler reports bad sizes
   if (!prep) return;
   for (const k of ['width', 'depth', 'height', 'ceiling']) kit.room[k] = prep.room[k];
+  // a shell that wires its own LEDs keeps the power box on its back wall, so the Power fields show where it is
+  if (prep.def.wiredLights && kit.lighting) kit.lighting.power = shellPower(kit.lighting.power, prep.room);
 }
+
+/** Does this kit's shell place and wire its own LEDs (#16)? */
+export const shellWiresLights = (kit) => !!(kit?.shell && SHELLS[kit.shell.type]?.wiredLights);
 
 export function setShellType(kit, type) {
   if (!type) {
