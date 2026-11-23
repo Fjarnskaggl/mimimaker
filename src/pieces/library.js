@@ -31,4 +31,16 @@ export const LIBRARY = [
       },
     }],
   },
+  {
+    id: 'windowseat', label: 'Window seat', theme: 'Library', placement: 'floor', mat: 'board',
+    tags: ['seating', 'cosy', 'books'], difficulty: 1,
+    params: [num('w', 'Width', 60, 200), num('d', 'Depth', 35, 70), num('h', 'Height', 35, 55), cnt('count', 'Front panels', 1, 4)],
+    defaults: { w: 120, d: 45, h: 45, count: 2 },
+    let: { ci: 'min(w, d) * 0.04' },
+    components: [
+      { kind: 'box', name: 'Window seat', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0], scores: { front: [{ fronts: { style: "'doors'", count: 'round(count)', w: 'w', h: 'h' } }] } },
+      { kind: 'flat', name: 'Cushion', material: 'felt', plane: { floor: { z: 'h' } }, surface: true, polys: [{ rect: ['ci', 'ci', 'w - 2 * ci', 'd - 2 * ci'] }] },
+    ],
+    note: 'Set it under a window; the cushion is cut from felt — glue it on top and add a couple of tiny rolled-felt pillows.',
+  },
 ];

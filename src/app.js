@@ -33,7 +33,7 @@ import { kitCutFiles, machineReadme } from './export/machines.js';
 // T2 shells
 import { shellSection, applyRoomLocks } from './ui/t2.js';
 // [T5] lighting UI
-import { renderSupplyField, renderCircuitSummary } from './ui/t5.js';
+import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField } from './ui/t5.js';
 
 const STORE_KEY = 'mimimaker.kit.v1';
 const $ = (sel) => document.querySelector(sel);
@@ -416,7 +416,8 @@ function ledInspector(e) {
       h('label', { class: 'field' }, 'Name', h('input', { value: led.name || '', oninput: (ev) => { led.name = ev.target.value; changed(); } })),
       h('div', { class: 'grid2' },
         selectField('Mounted on', led.mount, [['wall', 'Wall'], ['ceiling', 'Ceiling'], ['floor', 'Floor or a lamp']], (v) => { led.mount = v; restructured(); }),
-        selectField('Colour', led.color || 'warm', Object.entries(LED_COLORS).map(([k, c]) => [k, c.name]), (v) => { led.color = v; restructured(); }))),
+        selectField('Colour', led.color || 'warm', Object.entries(LED_COLORS).map(([k, c]) => [k, c.name]), (v) => { led.color = v; restructured(); })),
+      renderEffectFields(led, { selectField, numberField, changed, restructured })), // [T5] effect picker
     insSec('Where', h('div', { class: led.mount === 'wall' ? 'grid3' : 'grid2' }, place)),
     h('div', { class: 'insp-actions' }, h('span', { class: 'grow' }),
       h('button', { type: 'button', class: 'mm-btn mm-btn--sm mm-btn--danger', onclick: () => planAction('delete') }, 'Remove')),
@@ -466,6 +467,7 @@ function lightingInspector() {
       h('div', { class: 'grid2' },
         renderSupplyField(L.power, changed), // [T5] supply picker
         numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
+      renderMountField(L.power, changed), // [T5] mount picker
       h('div', { class: 'grid3' },
         selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
         numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),

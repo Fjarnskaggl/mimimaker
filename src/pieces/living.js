@@ -79,4 +79,51 @@ export const LIVING = [
     ],
     note: 'Build the body, then glue the top on so it overhangs the front and both ends evenly. A strip of washi tape along the top edge looks like veneer.',
   },
+  {
+    id: 'piano', label: 'Upright piano', theme: 'Living room', placement: 'floor', mat: 'board',
+    tags: ['music', 'cosy'], difficulty: 3,
+    params: [num('w', 'Width', 100, 170), num('d', 'Depth', 40, 70), num('h', 'Height', 100, 140), cnt('octaves', 'Octaves', 3, 7)],
+    defaults: { w: 145, d: 55, h: 120, octaves: 5 },
+    let: {
+      kd: 'd * 0.35', kh: 'h * 0.55', kt: 'max(3, 2 * t, h * 0.06)', lw: 'max(4, 2 * t + 1, w * 0.04)',
+      kw: 'w * 0.86', m: '(w - kw) / 2', n: '7 * round(octaves)',
+    },
+    components: [
+      { kind: 'box', name: 'Piano', size: ['w', 'd - kd', 'h'], faces: 'all', at: [0, 'kd', 0], scores: { front: [{ rect: ['w * 0.08', 'kh + h * 0.08', 'w * 0.84', 'h * 0.3'] }] } },
+      {
+        kind: 'box', name: 'Keybed', size: ['w', 'kd', 'kt'], faces: 'all', at: [0, 0, 'kh - kt'],
+        scores: { top: [{ repeat: 'n - 1', as: 'k', each: { line: [['m + (k + 1) * kw / n', 0], ['m + (k + 1) * kw / n', 'kd']] } }] },
+      },
+      { repeat: 2, as: 'i', each: { kind: 'box', name: 'Leg {i + 1}', size: ['lw', 'kd', 'kh - kt'], faces: 'all', at: ['i * (w - lw)', 0, 0] } },
+    ],
+    note: 'Build the body and the keybed, glue the keybed to the body front at the scored height, then the two legs underneath. Ink alternate pairs and threes of black keys between the scores.',
+  },
+  {
+    id: 'firescreen', label: 'Fire screen', theme: 'Living room', placement: 'floor', mat: 'card',
+    tags: ['cosy', 'screen'], difficulty: 1,
+    params: [num('w', 'Width', 50, 120), num('h', 'Height', 40, 90), num('border', 'Frame', 1, 8)],
+    defaults: { w: 80, h: 60, border: 3 },
+    size: ['w', 'max(2, w * 0.05)', 'h'],
+    let: { gap: 'w * 0.02', pw: '(w - 2 * gap) / 3', b: 'min(border, pw / 4)' },
+    components: [{
+      repeat: 3, as: 'k', let: { x0: 'k * (pw + gap)' },
+      each: {
+        kind: 'flat', name: 'Panel {k + 1}', plane: { upright: { y: 'max(2, w * 0.05) / 2' } },
+        polys: [{ arch: ['x0', 0, 'pw', 'h'] }, { arch: ['x0 + b', 'b', 'pw - 2 * b', 'h - 2 * b'] }],
+      },
+    }],
+    note: 'Cut it from black card; glue gold thread or wire mesh behind the openings, then hinge the three panels with tape so the screen stands in a zigzag in front of the fireplace.',
+  },
+  {
+    id: 'lamptable', label: 'Lamp table', theme: 'Living room', placement: 'floor', mat: 'board',
+    tags: ['table', 'light'], difficulty: 1,
+    params: [num('w', 'Width', 30, 70), num('h', 'Height', 40, 75)],
+    defaults: { w: 45, h: 55 },
+    size: ['w', 'w', 'h'],
+    components: [
+      { kind: 'box', name: 'Lamp table', size: ['w', 'w', 'h'], faces: ['top', 'left', 'right'], shelves: { even: 1, h: 'h' }, at: [0, 0, 0] },
+      { kind: 'flat', name: 'Round top', plane: { floor: { z: 'h' } }, surface: true, polys: [{ circle: ['w / 2', 'w / 2', 'w / 2', 64] }] },
+    ],
+    note: 'Glue the round top (patterned card looks like a tablecloth) centred on the square top. Put a small LED inside a bead lampshade on top.',
+  },
 ];
