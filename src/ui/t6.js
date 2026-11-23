@@ -8,7 +8,9 @@ import { createViewer } from '../render/webgl.js';
 import { resolveLook, faceMaterial, textureChoices, textureChoice, setTextureChoice } from '../textures/look.js';
 
 const PREF_KEY = 'mimimaker.t6.webgl';
-const state = { want: readPref(), viewer: null, loading: false, failed: null, last: null, button: null };
+// zoom is the viewer's own (wheel), kept here so every redraw uses it: the app
+// may pass a fresh copy of its view each time (the Light step does)
+const state = { want: readPref(), viewer: null, loading: false, failed: null, last: null, button: null, zoom: 1 };
 
 function readPref() {
   try { return localStorage.getItem(PREF_KEY) === '1'; } catch { return false; }
@@ -173,10 +175,9 @@ function startViewer() {
       if (!state.want) return;
       const v = createViewer(THREE);
       v.canvas.addEventListener('wheel', (e) => {
-        const view = state.last?.view;
-        if (!view) return;
+        if (!state.last) return;
         e.preventDefault();
-        view.zoom = Math.max(0.6, Math.min(4, (view.zoom || 1) * Math.exp(-e.deltaY * 0.0015)));
+        state.zoom = Math.max(0.6, Math.min(4, state.zoom * Math.exp(-e.deltaY * 0.0015)));
         redrawLast();
       }, { passive: false });
       state.viewer = v;
@@ -200,7 +201,7 @@ export function drawStage(stage, faces, view, kit = null) {
     for (const child of [...stage.children]) if (child !== state.viewer.canvas) child.remove();
     state.viewer.mount(stage);
     const look = kit ? resolveLook(kit) : {};
-    state.viewer.update(faces, view, {
+    state.viewer.update(faces, { ...view, zoom: state.zoom }, {
       textureOf: (face) => look[faceMaterial(face, kit)] || null,
       lookKey: JSON.stringify([look, kit?.scale]),
       scale: kit?.scale,

@@ -307,6 +307,7 @@ export function createViewer(THREE) {
         shadows: renderer.shadowMap.enabled && sun.castShadow,
         selected: selectedItem,
         hovered: hoverItem,
+        zoom: view.zoom || 1,
         windowLights: windows.visible ? windows.children.filter((o) => o.isSpotLight).length : 0,
         windowShadows: windows.children.filter((o) => o.isSpotLight).every((o) => o.castShadow),
       };
