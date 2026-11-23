@@ -179,3 +179,13 @@ test('Light step: pieces are not pickable in the room view (their inspector live
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('the Realistic 3D button looks pressed while it is on', async () => {
+  const page = await open();
+  const bg = () => page.locator('#renderer-toggle').evaluate((b) => getComputedStyle(b).backgroundColor);
+  const off = await bg();
+  await page.click('#renderer-toggle');
+  assert.equal(await page.locator('#renderer-toggle').getAttribute('aria-pressed'), 'true');
+  assert.notEqual(await bg(), off, 'pressed state is visible');
+  await page.close();
+});
