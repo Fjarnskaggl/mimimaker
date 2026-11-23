@@ -3,6 +3,7 @@ import { num, cnt } from './params.js';
 export const LIBRARY = [
   {
     id: 'ladder', label: 'Library ladder', theme: 'Library', placement: 'floor', mat: 'board',
+    tags: ['books'], difficulty: 2,
     params: [num('w', 'Width', 25, 70), num('h', 'Height', 80, 260), cnt('rungs', 'Rungs', 3, 12)],
     defaults: { w: 45, h: 200, rungs: 7 },
     size: ['w', 'max(2, w * 0.1)', 'h'],
@@ -18,6 +19,7 @@ export const LIBRARY = [
   },
   {
     id: 'books', label: 'Book stack', theme: 'Library', placement: 'floor', mat: 'card',
+    tags: ['books', 'accessory'], difficulty: 1,
     params: [num('w', 'Width', 10, 60), num('d', 'Depth', 8, 40), num('h', 'Book thickness', 2, 10), cnt('count', 'Books', 1, 6)],
     defaults: { w: 30, d: 22, h: 4, count: 3 },
     size: ['w', 'd', 'h * round(count)'],

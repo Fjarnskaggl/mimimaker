@@ -12,6 +12,7 @@ const sofaLets = { a: 'min(arm, w / 3)', dd: 'd - t' };
 export const LIVING = [
   {
     id: 'sofa', label: 'Sofa', theme: 'Living room', placement: 'floor', mat: 'board',
+    tags: ['seating', 'cosy'], difficulty: 2,
     params: [num('w', 'Width', 80, 320), num('d', 'Depth', 50, 120), num('seat', 'Seat height', 25, 60), num('back', 'Back height', 50, 120), num('arm', 'Arm width', 8, 40), num('armh', 'Arm height', 40, 90)],
     defaults: { w: 200, d: 85, seat: 42, back: 82, arm: 18, armh: 60 },
     size: ['w', 'd', 'max(back, armh)'],
@@ -21,6 +22,7 @@ export const LIVING = [
   },
   {
     id: 'armchair', label: 'Armchair', theme: 'Living room', placement: 'floor', mat: 'board',
+    tags: ['seating', 'cosy'], difficulty: 2,
     params: [num('w', 'Width', 50, 140), num('d', 'Depth', 50, 120), num('seat', 'Seat height', 25, 60), num('back', 'Back height', 50, 130), num('arm', 'Arm width', 8, 30), num('armh', 'Arm height', 40, 90)],
     defaults: { w: 90, d: 85, seat: 42, back: 90, arm: 16, armh: 62 },
     size: ['w', 'd', 'max(back, armh)'],
@@ -30,6 +32,7 @@ export const LIVING = [
   },
   {
     id: 'fireplace', label: 'Fireplace', theme: 'Living room', placement: 'floor', mat: 'board',
+    tags: ['cosy', 'light', 'arch'], difficulty: 2,
     params: [num('w', 'Width', 60, 220), num('d', 'Depth', 20, 70), num('h', 'Height', 60, 160)],
     defaults: { w: 120, d: 35, h: 105 },
     size: ['w', 'd', 'h + 4'],
@@ -42,12 +45,14 @@ export const LIVING = [
   },
   {
     id: 'tvstand', label: 'TV / media unit', theme: 'Living room', placement: 'floor', mat: 'board',
+    tags: ['storage', 'media'], difficulty: 1,
     params: [num('w', 'Width', 60, 250), num('d', 'Depth', 25, 60), num('h', 'Height', 30, 90), cnt('shelves', 'Shelves', 0, 2)],
     defaults: { w: 150, d: 40, h: 50, shelves: 1 },
     components: [{ kind: 'box', name: 'Media unit', size: ['w', 'd', 'h'], faces: ['bottom', 'top', 'left', 'right', 'back'], shelves: { even: 'round(shelves)', h: 'h' }, at: [0, 0, 0] }],
   },
   {
     id: 'floorlamp', label: 'Floor lamp', theme: 'Living room', placement: 'floor', mat: 'card',
+    tags: ['light', 'cosy'], difficulty: 2,
     params: [num('w', 'Shade width', 20, 60), num('h', 'Height', 80, 200), num('shade', 'Shade height', 15, 50)],
     defaults: { w: 35, h: 160, shade: 28 },
     size: ['w', 'w', 'h'],
