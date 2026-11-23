@@ -15,6 +15,7 @@
 
 import { ellipsePoly, pointInPolygon, bbox } from './geometry.js';
 import { planCircuit, supplyFor } from './lighting/circuit.js';
+import { effectOf, effectLoad, effectWarnings } from './lighting/effects.js';
 
 export const LED_COLORS = {
   warm: { name: 'Warm white', hex: '#ffc767' },
@@ -139,6 +140,10 @@ export function planLighting(lighting, ctx) {
       if (u < wi.u0 + r + 1 || u > wi.u0 + wi.len - r - 1 || v < t + r + 1 || v > t + Hi - r - 1) warnings.push(`${title} is off the ${face} wall.`);
       if (inOpening(face, u, v)) warnings.push(`${title} sits inside a window or door opening.`);
     }
+    const place = face === 'top' || face === 'bottom'
+      ? { face, mount: led.mount, start: u - t, span: Wi }
+      : { face, mount: led.mount, start: u - wallInfo[face].u0, span: wallInfo[face].len };
+    warnings.push(...effectWarnings(led, place, title));
     addHole(face, u, v);
     const p = netPoint(face, u, v, ctx);
     const route = routeWire({ face, p }, power, ctx, obstacles);
@@ -147,13 +152,13 @@ export function planLighting(lighting, ctx) {
     leds.push({
       label, name: led.name || '', mount: led.mount, face, u, v, p, color: led.color || 'warm',
       route: route.points, length, leadCm: Math.ceil((length / 10 + 3) / 5) * 5,
-      ...(led.duty != null ? { duty: led.duty } : {}),
+      effect: effectOf(led), load: effectLoad(led),
     });
   });
   if (leds.some((l) => l.face === 'bottom')) {
     warnings.push({ level: 'info', msg: 'Floor lights feed their wires underneath the room — glue 3–4 mm feet (or felt pads) under the floor so the wires aren\'t pinched.' });
   }
-  const circuit = planCircuit(leds.map((l) => ({ color: l.color, duty: l.duty })), supplyFor(pw));
+  const circuit = planCircuit(leds.map((l) => l.load), supplyFor(pw));
   power.supply = circuit.supply.id;
   warnings.push(...circuit.warnings);
   return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit };
