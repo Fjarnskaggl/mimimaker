@@ -176,3 +176,25 @@ test('shell panel: a nook can get a gable roof', async () => {
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('room box: a gable roof from the Room section', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  const room = page.locator('details.section', { has: page.locator('summary', { hasText: 'Room box' }) });
+  const gable = room.locator('input[data-room-roof=gable]');
+  assert.equal(await gable.isChecked(), false, 'no roof by default');
+  await gable.check();
+  assert.deepEqual((await kit(page)).room.roof, { type: 'gable', pitch: 40 });
+  await room.locator('input[data-room-roof=pitch]').fill('35');
+  assert.equal((await kit(page)).room.roof.pitch, 35);
+  await page.waitForFunction(() => document.querySelectorAll('#view svg path, #view canvas').length > 10);
+  assert.equal(await page.locator('#warnings .warn.error').count(), 0, await page.locator('#warnings').innerText());
+  if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'room-gable.png') });
+  await gable.uncheck();
+  assert.equal((await kit(page)).room.roof ?? null, null);
+  // a shell brings its own roof options, so the room roof hides
+  await panel(page).locator('select[data-shell=type]').selectOption('nook');
+  assert.equal(await room.locator('input[data-room-roof=gable]').count(), 0);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

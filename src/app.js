@@ -34,7 +34,7 @@ import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, han
 import { kitCutFiles, machineReadme } from './export/machines.js';
 import { kitHandCutFiles } from './export/handcut.js';
 // T2 shells
-import { shellSection, applyRoomLocks } from './ui/t2.js';
+import { shellSection, applyRoomLocks, appendRoofControls } from './ui/t2.js';
 // [T5] lighting UI
 import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
@@ -339,6 +339,7 @@ function roomSection() {
     h('p', { class: 'hint' }, 'Real-world sizes; the scale shrinks them to the model.'),
   ]);
   applyRoomLocks(kit, el, h); // T2 shells: the shell owns the room size (and overlays for whole-scene shells)
+  appendRoofControls(kit, el, { h, numberField, checkField, changed, restructured }); // T2 roofs
   return el;
 }
 
