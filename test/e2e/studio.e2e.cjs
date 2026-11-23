@@ -6,11 +6,17 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-const PORT = 5199;
-const URL = `http://localhost:${PORT}/`;
-let server, browser;
+// A free port per run: node --test runs e2e files in parallel, so fixed
+// ports collide and one file's server gets killed by another's teardown.
+let PORT, URL, server, browser;
+const freePort = () => new Promise((resolve) => {
+  const srv = require('node:net').createServer();
+  srv.listen(0, () => { const { port } = srv.address(); srv.close(() => resolve(port)); });
+});
 
 before(async () => {
+  PORT = await freePort();
+  URL = `http://localhost:${PORT}/`;
   server = spawn(process.execPath, [path.join(__dirname, '../../scripts/serve.js')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
   for (let i = 0; i < 50; i++) {
     try { await fetch(URL); break; } catch { await new Promise((r) => setTimeout(r, 100)); }
@@ -171,5 +177,24 @@ test('no sideways scrolling at phone width on any tab', async () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     assert.ok(overflow <= 0, `${tab}: page is ${overflow}px too wide`);
   }
+  await page.close();
+});
+
+test('disabled fields look disabled', async () => {
+  const page = await open();
+  const styles = await page.evaluate(() => {
+    const field = document.createElement('label');
+    field.className = 'field';
+    field.innerHTML = '<span class="unit-wrap"><input type="number" value="1"></span><select><option>a</option></select>';
+    document.querySelector('#sidebar .section-body').append(field);
+    const [input, select] = [field.querySelector('input'), field.querySelector('select')];
+    const before = [getComputedStyle(input).opacity, getComputedStyle(input).cursor];
+    input.disabled = true; select.disabled = true;
+    return { before, input: [getComputedStyle(input).opacity, getComputedStyle(input).cursor], select: getComputedStyle(select).opacity };
+  });
+  assert.equal(styles.before[0], '1');
+  assert.ok(Number(styles.input[0]) < 0.8, `disabled input opacity ${styles.input[0]}`);
+  assert.equal(styles.input[1], 'not-allowed');
+  assert.ok(Number(styles.select) < 0.8, `disabled select opacity ${styles.select}`);
   await page.close();
 });

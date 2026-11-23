@@ -1,7 +1,7 @@
 // UI controller: edits the kit object, recompiles, and renders the views.
 
 import { compileKit } from './kit.js';
-import { CATALOG, THEMES, defaultKit, defaultMaterialFor } from './catalog.js';
+import { CATALOG, defaultKit, defaultMaterialFor } from './catalog.js';
 import { ROOM_TYPES, applyRoomType } from './templates.js';
 import { LED_COLORS, POWER_KINDS } from './lighting.js';
 import { ledMapSVG, ledRows } from './ledmap.js';
@@ -15,11 +15,13 @@ import { itemSize } from './catalog.js';
 import { renderScene } from './preview3d.js';
 // T6: WebGL viewer + SVG fallback
 import { drawStage, rendererToggle } from './ui/t6.js';
+// T1: piece library (search, difficulty, part counts)
+import { pieceLibrary } from './ui/t1.js';
 import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { guideHTML } from './guide.js';
 import { makeZip } from './zip.js';
 // T2 shells
-import { shellSection } from './ui/t2.js';
+import { shellSection, applyRoomLocks } from './ui/t2.js';
 
 const STORE_KEY = 'mimimaker.kit.v1';
 const $ = (sel) => document.querySelector(sel);
@@ -202,7 +204,7 @@ function kitSection() {
 
 function roomSection() {
   const r = kit.room;
-  return section('Room box', [
+  const el = section('Room box', [
     h('div', { class: 'grid3' },
       numberField('Width', r.width, (v) => { r.width = v; changed(); }, { min: 20, unit: 'cm' }),
       numberField('Depth', r.depth, (v) => { r.depth = v; changed(); }, { min: 20, unit: 'cm' }),
@@ -218,6 +220,8 @@ function roomSection() {
     ),
     selectField('Window & door trim material', r.trimMaterial, matOptions((m) => m.kind !== 'fabric'), (v) => { r.trimMaterial = v; changed(); }),
   ]);
+  applyRoomLocks(kit, el, h); // T2 shells: the shell owns the room size (and overlays for whole-scene shells)
+  return el;
 }
 
 const OPENING_KINDS = [['window', 'Window'], ['arch', 'Arched window'], ['round', 'Round window'], ['door', 'Door'], ['archdoor', 'Arched door']];
@@ -352,17 +356,9 @@ function itemsSection() {
     restructured();
     toast(`Added ${def.label.toLowerCase()} — set its position in the list above.`);
   };
-  const chips = h('div', { class: 'chips', role: 'tablist', 'aria-label': 'Piece themes' }, THEMES.map((th) => h('button', {
-    type: 'button', role: 'tab', class: 'chip', 'aria-selected': String(view.theme === th),
-    onclick: () => { view.theme = th; renderSidebar(); },
-  }, th)));
-  const pieces = Object.entries(CATALOG).filter(([, d]) => d.group === view.theme).map(([type, d]) => h('button', {
-    type: 'button', class: 'piece', title: `Add ${d.label}`, onclick: () => addPiece(type),
-  }, h('span', { class: 'thumb', html: itemThumb(type) }), h('span', {}, d.label)));
-  return section('Furniture & decor', [
-    ...cards,
-    h('div', { class: 'library' }, h('strong', { class: 'library-title' }, 'Add a piece'), chips, h('div', { class: 'piece-grid' }, pieces)),
-  ], { count: kit.items.length });
+  // T1: piece library (search, difficulty, part counts) lives in src/ui/t1.js
+  const library = pieceLibrary({ view, addPiece, thumb: itemThumb });
+  return section('Furniture & decor', [...cards, library], { count: kit.items.length });
 }
 
 function lightingSection() {

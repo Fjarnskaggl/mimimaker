@@ -297,3 +297,7 @@ kbd { font: 600 11px ui-monospace, monospace; background: var(--panel-2); border
 .tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
 .tabs button { flex: none; white-space: nowrap; }
+
+/* disabled fields (e.g. room size while a book-nook shell sets it) */
+.field input:disabled, .field select:disabled, .check input:disabled { opacity: .55; cursor: not-allowed; }
+.field:has(input:disabled) .unit { opacity: .55; }

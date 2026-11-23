@@ -34,6 +34,45 @@ export function setShellType(kit, type) {
   syncShellRoom(kit);
 }
 
+/**
+ * Which Room box fields the shell takes over: `size` (width, depth, height,
+ * ceiling) whenever a shell is on; `overlays` (wallpaper, floor) when the
+ * shell is the whole scene. `note` explains it in the Room box section.
+ */
+export function roomLocks(kit) {
+  const def = kit?.shell && SHELLS[kit.shell.type];
+  if (!def) return { size: false, overlays: false, note: null };
+  const overlays = !def.furnishable;
+  const note = overlays
+    ? 'Sized by the shell — change the shelf gap. Wallpaper and floor covering are off while the shell is the whole scene.'
+    : 'Sized by the shell — change the shelf gap.';
+  return { size: true, overlays, note };
+}
+
+const ROOM_SIZE_FIELDS = ['Width', 'Depth', 'Height', 'Ceiling'];
+const ROOM_OVERLAY_FIELDS = ['Wallpaper', 'Floor covering'];
+
+/** Disable the Room box fields a shell owns (found by their labels) and add the note. */
+export function applyRoomLocks(kit, sectionEl, h) {
+  const locks = roomLocks(kit);
+  if (!locks.note) return;
+  const labelled = (names) => [...sectionEl.querySelectorAll('label')]
+    .filter((l) => l.querySelector('input') && names.some((n) => l.textContent.trim().startsWith(n)));
+  const lock = (labels, withPicker = false) => labels.forEach((l) => {
+    const input = l.querySelector('input');
+    input.disabled = true;
+    // overlays are off under a whole-scene shell: show that, but leave the
+    // room's own setting alone so it returns with the room
+    if (withPicker) input.checked = false;
+    // each overlay checkbox is followed by its material picker
+    const picker = withPicker && l.nextElementSibling?.querySelector('select');
+    if (picker) picker.disabled = true;
+  });
+  if (locks.size) lock(labelled(ROOM_SIZE_FIELDS));
+  if (locks.overlays) lock(labelled(ROOM_OVERLAY_FIELDS), true);
+  sectionEl.querySelector('.section-body')?.prepend(h('p', { class: 'hint', 'data-room-lock': '' }, locks.note));
+}
+
 const tag = (field, key, value) => {
   field.querySelector('input, select')?.setAttribute(key, value);
   return field;
