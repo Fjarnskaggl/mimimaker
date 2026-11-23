@@ -1,0 +1,1 @@
+The mark: Mimi's head (kraft box, finger-joint top, lit windows, LED antenna), 48 × 48, multi-colour, never recoloured. The name is set in type next to it (lowercase Bricolage Grotesque 800, `ink`), not as an image.
