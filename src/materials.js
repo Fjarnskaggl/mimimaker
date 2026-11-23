@@ -162,6 +162,36 @@ export const MACHINES = {
   laser: { name: 'Laser cutter (generic)', family: 'laser', cut: [400, 400], tools: ['fine', 'knife', 'rotary'], kerf: 0.1 },
 };
 
+const MIN_BED = 50, MAX_BED = 3000, MAX_KERF = 1;
+const okSide = (v) => typeof v === 'number' && Number.isFinite(v) && v >= MIN_BED && v <= MAX_BED;
+
+/**
+ * The machine profile `id` (default: the kit's machine) with the kit's own
+ * edits applied: kit.machineOverrides[id] = { cut: [w, h], kerf }. Values
+ * out of range fall back to the preset, side by side.
+ */
+export function machineFor(kit, id = kit?.machine) {
+  const key = MACHINES[id] ? id : 'maker';
+  const base = MACHINES[key];
+  const o = kit?.machineOverrides?.[key];
+  if (!o || typeof o !== 'object') return base;
+  const out = { ...base };
+  if (Array.isArray(o.cut)) {
+    const cut = [0, 1].map((i) => (okSide(o.cut[i]) ? o.cut[i] : base.cut[i]));
+    if (cut[0] !== base.cut[0] || cut[1] !== base.cut[1]) out.cut = cut;
+  }
+  if (base.family === 'laser' && typeof o.kerf === 'number' && o.kerf >= 0 && o.kerf <= MAX_KERF) out.kerf = o.kerf;
+  return out.cut === base.cut && out.kerf === base.kerf ? base : out;
+}
+
+/** kit.machineOverrides with only known machines and plain-object entries kept. */
+export function cleanOverrides(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+  return Object.fromEntries(Object.entries(v).filter(([k, o]) => MACHINES[k] && o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length));
+}
+
+export const BED_LIMITS = { min: MIN_BED, max: MAX_BED, maxKerf: MAX_KERF };
+
 export const TOOL_NAMES = { fine: 'Fine-Point Blade', knife: 'Knife Blade', rotary: 'Rotary Blade' };
 
 /** Usable sheet area for a material on a machine (clipped to the cut area). */

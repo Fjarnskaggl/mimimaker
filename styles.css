@@ -421,6 +421,9 @@ details.section > summary:has(.count)::after { margin-left: var(--space-2); }
 .mat-row input[type=number] { font-family: var(--font-mono); }
 .mat-row input[type=color] { padding: 0; }
 .mat-head { font: 600 12px/16px var(--font-sans); color: var(--ink-muted); }
+/* T3 machine bed fields (Make → Advanced) */
+.bed-fields { display: grid; gap: var(--space-3); }
+.bed-fields .hint { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 /* T3 material library */
 .mat-library { display: grid; gap: var(--space-3); }
 .mat-library .mat-row { grid-template-columns: 30px minmax(140px, 1fr) 72px 72px 72px 80px 236px; }

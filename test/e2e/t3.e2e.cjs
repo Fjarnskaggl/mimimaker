@@ -233,3 +233,26 @@ test('kit zip: "All machines" adds every machine’s cut files and a file list',
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('machine bed: edit the mat size and the sheets follow; reset restores it', async () => {
+  const page = await open();
+  await chooseMachine(page, 'Laser cutter (generic)');
+  await page.locator('details.more summary', { hasText: 'Advanced' }).click();
+  const before = await page.locator('.sheet-card').count();
+  const w = page.locator('input[aria-label="Bed width (mm)"]');
+  const hgt = page.locator('input[aria-label="Bed height (mm)"]');
+  assert.equal(await w.inputValue(), '400');
+  await w.fill('150'); await w.dispatchEvent('change');
+  await hgt.fill('150'); await hgt.dispatchEvent('change');
+  await page.waitForFunction((n) => document.querySelectorAll('.sheet-card').length > n, before);
+  assert.deepEqual(await page.evaluate(() => window.mimimaker.kit.machineOverrides.laser.cut), [150, 150]);
+  const kerf = page.locator('input[aria-label="Machine kerf (mm)"]');
+  await kerf.fill('0.2'); await kerf.dispatchEvent('change');
+  await page.waitForFunction(() => /kerf 0\.2 mm/.test(document.querySelector('.sheet-card .cut-time').textContent));
+  await shot(page, 'machine-bed');
+  await page.locator('button', { hasText: 'Reset to' }).click();
+  await page.waitForFunction((n) => document.querySelectorAll('.sheet-card').length === n, before);
+  assert.equal(await page.locator('input[aria-label="Bed width (mm)"]').inputValue(), '400');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

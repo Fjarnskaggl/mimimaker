@@ -30,7 +30,7 @@ import { drawStage, rendererToggle, texturePicker, attachPicking } from './ui/t6
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 // T3 wiring: per-machine cut files
-import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, handCutButton, printCutButton, updatePrintCutButton, materialLibrary, kitCost, allMachinesField } from './ui/t3.js';
+import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, handCutButton, printCutButton, updatePrintCutButton, materialLibrary, kitCost, allMachinesField, machineBedFields } from './ui/t3.js';
 import { zipCutFiles, zipFileList } from './export/bundle.js';
 import { kitHandCutFiles } from './export/handcut.js';
 import { kitPrintCutFiles } from './export/printcut.js';
@@ -914,7 +914,8 @@ function renderMake(el) {
         h('div', { class: 'grid2' },
           numberField('Finger width (0 = auto)', kit.fingerWidth, (v) => { kit.fingerWidth = Math.max(0, v); changed(); }, { min: 0, max: 30, step: 0.5, unit: 'mm' }),
           numberField('Glue tab width', kit.tabWidth, (v) => { kit.tabWidth = Math.max(1, v); changed(); }, { min: 1, max: 15, step: 0.5, unit: 'mm' })),
-        checkField('Draw part numbers with a Cricut pen', kit.drawLabels, (v) => { kit.drawLabels = v; changed(); }))),
+        checkField('Draw part numbers with a Cricut pen', kit.drawLabels, (v) => { kit.drawLabels = v; changed(); }),
+        h('div', { id: 'make-bed' }))),
       h('details', { class: 'more', open: matsOpen, ontoggle: (e) => { matsOpen = e.target.open; } }, h('summary', {}, ic('sheets'), 'Materials'), h('div', { id: 'make-materials' }))));
   }
   const { dims, parts, sheets } = compiled;
@@ -926,6 +927,9 @@ function renderMake(el) {
     h('div', {}, h('span', {}, 'Sheets'), h('b', {}, sheets.length)),
     h('div', {}, h('span', {}, 'Cutting'), h('b', {}, `≈ ${formatMinutes(minutes)}`)),
     h('div', { title: 'Sheets × price per sheet (set prices under Materials)' }, h('span', {}, 'Material'), h('b', {}, formatMoney(cost.total, cost.currency)))); // T3
+  const bedSlot = el.querySelector('#make-bed'); // T3 machine bed size / kerf
+  if (!bedSlot.firstChild) bedSlot.append(machineBedFields(() => kit, changed));
+  bedSlot.firstChild.update();
   const lib = materialsPanel(); // T3
   const slot = el.querySelector('#make-materials');
   if (slot.firstChild !== lib) slot.replaceChildren(lib);
