@@ -20,6 +20,9 @@ import { pieceLibrary } from './ui/t1.js';
 import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { guideHTML } from './guide.js';
 import { makeZip } from './zip.js';
+// T3 wiring: per-machine cut files
+import { sheetDownloadButtons, sheetSettings, sheetLegend } from './ui/t3.js';
+import { kitCutFiles, machineReadme } from './export/machines.js';
 // T2 shells
 import { shellSection, applyRoomLocks } from './ui/t2.js';
 // [T5] lighting UI
@@ -517,18 +520,16 @@ function renderCalibration() {
 }
 
 function renderSheets(el) {
-  const legend = h('div', { class: 'legend' },
-    h('span', {}, h('i', { style: `border-color:${LAYER_COLORS.cut}` }), 'Cut'),
-    h('span', {}, h('i', { style: `border-color:${LAYER_COLORS.score};border-top-style:dashed` }), 'Score / fold'),
-    h('span', {}, 'Numbers match the assembly guide. Hover a part for details.'));
+  const legend = sheetLegend(compiled.machine, 'Numbers match the assembly guide. Hover a part for details.'); // T3
+  const fileOpts = { drawLabels: kit.drawLabels, title: (s) => `${kit.name} – ${s.material.name} ${s.index}` };
   const cards = compiled.sheets.map((s) => {
     const card = h('article', { class: 'sheet-card' },
       h('header', {},
         h('span', { class: 'sw', style: `background:${s.material.color}` }),
         h('strong', {}, `${s.material.name} · ${s.index}/${s.count}`),
-        h('button', { class: 'small', type: 'button', onclick: () => download(sheetFileName(s), sheetCutSVG(s, { drawLabels: kit.drawLabels, title: `${kit.name} – ${s.material.name} ${s.index}` }), 'image/svg+xml') }, 'SVG')),
+        ...sheetDownloadButtons(s, compiled.machine, fileOpts, download)), // T3
       h('div', { html: sheetPreviewSVG(s) }),
-      h('div', { class: 'cut-time' }, `≈ ${formatMinutes(estimateCutMinutes(s))} · Design Space: ${withMaterialDefaults(s.material).cricut}${s.material.tool === 'knife' ? ` · ${withMaterialDefaults(s.material).passes} passes` : ''}`),
+      sheetSettings(s, compiled.machine), // T3
       h('div', { class: 'meta' }, `${s.w}×${s.h} mm · ${s.placements.length} parts: ${s.placements.map((p) => '#' + p.part.id).sort((a, b) => a.slice(1) - b.slice(1)).join(' ')}`));
     return card;
   });
@@ -731,16 +732,13 @@ function renderGuide(el) {
 
 // ------------------------------------------------------------------ header
 function exportZip() {
-  const files = compiled.sheets.map((s) => ({
-    name: `cut-files/${sheetFileName(s)}`,
-    data: sheetCutSVG(s, { drawLabels: kit.drawLabels, title: `${kit.name} – ${s.material.name} ${s.index}` }),
-  }));
+  const files = kitCutFiles(compiled.sheets, compiled.machine, { drawLabels: kit.drawLabels, title: (s) => `${kit.name} – ${s.material.name} ${s.index}` }); // T3
   files.push({ name: 'assembly-guide.html', data: guideHTML(kit, compiled) });
   if (compiled.lighting?.enabled && compiled.lighting.leds.length) files.push({ name: 'led-map.svg', data: ledMapSVG(compiled, { standalone: true }) });
   files.push({ name: 'kit.json', data: JSON.stringify(kit, null, 2) });
   files.push({
     name: 'README.txt',
-    data: `${kit.name}\n\nOpen assembly-guide.html in a browser for the parts list, Design Space steps and assembly instructions.\nUpload each SVG in cut-files/ to Cricut Design Space at its original size.\nkit.json re-opens this design in mimimaker.\n`,
+    data: `${kit.name}\n\nOpen assembly-guide.html in a browser for the parts list, Design Space steps and assembly instructions.\n${machineReadme(compiled.machine)}kit.json re-opens this design in mimimaker.\n`,
   });
   download(`${slug(kit.name)}.zip`, makeZip(files), 'application/zip');
 }
