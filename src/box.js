@@ -65,7 +65,8 @@ export function faceFrame(face, W, D, H, inset = 0, side = 'outer') {
  * @param {object} [o.scores] face -> [[p,q],…] score lines (panel coords)
  * @param {number[]} [o.shelves] z of each shelf's underside (mm from outer bottom)
  * @param {number} [o.minFeature] smallest tab or notch the cutter makes cleanly
- *   (mm, see minJointFeature); raises the finger width when it is smaller
+ *   (mm, see minJointFeature); raises the finger width when it is smaller.
+ *   Shelf tabs keep their fixed 1–2 per edge; minFinger reports them.
  */
 export function buildBox({ W, D, H, t, faces, fingerWidth, holes = {}, scores = {}, shelves = [], clearance = 0.1, minFeature = 0 }) {
   const present = new Set(faces);
@@ -82,10 +83,8 @@ export function buildBox({ W, D, H, t, faces, fingerWidth, holes = {}, scores = 
     const y0 = present.has('front') ? t : 0;
     const y1 = present.has('back') ? D - t : D;
     const Ds = y1 - y0;
-    // two tabs per edge when they stay at least minFeature wide, else one
-    const shelfTabs = (L) => (L > 25 && L / 5 >= minFeature ? 2 : 1);
-    const side = profileTabs(Ds, t, shelfTabs(Ds));
-    const back = present.has('back') ? profileTabs(Wi, t, shelfTabs(Wi)) : profilePlain(Wi);
+    const side = profileTabs(Ds, t, Ds > 25 ? 2 : 1);
+    const back = present.has('back') ? profileTabs(Wi, t, Wi > 25 ? 2 : 1) : profilePlain(Wi);
     const outline = panelOutline(Wi, Ds, [profilePlain(Wi), side, back, side]);
     const c = clearance;
     for (const s of side) if (s.d < 0) {

@@ -14,8 +14,6 @@ import { prepareShell, compileShell, compileRoof, shellLights } from './shells/k
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
-/** Knife Blade cuts get ragged below roughly this feature size (mm). */
-const MIN_KNIFE_FEATURE = 3;
 /** Gap between overlays (wallpaper, flooring) and the walls (mm). */
 const OVERLAY_MARGIN = 0.5;
 
@@ -88,19 +86,20 @@ export function compileKit(kit) {
     });
   };
   // Joint tabs never go narrower than the machine cuts cleanly in that material.
+  const cutterName = (mat) => (machine.family === 'laser' ? 'the laser' : `the ${TOOL_NAMES[mat.tool] || 'blade'}`);
   const raised = new Set();
   const jointWidth = (mat) => {
     const min = minJointFeature(machine, mat);
-    if (fingerWidth > 0 && fingerWidth < min && !raised.has(min)) {
-      raised.add(min);
-      const cutter = machine.family === 'laser' ? 'the laser' : `the ${TOOL_NAMES[mat.tool] || 'blade'}`;
-      warn(`Finger width ${fingerWidth} mm is narrower than ${cutter} cuts cleanly in ${mat.name}, so its joints use ${min} mm. Set the finger width to at least ${min} mm.`);
+    if (fingerWidth > 0 && fingerWidth < min && !raised.has(mat.id)) {
+      raised.add(mat.id);
+      warn(`Finger width ${fingerWidth} mm is narrower than ${cutterName(mat)} cuts cleanly in ${mat.name}, so its joints use ${min} mm. Set the finger width to at least ${min} mm.`);
     }
     return Math.max(fingerWidth > 0 ? fingerWidth : autoFingerWidth(mat.thickness), min);
   };
   const checkFingers = (minFinger, mat, what) => {
-    if (mat.tool === 'knife' && minFinger < MIN_KNIFE_FEATURE) {
-      warn(`${what}: finger joints are only ${minFinger.toFixed(1)} mm wide — the Knife Blade is cleaner above ${MIN_KNIFE_FEATURE} mm. Make it bigger, raise the finger width, or use thinner board.`);
+    const min = minJointFeature(machine, mat);
+    if (minFinger < min - 1e-9) {
+      warn(`${what}: finger joints are only ${minFinger.toFixed(1)} mm wide — ${cutterName(mat)} is cleaner above ${min} mm. Make it bigger, raise the finger width, or use thinner board.`);
     }
   };
 

@@ -43,8 +43,8 @@ test('a too-small finger width is raised to what the machine cuts cleanly', () =
   kit.fingerWidth = 1;
   const r = compileKit(kit);
   assert.ok(!r.warnings.some((w) => /finger joints are only/.test(w.msg)), 'no thin-finger warning: the width was raised');
-  const raised = r.warnings.filter((w) => /^Finger width 1 mm is narrower than the Knife Blade/.test(w.msg));
-  assert.equal(raised.length, 1, 'says once that the width was raised');
+  const raised = r.warnings.filter((w) => /^Finger width 1 mm is narrower than the Knife Blade cuts cleanly in Chipboard 2\.0 mm/.test(w.msg));
+  assert.equal(raised.length, 1, 'says once per material that the width was raised');
   assert.equal(raised[0].level, 'warn');
   assert.match(raised[0].msg, /use 3 mm/);
   const roomIds = new Set(r.groups.find((g) => g.title === 'Room box').parts);
