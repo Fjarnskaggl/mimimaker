@@ -85,3 +85,22 @@ test('true-shape nesting runs in a worker and swaps in fewer sheets', async () =
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('hand-cut PDF: a secondary button on Make, and both papers in the zip', async () => {
+  const page = await open();
+  await page.click('[data-step=make]');
+  const btn = page.locator('.page-head #btn-handcut');
+  assert.match(await btn.textContent(), /Hand-cut PDF/);
+  const cls = await btn.getAttribute('class');
+  assert.match(cls, /\bmm-btn\b/);
+  assert.doesNotMatch(cls, /mm-btn--primary/, 'Download kit stays the only primary');
+  const [dl] = await Promise.all([page.waitForEvent('download'), btn.click()]);
+  assert.match(dl.suggestedFilename(), /hand-cut-templates-(a4|letter)\.pdf$/);
+  assert.equal(fs.readFileSync(await dl.path()).subarray(0, 5).toString('latin1'), '%PDF-');
+  const [zip] = await Promise.all([page.waitForEvent('download'), page.click('#btn-zip')]);
+  const text = fs.readFileSync(await zip.path()).toString('latin1');
+  assert.ok(text.includes('hand-cut/hand-cut-templates-a4.pdf') && text.includes('hand-cut/hand-cut-templates-letter.pdf'));
+  await shot(page, 'handcut-button');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

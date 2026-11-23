@@ -132,3 +132,21 @@ test('part outlines land at the right place on a single-tile page', () => {
   const want = [(10 + sx - b.x) * MM, (297 - (10 + sy - b.y)) * MM].map((v) => v.toFixed(2));
   assert.ok(page.content.includes(`${want[0]} ${want[1]} m`), `expected moveto ${want.join(' ')}`);
 });
+
+// ------------------------------------------------------------ app wiring
+import { defaultPaper, kitHandCutFiles } from '../src/export/handcut.js';
+
+test('paper follows the locale: Letter in the US/Canada, A4 elsewhere', () => {
+  assert.equal(defaultPaper('en-US'), 'letter');
+  assert.equal(defaultPaper('en-CA'), 'letter');
+  assert.equal(defaultPaper('es-MX'), 'letter');
+  assert.equal(defaultPaper('en-GB'), 'a4');
+  assert.equal(defaultPaper('sv'), 'a4');
+  assert.equal(defaultPaper(undefined), 'a4');
+});
+
+test('the kit zip gets hand-cut templates on both A4 and Letter', () => {
+  const files = kitHandCutFiles(compiled.sheets, { title: 'Test kit' });
+  assert.deepEqual(files.map((f) => f.name), ['hand-cut/hand-cut-templates-a4.pdf', 'hand-cut/hand-cut-templates-letter.pdf']);
+  for (const f of files) parsePDF(f.data);
+});
