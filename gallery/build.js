@@ -64,6 +64,12 @@ export async function buildGallery(entries, { appUrl = '../' } = {}) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>mimimaker gallery</title>
+<meta name="description" content="Miniature room kits shared by the mimimaker community. Open one to get your own copy to edit and cut, free and with no account.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="mimimaker">
+<meta property="og:title" content="mimimaker gallery: room kits to open and remix">
+<meta property="og:description" content="${entries.length} miniature room kits shared by the community. Open one to get your own copy to edit and cut, free and with no account.">
+<meta name="twitter:card" content="summary">
 <style>
 :root { --bg: #faf7f2; --fg: #2b2520; --muted: #6d6258; --card: #fff; --line: #e4dcd1; --accent: #b4532a; --on-accent: #fff; --render: #f1ebe2; }
 @media (prefers-color-scheme: dark) { :root { --bg: #1d1a17; --fg: #eee6dc; --muted: #a89c8f; --card: #27231f; --line: #3a342e; --accent: #e88a5c; --on-accent: #1d1a17; --render: #ece5da; } }

@@ -15,7 +15,7 @@ import { History } from './history.js';
 import { collisions, moveItem, rotateItem, slideOnWall, snap, itemParams, findFreeSpot } from './plan.js';
 import { planSVG, posOnWall } from './planview.js';
 import { fitCoupon, couponSVG, calibrate, estimateCutMinutes, formatMinutes } from './make.js';
-import { shareHash, kitFromHash, decodeKit } from './share.js';
+import { shareHash, kitFromHash, decodeKit, shareSummary, linkSizeNote } from './share.js';
 import { itemSize } from './catalog.js';
 import { renderScene } from './preview3d.js';
 import { sheetPreviewSVG } from './svg.js';
@@ -984,7 +984,11 @@ async function shareLink() {
   $('#share-url').value = '';
   $('#share-url').placeholder = 'Making link…';
   $('#share-note').textContent = '';
+  $('#share-summary').textContent = shareSummary(kit); // T7
+  pop.querySelector('.share-warn')?.remove();
   const url = location.href.split('#')[0] + await shareHash(kit);
+  const long = linkSizeNote(url.length); // T7: some apps cut long links
+  if (long) $('#share-note').after(h('p', { class: 'hint share-warn', role: 'note' }, long));
   $('#share-url').value = url;
   $('#share-url').select();
   try { await navigator.clipboard.writeText(url); $('#share-note').textContent = 'Copied. Anyone with the link gets their own copy of this design.'; } catch {
