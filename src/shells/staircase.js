@@ -34,6 +34,27 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v)));
 const tabCount = (L) => (L > 50 ? 2 : 1);
 const tabsOf = (profile) => profile.filter((s) => s.d < 0);
 
+/**
+ * Steps for a stair that climbs `zTop` over `run` (mm) to a landing: `want`
+ * if given, else the count whose pitch is closest to a comfortable one.
+ */
+export function pickSteps(zTop, run, t, want = 0) {
+  const fits = (n) => n >= 2 && zTop / n >= t + 2 && run / (n - 1) >= 3 * t;
+  let n = clampInt(want, 0, 40);
+  if (!n) {
+    let best = Infinity;
+    for (let c = 2; c <= 40; c++) {
+      if (!fits(c)) continue;
+      const err = Math.abs(zTop / c / (run / (c - 1)) - PITCH);
+      if (err < best) { best = err; n = c; }
+    }
+  }
+  if (!n || !fits(n)) {
+    throw new Error(`${n || 'No'} steps fit a ${zTop.toFixed(0)} mm climb over ${run.toFixed(0)} mm — make the landing lower or shallower, or change the step count.`);
+  }
+  return n;
+}
+
 export function buildStaircase({ W, D, H, t, fingerWidth, holes = {} }, params) {
   const P = { ...STAIRCASE_DEFAULTS, ...params };
   const Wi = W - 2 * t, Di = D - t, Hi = H - 2 * t;
@@ -48,20 +69,7 @@ export function buildStaircase({ W, D, H, t, fingerWidth, holes = {} }, params) 
   const sw = P.stairWidth > 0 ? clamp(P.stairWidth, 15, Wi * 0.6) : clamp(Wi * 0.32, 18, Wi * 0.6);
   const run = Di - dL; // the stair starts at the open front and runs to the landing
 
-  // steps: given, or the count whose pitch is closest to PITCH
-  const fits = (n) => n >= 2 && zTop / n >= t + 2 && run / (n - 1) >= 3 * t;
-  let n = clampInt(P.steps, 0, 40);
-  if (!n) {
-    let best = Infinity;
-    for (let c = 2; c <= 40; c++) {
-      if (!fits(c)) continue;
-      const err = Math.abs(zTop / c / (run / (c - 1)) - PITCH);
-      if (err < best) { best = err; n = c; }
-    }
-  }
-  if (!n || !fits(n)) {
-    throw new Error(`${n || 'No'} steps fit a ${zTop.toFixed(0)} mm climb over ${run.toFixed(0)} mm — make the landing lower or shallower, or change the step count.`);
-  }
+  const n = pickSteps(zTop, run, t, P.steps);
   const rise = zTop / n, going = run / (n - 1);
 
   // ---------------------------------------------------------------- stairs
