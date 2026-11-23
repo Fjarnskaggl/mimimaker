@@ -44,7 +44,7 @@ function faceGeometry(THREE, face, texSize = 0) {
 export function createViewer(THREE) {
   const canvas = document.createElement('canvas');
   canvas.className = 't6-canvas';
-  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;display:block';
+  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block'; // cursor: styles.css
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(2, globalThis.devicePixelRatio || 1));
   renderer.setClearColor(0x000000, 0);
@@ -244,7 +244,6 @@ export function createViewer(THREE) {
     /** Tint the piece under the pointer (item index, or null for none) and redraw if it changed. */
     hover(item) {
       item = item ?? null;
-      canvas.style.cursor = item == null ? 'grab' : 'pointer';
       if (item === hoverItem) return;
       hoverItem = item;
       if (faces) render();

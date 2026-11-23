@@ -123,10 +123,10 @@ test('hover feedback in Realistic 3D: the piece under the pointer is tinted, and
   assert.ok(p, 'piece 2 is visible');
   await page.mouse.move(p.x, p.y);
   await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().hovered === 2, null, { timeout: 2000 });
-  assert.equal(await page.evaluate(() => document.querySelector('.stage canvas').style.cursor), 'pointer');
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.stage canvas')).cursor), 'pointer');
   await page.mouse.move(2, 2); // leave the stage
   await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().hovered === null, null, { timeout: 2000 });
-  assert.notEqual(await page.evaluate(() => document.querySelector('.stage canvas').style.cursor), 'pointer');
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.stage canvas')).cursor), 'grab');
   assert.deepEqual(page.errors, []);
   await page.close();
 });
@@ -208,10 +208,11 @@ test('Realistic 3D: zoom holds through redraws in the Light step', async () => {
   await page.close();
 });
 
-test('3D shortcuts stay out of the way: not from a focused list button, not in the Light step', async () => {
+test('3D shortcuts stay out of the way: not from a focused button, not in the Light step', async () => {
   const page = await open();
   const n = await page.evaluate(() => window.mimimaker.kit.items.length);
-  await page.click('[data-select-item="1"]'); // focus stays on the list button
+  await page.click('[data-select-item="1"]');
+  await page.focus('#sidebar [data-action=back]'); // a focused button keeps its own keys
   const x0 = await page.evaluate(() => window.mimimaker.kit.items[1].x);
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Backspace');
@@ -228,16 +229,18 @@ test('3D shortcuts stay out of the way: not from a focused list button, not in t
   await page.close();
 });
 
-test('clicking a window in the 3D view keeps a window picked from the list', async () => {
+test('a click in the 3D view off the pieces keeps a window picked from the list', async () => {
   const page = await open();
   assert.ok(await page.locator('[data-select-opening="0"]').count(), 'the starter room has a window');
-  await page.click('[data-select-opening="0"]');
+  await page.locator('[data-select-opening="0"]').evaluate((b) => b.click()); // its section may be folded
   const kind = () => page.locator('#sidebar .insp-kind').first().textContent();
   const before = await kind();
-  // the back wall, above the furniture, where the window is
-  const box = await page.locator('.stage svg').boundingBox();
-  await page.mouse.click(box.x + box.width * 0.45, box.y + box.height * 0.3);
-  assert.equal(await kind(), before, 'still on the window');
+  assert.notEqual(before, 'Room');
+  for (const [fx, fy] of [[0.5, 0.09], [0.45, 0.3]]) { // above the room, and on the back wall
+    const box = await page.locator('.stage').boundingBox();
+    await page.mouse.click(box.x + box.width * fx, box.y + box.height * fy);
+    assert.equal(await kind(), before, 'still on the window');
+  }
   await page.close();
 });
 

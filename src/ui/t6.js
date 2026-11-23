@@ -115,18 +115,19 @@ export function attachPicking(stage, onPick, { enabled = () => true } = {}) {
   });
   stage.addEventListener('pointercancel', () => { down = null; });
   // hover: show which piece a click would pick (checked once per frame)
-  let pending = null;
+  let pending = null, frame = 0;
+  const clearHover = () => { cancelAnimationFrame(frame); pending = null; setHover(stage, null); };
   stage.addEventListener('pointermove', (e) => {
-    if (e.buttons || !enabled()) { if (stage.t6hover != null) setHover(stage, null); return; } // orbiting, or nothing to pick
+    if (e.buttons || !enabled()) { clearHover(); return; } // orbiting, or nothing to pick
     if (pending) { pending.x = e.clientX; pending.y = e.clientY; return; }
     pending = { x: e.clientX, y: e.clientY };
-    requestAnimationFrame(() => {
+    frame = requestAnimationFrame(() => {
       const { x, y } = pending;
       pending = null;
-      setHover(stage, pickAt(stage, x, y));
+      setHover(stage, enabled() ? pickAt(stage, x, y) : null);
     });
   });
-  stage.addEventListener('pointerleave', () => setHover(stage, null));
+  stage.addEventListener('pointerleave', clearHover);
   // tests and tours: a point where the piece is the front-most thing
   stage.t6pickPoint = (index) => {
     if (stage.dataset.renderer === 'webgl' && state.viewer) return state.viewer.pointFor(index);
@@ -143,6 +144,7 @@ export function attachPicking(stage, onPick, { enabled = () => true } = {}) {
 function setHover(stage, index) {
   index = index ?? null;
   stage.t6hover = index;
+  stage.classList.toggle('t6-over-piece', index != null);
   if (stage.dataset.renderer === 'webgl' && state.viewer) { state.viewer.hover(index); return; }
   paintSvgHover(stage);
 }
@@ -150,7 +152,6 @@ function paintSvgHover(stage) {
   const index = stage.t6hover ?? null;
   for (const el of stage.querySelectorAll('path.hover')) if (Number(el.dataset.item) !== index) el.classList.remove('hover');
   if (index != null) for (const el of stage.querySelectorAll(`path[data-item="${index}"]`)) el.classList.add('hover');
-  stage.classList.toggle('t6-over-piece', index != null);
 }
 
 function disposeViewer() {
@@ -195,6 +196,12 @@ function startViewer() {
  * "loading" or "unavailable".
  */
 export function drawStage(stage, faces, view, kit = null) {
+  // new pieces or a new stage: whatever was hovered may now be another piece
+  if (state.last && (state.last.faces !== faces || state.last.stage !== stage)) {
+    stage.t6hover = null;
+    stage.classList.remove('t6-over-piece');
+    state.viewer?.hover(null);
+  }
   state.last = { stage, faces, view, kit };
   if (kit) syncPicker(kit);
   if (state.want && state.viewer) {
