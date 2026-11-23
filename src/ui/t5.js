@@ -29,9 +29,9 @@ export function circuitSummaryModel(circuit) {
     status: circuit.status,
     title: supply.name,
     rows: [
-      ['LEDs', `${count}, wired in parallel`],
+      circuit.devices ? ['Parts', `${circuit.what}, wired in parallel`] : ['LEDs', `${count}, wired in parallel`],
       ['Current', `up to ${round(totalMA)} mA${avg} · ${budget.recommendedMA} mA comfortable, ${budget.maxMA} mA max`],
-      ['Battery life', lifeHours == null ? lifeText : `${lifeText} of light (estimate)`],
+      ['Battery life', lifeHours == null ? lifeText : `${lifeText} of ${circuit.devices ? 'running' : 'light'} (estimate)`],
     ],
     load: Math.min(1, circuit.load),
     messages: circuit.warnings.map((w) => w.msg),

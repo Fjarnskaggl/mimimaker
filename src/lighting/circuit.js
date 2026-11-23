@@ -31,6 +31,9 @@ export const SUPPLIES = {
   },
 };
 
+/** Worst-case start-up / stall current of a geared micro motor at 3 V (Adafruit 3871: 380 mA). */
+export const MOTOR_SURGE_MA = 380;
+
 const BIGGER = { cr2032: 'a 2×AA battery box', aaa2: 'a 2×AA battery box', aa2: 'a USB lead', usb: 'two USB leads, each powering half the lights' };
 
 /** Worst-case current and typical forward voltage for each LED colour. */
@@ -105,15 +108,26 @@ export function planCircuit(leds, supplyId) {
   if (n && supply.id === 'usb') {
     warnings.push({ level: 'info', msg: 'USB gives 5 V: use LEDs sold for USB / 5 V (or a USB lead with a 3 V regulator). Plain 3 V LEDs burn out on 5 V.' });
   }
-  if (specs.some((l) => l.motor)) {
-    warnings.push({ level: 'info', msg: 'Motors draw a short surge (up to about 380 mA) when they start, so lights may blink as they spin up, and weak batteries may not start them.' });
+  const motors = specs.filter((l) => l.motor);
+  if (motors.length) {
+    const surge = totalMA - motors.reduce((s, l) => s + l.mA, 0) + motors.length * MOTOR_SURGE_MA;
+    if (supply.id !== 'usb' && surge > supply.maxMA && status !== 'error') {
+      if (status === 'ok') status = 'warn';
+      warnings.push({ level: 'warn', msg: `Starting ${motors.length === 1 ? 'the motor' : `${motors.length} motors together`} can pull about ${surge} mA, more than a ${supply.short} gives (${supply.maxMA} mA), so ${motors.length === 1 ? 'it' : 'they'} may not start. Use ${BIGGER[supply.id]}, or fewer motors.` });
+    } else {
+      warnings.push({ level: 'info', msg: `Motors draw a short surge (up to about ${MOTOR_SURGE_MA} mA) when they start, so lights may blink as they spin up, and weak batteries may not start them.` });
+    }
+    if (supply.id === 'usb') {
+      warnings.push({ level: 'warn', msg: 'The geared micro motors here are 3 V motors: USB\'s 5 V overspeeds and wears them out. Use motors rated for 5 V, or a USB lead with a 3 V regulator.' });
+      if (status === 'ok') status = 'warn';
+    }
   }
   if (n && supply.volts < 3.5 && specs.some((l) => l.vf >= 2.8)) {
     warnings.push({ level: 'info', msg: `White, pink and green LEDs need nearly the full 3 V, so they dim as the ${supply.id === 'cr2032' ? 'coin cell runs' : 'batteries run'} down.` });
   }
   const lifeHours = batteryLifeHours(supply.id, averageMA, totalMA);
   return {
-    wiring: 'parallel', supply, count: n, bulbs, totalMA, averageMA,
+    wiring: 'parallel', supply, count: n, bulbs, devices, what, totalMA, averageMA,
     budget: { recommendedMA: supply.recommendedMA, maxMA: supply.maxMA },
     load: totalMA / supply.maxMA, status, lifeHours,
     lifeText: n ? formatLife(lifeHours) : '',

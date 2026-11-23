@@ -79,10 +79,11 @@ export function planMotion(leds) {
     }
     parts.push({ name: `${l.label} motor mount`, role: 'mount', polys: mountPlate() });
   }
+  const fans = motors.some((l) => l.effect === 'fan'), turns = motors.some((l) => l.effect === 'turntable');
   if (motors.length) {
     steps.push(
-      `Motors (${motors.map((l) => l.label).join(', ')}): glue each motor to its motor mount with the shaft through the hole, then glue the mount ${motors.some((l) => l.effect === 'fan') ? 'on top of the ceiling (fan) or ' : ''}under the floor (turntable), over the 5 mm shaft hole, so the shaft pokes into the room. With a hidden base, a turntable motor sits inside the base.`,
-      'Pierce the hub hole of each fan rotor or turntable, push it onto the shaft from inside the room and fix it with a drop of glue; it should spin clear of the ceiling or floor. Twist a slight pitch into each fan blade.',
+      `Motors (${motors.map((l) => l.label).join(', ')}): glue each motor to its motor mount with the shaft through the hole, then glue the mount ${[fans ? `on top of the ceiling${turns ? ' (fan)' : ''}` : '', turns ? `under the floor${fans ? ' (turntable)' : ''}` : ''].filter(Boolean).join(' or ')}, over the 5 mm shaft hole, so the shaft pokes into the room.${turns ? ' With a hidden base, a turntable motor sits inside the base.' : ''}`,
+      `Pierce the hub hole of each ${[fans ? 'fan rotor' : '', turns ? 'turntable' : ''].filter(Boolean).join(' or ')}, push it onto the shaft from inside the room and fix it with a drop of glue; it should spin clear of the ${fans && turns ? 'ceiling or floor' : fans ? 'ceiling' : 'floor'}.${fans ? ' Twist a slight pitch into each fan blade.' : ''}`,
       'A motor has no + and −: if it spins the wrong way, swap its two wires. Motors draw a short surge when they start, so test them with fresh batteries.',
     );
   }

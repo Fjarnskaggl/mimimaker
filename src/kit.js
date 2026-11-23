@@ -12,7 +12,6 @@ import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometr
 // T2 shells
 import { prepareShell, compileShell, compileRoof, shellLighting } from './shells/kit.js';
 import { buildBase } from './lighting/base.js';
-import { EFFECTS } from './lighting/effects.js';
 import { fanRotor, turntableDisc } from './lighting/motion.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
@@ -262,9 +261,9 @@ export function compileKit(kit) {
       const fr = faceFrame(led.face, W, D, H, t + 0.6, 'inner');
       // >>> [T5] motion and sound: a fan rotor or turntable shows where it turns; no glow
       if (led.load?.device) {
-        const size = led.size ?? EFFECTS[led.effect]?.defaults?.sizeMm;
+        const size = led.size;
         const shape = led.effect === 'fan' ? fanRotor(led.u, led.v, size) : led.effect === 'turntable' ? turntableDisc(led.u, led.v, size) : null;
-        if (shape) add3d(1.7, shape, faceFrame(led.face, W, D, H, t + (led.effect === 'fan' ? 4 : 1), 'inner'), worldXf, '#b8a990');
+        if (shape && !led.misplaced) add3d(1.7, shape, faceFrame(led.face, W, D, H, t + (led.effect === 'fan' ? 4 : 1), 'inner'), worldXf, '#b8a990');
         continue;
       }
       // <<< [T5]

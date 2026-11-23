@@ -97,8 +97,8 @@ export function ledMapSVG(compiled, { standalone = false } = {}) {
   // one-line circuit summary under the map
   const cc = lighting.circuit;
   if (cc?.count) {
-    const what = cc.bulbs && cc.bulbs !== cc.count ? `${cc.count} lights (${cc.bulbs} LEDs)` : `${cc.count} LED${cc.count === 1 ? '' : 's'}`;
-    const life = cc.lifeHours == null ? cc.lifeText : `${cc.lifeText} of light (estimate)`;
+    const what = cc.what || (cc.bulbs && cc.bulbs !== cc.count ? `${cc.count} lights (${cc.bulbs} LEDs)` : `${cc.count} LED${cc.count === 1 ? '' : 's'}`);
+    const life = cc.lifeHours == null ? cc.lifeText : `${cc.lifeText} of ${cc.devices ? 'running' : 'light'} (estimate)`;
     const line = `${SUPPLY_LABEL[cc.supply.id] || cc.supply.short} · ${what} in parallel · up to ${Math.round(cc.totalMA * 10) / 10} mA · ${life}`;
     out.push(`<text class="circuit" x="${f(x0 + pad * 0.5)}" y="${f(y1 + fs * 0.4)}" font-size="${f(fs * 0.8)}" fill="${col.text}">${esc(line)}</text>`);
     y1 += fs * 1.2;

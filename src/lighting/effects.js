@@ -90,10 +90,10 @@ export function effectWarnings(led, place, title) {
   const out = [];
   const effect = effectOf(led);
   if (effect === 'fan' && place.face !== 'top') {
-    out.push({ level: 'warn', msg: `${title} is a ceiling fan — put it on the ceiling.` });
+    out.push({ level: 'error', msg: `${title} is a ceiling fan — put it on the ceiling. Its shaft hole and blades aren't cut until it is.` });
   }
   if (effect === 'turntable' && place.face !== 'bottom') {
-    out.push({ level: 'warn', msg: `${title} is a turntable — put it on the floor.` });
+    out.push({ level: 'error', msg: `${title} is a turntable — put it on the floor. Its shaft hole and platform aren't cut until it is.` });
   }
   if (effect === 'candle' && place.mount === 'ceiling') {
     out.push({ level: 'info', msg: `${title} is a flicker candle on the ceiling — candles look right standing up: on a sconce, a table or the floor.` });

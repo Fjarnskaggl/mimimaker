@@ -169,7 +169,9 @@ export function planLighting(lighting, ctx) {
       ? { face, mount: led.mount, start: u - t, span: Wi }
       : { face, mount: led.mount, start: u - wallInfo[face].u0, span: wallInfo[face].len };
     warnings.push(...effectWarnings(led, place, title));
-    for (const h of effectHoles(effectOf(led), u, v, r)) (holes[face] ||= []).push(h); // a motor's shaft hole, a speaker grille
+    const fx = effectOf(led);
+    const misplaced = (fx === 'fan' && face !== 'top') || (fx === 'turntable' && face !== 'bottom'); // effectWarnings says so
+    for (const h of effectHoles(misplaced ? 'steady' : fx, u, v, r)) (holes[face] ||= []).push(h); // a motor's shaft hole, a speaker grille
     const p = netPoint(face, u, v, ctx);
     // into a hidden base, a floor light's wires drop straight through its hole
     const route = base && face === 'bottom' ? { points: [p], crossesOpening: false } : routeWire({ face, p }, power, ctx, obstacles);
@@ -179,7 +181,8 @@ export function planLighting(lighting, ctx) {
     leds.push({
       label, name: led.name || '', mount: led.mount, face, u, v, p, color: led.color || 'warm',
       route: route.points, length, leadCm: Math.ceil((length / 10 + 3) / 5) * 5,
-      effect: effectOf(led), load: effectLoad(led), size: led.sizeMm,
+      effect: fx, load: effectLoad(led), misplaced,
+      size: Math.min(200, Math.max(20, led.sizeMm ?? EFFECTS[fx]?.defaults?.sizeMm ?? 50)),
     });
   });
   // LEDs the shell places itself: its own holes, wired from there (#16)
@@ -201,7 +204,7 @@ export function planLighting(lighting, ctx) {
   warnings.push(...circuit.warnings);
   const cover = planCover({ cover: lighting.cover, leds, power, openings: ctx.openings, W: ctx.W, H: ctx.H, s, t });
   warnings.push(...cover.warnings);
-  const motion = planMotion(leds.map((l) => ({ ...l, size: l.size ?? EFFECTS[l.effect]?.defaults?.sizeMm })));
+  const motion = planMotion(leds.filter((l) => !l.misplaced));
   return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit, parts: [...cover.parts, ...motion.parts], steps: [...cover.steps, ...motion.steps],
     coverRange: coverRange(circuit.supply.id, { W: ctx.W, H: ctx.H, s, t }) };
 }
