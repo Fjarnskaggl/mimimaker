@@ -237,3 +237,22 @@ test('phone: steps fit, the inspector follows the stage, nothing scrolls sideway
   await shot(page, 'phone');
   await page.close();
 });
+
+test('locked room sizes from a shell show in full', async () => {
+  const page = await open();
+  await page.locator('[data-panel=shell] select[data-shell=type]').selectOption('nook');
+  const room = page.locator('#sidebar details.section', { has: page.locator('summary', { hasText: 'Room box' }) });
+  for (const label of ['Width', 'Depth', 'Height']) {
+    const fits = await room.locator('label', { hasText: label }).first().locator('input').evaluate((i) => i.scrollWidth <= i.clientWidth);
+    assert.ok(fits, `${label} value is cut off`);
+  }
+  await page.close();
+});
+
+test('a new piece from the drawer lands in a free spot', async () => {
+  const page = await open();
+  await page.click('#rail-pieces');
+  await page.click('.piece[data-piece="table"]');
+  assert.equal(await page.locator('#sidebar .mm-notice--danger').count(), 0, 'no overlap notice');
+  await page.close();
+});
