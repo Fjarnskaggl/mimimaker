@@ -24,7 +24,7 @@ test('each LED marker says its effect, with a glyph for the special ones', () =>
 
 test('a strip is drawn at its real length along its wall', () => {
   const c = compiled([wall({ effect: 'strip', pos: 20, elev: 100, lengthMm: 50 })], { supply: 'usb', kind: 'usb' });
-  const m = ledMapSVG(c).match(/<rect class="fx-strip"[^>]*width="([\d.]+)"/);
+  const m = ledMapSVG(c).match(/<rect class="fx-strip"[^>]*? width="([\d.]+)"/);
   assert.ok(m, 'strip bar');
   assert.ok(Math.abs(+m[1] - 50) < 0.01, `bar is ${m[1]} mm`);
 });
