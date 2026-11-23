@@ -247,6 +247,44 @@
    "max@card": "a55589e12b775549"
   }
  },
+ "loveseat": {
+  "label": "Loveseat",
+  "meta": "5fc4869066caa745",
+  "components": [
+   "box:Seat",
+   "box:Left arm",
+   "box:Right arm",
+   "flat:Back"
+  ],
+  "cases": {
+   "defaults@board": "cd3f0f8f9a986cfa",
+   "defaults@card": "ae06ae5cff0fdca2",
+   "min@board": "e7eeb1c796bbf1e0",
+   "min@card": "b86db0b39718e68f",
+   "max@board": "cdbbd4b4bccaab39",
+   "max@card": "f32479f3ab2482bf"
+  }
+ },
+ "cornersofa": {
+  "label": "Corner sofa",
+  "meta": "c2f8ee106ddace83",
+  "components": [
+   "box:Long seat",
+   "box:Return seat",
+   "box:Right arm",
+   "box:Front arm",
+   "flat:Long back",
+   "flat:Side back"
+  ],
+  "cases": {
+   "defaults@board": "4292d12bd317dc4f",
+   "defaults@card": "a38b89748b764d84",
+   "min@board": "8af156a8b961619c",
+   "min@card": "f0341b42239b67a3",
+   "max@board": "41804792ed3db8d2",
+   "max@card": "788f8af099650617"
+  }
+ },
  "bed": {
   "label": "Bed",
   "meta": "69a026d740d518b5",
@@ -603,6 +641,38 @@
    "max@card": "4569b9e746b143a9"
   }
  },
+ "shopshelving": {
+  "label": "Shop shelving",
+  "meta": "524b439009eb8a7a",
+  "components": [
+   "box:Shop shelving",
+   "flat:Header sign"
+  ],
+  "cases": {
+   "defaults@board": "faaca1e22f4b0a11",
+   "defaults@card": "c825a7eea3bd53d9",
+   "min@board": "daabf6ea647c4aa0",
+   "min@card": "1596228915fce609",
+   "max@board": "26b5533aa17c5663",
+   "max@card": "6b1659fc239a19d3"
+  }
+ },
+ "barcounter": {
+  "label": "Bar counter",
+  "meta": "554dd50d5d0045b6",
+  "components": [
+   "box:Bar counter",
+   "box:Bar top"
+  ],
+  "cases": {
+   "defaults@board": "49de4c42b1a53fe2",
+   "defaults@card": "73b8e9337d13ec36",
+   "min@board": "dbcde9d130558c14",
+   "min@card": "89886f257a6ecc70",
+   "max@board": "72dd0c8dab2e0567",
+   "max@card": "3572fc7dc76bb789"
+  }
+ },
  "ladder": {
   "label": "Library ladder",
   "meta": "3eda8a075550de0f",
@@ -649,6 +719,39 @@
    "min@card": "ec0048534bc1393a",
    "max@board": "532532f3c449ace7",
    "max@card": "b3b9772d4e5b6314"
+  }
+ },
+ "stepcupboard": {
+  "label": "Step cupboard",
+  "meta": "b29681176e40d833",
+  "components": [
+   "box:Step 1",
+   "box:Step 2",
+   "box:Step 3",
+   "box:Step 4"
+  ],
+  "cases": {
+   "defaults@board": "cae9f3395c2b6d9c",
+   "defaults@card": "150662d86fa29386",
+   "min@board": "fe95efec3e3ee452",
+   "min@card": "a40e1723886d3568",
+   "max@board": "44a2ad94ce364511",
+   "max@card": "e1af4ed2c9ba9f36"
+  }
+ },
+ "filingcabinet": {
+  "label": "Filing cabinet",
+  "meta": "28b533c7f3947225",
+  "components": [
+   "box:Filing cabinet"
+  ],
+  "cases": {
+   "defaults@board": "44e609b81d8974d7",
+   "defaults@card": "6c370a25985335dd",
+   "min@board": "662d579d3acc91d3",
+   "min@card": "1999df325e8b71ae",
+   "max@board": "dd858a4415e10038",
+   "max@card": "e1f2f8b421a4fa0e"
   }
  },
  "rug": {
@@ -796,6 +899,22 @@
    "min@card": "677af6395d1c7c45",
    "max@board": "e9aee8aee8a06c6a",
    "max@card": "e9aee8aee8a06c6a"
+  }
+ },
+ "planter": {
+  "label": "Garden planter",
+  "meta": "9aa7880350c53354",
+  "components": [
+   "box:Planter",
+   "flat:Greenery"
+  ],
+  "cases": {
+   "defaults@board": "5c232922eed466de",
+   "defaults@card": "f3ffc551f8776f3b",
+   "min@board": "c3840c49f7bac593",
+   "min@card": "06df3ef87d290ec7",
+   "max@board": "85f66613208de4fa",
+   "max@card": "922f2122d3642afc"
   }
  }
 }

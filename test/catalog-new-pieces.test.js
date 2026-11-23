@@ -24,6 +24,14 @@ const NEW = {
   windowseat: 'Library',
   dressingtable: 'Bedroom',
   crib: 'Bedroom',
+  // batch 3
+  loveseat: 'Living room',
+  cornersofa: 'Living room',
+  stepcupboard: 'Library',
+  shopshelving: 'Café',
+  barcounter: 'Café',
+  filingcabinet: 'Library',
+  planter: 'Decor',
 };
 const S = 10 / 24; // cm → model mm at the default 1:24 scale
 
@@ -221,4 +229,67 @@ test('crib: slatted front and back, plain ends, raised base', () => {
   for (const e of ends) assert.deepEqual(e.plane.n.map(Math.abs), [1, 0, 0]);
   const base = comps.find((c) => c.kind === 'box');
   assert.ok(base.at[2] > 0, 'base is raised');
+});
+
+// ------------------------------------------------------------------ batch 3
+
+test('the catalogue has the 20 new pieces the checklist asked for', () => {
+  assert.equal(Object.keys(NEW).length, 20);
+  assert.equal(Object.keys(CATALOG).length, 37 + 20);
+});
+
+test('loveseat: a two-cushion seat between arms, under an arched back', () => {
+  const comps = build('loveseat');
+  const seat = comps.find((c) => c.name === 'Seat');
+  assert.equal(seat.scores.top.length, 1, 'one line splits the seat into two cushions');
+  assert.equal(comps.filter((c) => c.name.endsWith('arm')).length, 2);
+  assert.ok(comps.some((c) => c.kind === 'flat' && c.name === 'Back'));
+});
+
+test('corner sofa: an L of two seats with two backs at right angles', () => {
+  const comps = build('cornersofa');
+  const seats = comps.filter((c) => c.kind === 'box' && c.name.includes('seat'));
+  assert.equal(seats.length, 2);
+  const [a, b] = seats;
+  const overlap = [0, 1, 2].every((i) => a.at[i] < b.at[i] + b.size[i] - 1e-9 && b.at[i] < a.at[i] + a.size[i] - 1e-9);
+  assert.equal(overlap, false, 'the two seats do not overlap');
+  const backs = comps.filter((c) => c.kind === 'flat' && c.name.includes('back'));
+  assert.deepEqual(backs.map((c) => c.plane.n.map(Math.abs)).sort(), [[0, 1, 0], [1, 0, 0]]);
+  assert.equal(comps.filter((c) => c.name.endsWith('arm')).length, 2);
+});
+
+test('step cupboard: one rising step per count, each with a door outline', () => {
+  const steps = build('stepcupboard', { steps: 4 }).filter((c) => c.kind === 'box');
+  assert.equal(steps.length, 4);
+  for (let k = 1; k < steps.length; k++) assert.ok(steps[k].size[2] > steps[k - 1].size[2], 'each step is taller');
+  for (const s of steps) assert.equal(s.scores.front.length, 4, `${s.name} door outline`);
+});
+
+test('shop shelving: shelves as set, and a header sign above the top', () => {
+  const comps = build('shopshelving', { shelves: 3 });
+  const unit = comps.find((c) => c.kind === 'box');
+  assert.equal(unit.shelves.length, 3);
+  const sign = comps.find((c) => c.name === 'Header sign');
+  assert.ok(sign.plane.o[2] >= unit.size[2] - 1e-9);
+});
+
+test('bar counter: the bar top overhangs the customer side', () => {
+  const comps = build('barcounter');
+  const body = comps.find((c) => c.name === 'Bar counter');
+  const top = comps.find((c) => c.name === 'Bar top');
+  assert.ok(body.at[1] > 0 && top.at[1] === 0, 'body is set back from the front');
+  assert.ok(top.size[1] > body.size[1]);
+});
+
+test('filing cabinet: drawer gaps plus a scored handle on every drawer', () => {
+  const [box] = build('filingcabinet', { count: 4 });
+  assert.equal(box.scores.front.length, (4 - 1) + 4 * 4);
+});
+
+test('garden planter: an open-topped trough with greenery', () => {
+  const comps = build('planter');
+  const trough = comps.find((c) => c.kind === 'box');
+  assert.ok(!trough.faces.includes('top'));
+  assert.ok(trough.scores.front.length >= 2, 'plank lines');
+  assert.ok(comps.some((c) => c.kind === 'flat' && c.name === 'Greenery'));
 });

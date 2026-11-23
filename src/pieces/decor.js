@@ -127,4 +127,19 @@ export const DECOR = [
     ],
     note: 'Slit one crown from the top and the other from the bottom to the middle, slide them together crosswise, then glue the trunk into the pot with the crowns on top.',
   },
+  {
+    id: 'planter', label: 'Garden planter', theme: 'Decor', placement: 'floor', mat: 'board',
+    tags: ['plant', 'garden', 'green'], difficulty: 1,
+    params: [num('w', 'Length', 30, 150), num('d', 'Width', 20, 50), num('h', 'Height', 20, 60), num('leaf', 'Plant height', 20, 80)],
+    defaults: { w: 80, d: 30, h: 35, leaf: 40 },
+    size: ['w', 'd', 'h + leaf'],
+    components: [
+      {
+        kind: 'box', name: 'Planter', size: ['w', 'd', 'h'], faces: ['bottom', 'front', 'back', 'left', 'right'], at: [0, 0, 0],
+        scores: { front: [{ repeat: 2, as: 'k', each: { line: [['t + 0.6', 'h * (k + 1) / 3'], ['w - t - 0.6', 'h * (k + 1) / 3']] } }] },
+      },
+      { kind: 'flat', name: 'Greenery', plane: { upright: { y: 'd / 2', z: 'h * 0.5' } }, polys: [{ plant: ['w', 'leaf + h * 0.5'] }] },
+    ],
+    note: 'The score lines read as planks; cut the greenery from green card, slot it into the trough and fill around it with glue and crumbled cork for soil.',
+  },
 ];
