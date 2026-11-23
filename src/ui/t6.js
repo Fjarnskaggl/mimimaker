@@ -84,6 +84,47 @@ function syncPicker(kit = picker?.getKit()) {
   for (const select of body.querySelectorAll('select')) select.value = textureChoice(kit, select.dataset.material);
 }
 
+// ------------------------------------------------------------ click to select
+const CLICK_SLOP = 5; // px a press may move and still count as a click, not an orbit
+
+/** The piece (item index) under a client point in whichever renderer is showing, or null. */
+function pickAt(stage, x, y) {
+  if (stage.dataset.renderer === 'webgl' && state.viewer) return state.viewer.pick(x, y);
+  const hit = document.elementFromPoint(x, y)?.closest?.('[data-item]');
+  return hit && stage.contains(hit) ? Number(hit.dataset.item) : null;
+}
+
+/**
+ * Click a piece in the 3D view to select it. onPick(index) should select it
+ * the same way the plan does. Drags still orbit: only a press that barely
+ * moves counts as a click.
+ */
+export function attachPicking(stage, onPick) {
+  let down = null;
+  stage.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
+  stage.addEventListener('pointerup', (e) => {
+    if (!down) return;
+    const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+    down = null;
+    if (moved > CLICK_SLOP) return;
+    const index = pickAt(stage, e.clientX, e.clientY);
+    if (index == null) return;
+    onPick(index);
+    redrawLast(); // show the highlight
+  });
+  stage.addEventListener('pointercancel', () => { down = null; });
+  // tests and tours: a point where the piece is the front-most thing
+  stage.t6pickPoint = (index) => {
+    if (stage.dataset.renderer === 'webgl' && state.viewer) return state.viewer.pointFor(index);
+    for (const path of stage.querySelectorAll(`[data-item="${index}"]`)) {
+      const r = path.getBoundingClientRect();
+      const p = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      if (pickAt(stage, p.x, p.y) === index) return p;
+    }
+    return null;
+  };
+}
+
 function disposeViewer() {
   state.viewer?.dispose();
   state.viewer = null;
@@ -145,7 +186,7 @@ export function drawStage(stage, faces, view, kit = null) {
   }
   if (!state.want) disposeViewer();
   stage.t6viewer = null;
-  stage.innerHTML = renderScene(faces, view);
+  stage.innerHTML = renderScene(faces, { ...view, selected: view.sel?.kind === 'item' ? view.sel.index : null });
   stage.dataset.renderer = 'svg';
   if (!state.want) { delete stage.dataset.webgl; return; }
   if (!state.failed) startViewer();
