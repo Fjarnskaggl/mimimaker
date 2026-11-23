@@ -134,8 +134,9 @@ test('unlit windows are drawn, and each lit building gets an LED spot in its cav
   const sh = alley({ litRatio: 0.5, seed: 3 }, t);
   const unlit = sh.alley.buildings.flatMap((b) => b.windows.filter((w) => !w.lit));
   assert.ok(unlit.length > 0);
-  const base = sh.parts.filter((p) => p.role === 'layer' && p.layer === 0);
-  assert.ok(base.reduce((s, p) => s + p.scores.length, 0) >= unlit.length * 3);
+  // drawn on the front-most layer, where they are seen
+  const top = sh.parts.filter((p) => p.role === 'layer' && p.layer === sh.alley.layers - 1);
+  assert.ok(top.reduce((s, p) => s + p.scores.length, 0) >= unlit.length * 3);
   const { cavity } = sh.alley;
   for (const b of sh.alley.buildings.filter((q) => q.windows.some((w) => w.lit))) {
     const led = sh.lights.find((l) => l.building === b.id);
@@ -183,6 +184,26 @@ test('alley joints: every spacer, layer and backdrop is glued to what it touches
     }
     for (const p of sh.parts.filter((q) => q.role === 'layer' && q.layer > 0)) {
       assert.ok(sh.joints.some((j) => j.kind === 'flat' && [j.a, j.b].includes(p.key)), `${p.key} glued to the layer below`);
+    }
+  }
+});
+
+test('relief layers open only over lit windows; unlit ones are drawn on the front layer only', () => {
+  for (const [params, t] of VARIANTS) {
+    const sh = alley(params, t);
+    const { layers } = sh.alley;
+    for (const b of sh.alley.buildings) {
+      const lit = b.windows.filter((w) => w.lit).length;
+      const unlit = b.windows.length - lit;
+      for (const p of sh.parts.filter((q) => q.building === b.id)) {
+        assert.equal(p.polys.length - 1, lit, `${p.key}: one opening per lit window`);
+        assert.equal(p.scores.length > 0, p.layer === layers - 1 && unlit > 0, `${p.key}: only the front layer is drawn on`);
+      }
+    }
+    if (layers > 1) {
+      for (const base of sh.parts.filter((p) => p.role === 'layer' && p.layer === 0)) {
+        assert.equal(base.scores.length, 0, `${base.key}: hidden under the relief, so nothing to draw`);
+      }
     }
   }
 });

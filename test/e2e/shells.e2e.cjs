@@ -2,31 +2,18 @@
 // Run with: npm run test:e2e   (SHOT_DIR=… also saves screenshots)
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const { startServer } = require('./helpers.cjs');
 
-const net = require('node:net');
-
-// A free port, so this file can run in parallel with the other e2e files.
-const freePort = () => new Promise((resolve, reject) => {
-  const srv = net.createServer().once('error', reject).listen(0, () => {
-    const { port } = srv.address();
-    srv.close(() => resolve(port));
-  });
-});
 let URL, server, browser;
 
 before(async () => {
-  const PORT = await freePort();
-  URL = `http://localhost:${PORT}/`;
-  server = spawn(process.execPath, [path.join(__dirname, '../../scripts/serve.js')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
-  for (let i = 0; i < 50; i++) {
-    try { await fetch(URL); break; } catch { await new Promise((r) => setTimeout(r, 100)); }
-  }
+  server = await startServer();
+  URL = server.url;
   browser = await chromium.launch();
 });
-after(async () => { await browser?.close(); server?.kill(); });
+after(async () => { await browser?.close(); server?.close(); });
 
 async function open() {
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
