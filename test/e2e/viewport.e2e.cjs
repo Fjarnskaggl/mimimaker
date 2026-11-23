@@ -325,6 +325,10 @@ test('wheel zoom: line-mode wheels zoom a useful step, the page scrolls past the
   await page.waitForFunction(() => document.querySelector('.stage path.hover'), null, { timeout: 10000 });
   await wheel({ deltaY: -600 });
   assert.equal(await page.evaluate(() => document.querySelector('.stage').t6hover ?? null), null);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 const ledRing = (page) => page.evaluate(() => [...new Set([...document.querySelectorAll('.stage path.sel-led')].map((p) => Number(p.dataset.led)))]);
 const kindNow = (page) => page.locator('#sidebar .insp-kind').first().textContent();
 
