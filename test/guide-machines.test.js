@@ -5,7 +5,7 @@ import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
 import { guideHTML } from '../src/guide.js';
 import { machineSettingsLine } from '../src/export/machines.js';
-import { laserFileName } from '../src/export/laser.js';
+import { laserFileName, LASER_COLORS } from '../src/export/laser.js';
 import { sheetFileName } from '../src/svg.js';
 
 const guideFor = (machine) => {
@@ -52,6 +52,23 @@ test('Silhouette guide uses Silhouette Studio and the Silhouette blades', () => 
   assert.match(cutting, /Basic edition/);
   assert.match(cutting, /\.dxf/);
   assert.match(html, /AutoBlade/);
+});
+
+test('Silhouette guide says what the pen lines are and uses Silhouette mat names', () => {
+  const kit = defaultKit();
+  kit.machine = 'cameo';
+  kit.drawLabels = true;
+  const html = guideHTML(kit, compileKit(kit));
+  assert.match(section(html, 'Cutting in Silhouette Studio'), /blue<\/span> = Sketch/);
+  const need = section(html, "You'll need");
+  assert.doesNotMatch(need, /Strong-grip|standard grip/);
+  assert.match(need, /StrongHold/);
+});
+
+test('laser sheet previews use the laser layer colours the steps describe', () => {
+  const { html } = guideFor('laser');
+  assert.match(html, new RegExp(`\\.part \\.cut \\{ stroke: ${LASER_COLORS.cut}`));
+  assert.match(html, new RegExp(`\\.part \\.score \\{ stroke: ${LASER_COLORS.score}`));
 });
 
 test('each cut sheet carries its machine settings line', () => {
