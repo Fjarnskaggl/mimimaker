@@ -79,7 +79,8 @@ test('shell panel: a nook keeps furniture and survives undo', async () => {
   const k = await kit(page);
   assert.equal(k.shell.type, 'nook');
   assert.equal(k.items.length, before.items.length, 'furniture kept');
-  assert.equal(await panel(page).locator('[data-shell-param]').count(), 0, 'a plain nook has no extra controls');
+  const ctrls = await panel(page).locator('[data-shell-param]').evaluateAll((els) => els.map((e) => e.dataset.shellParam));
+  assert.deepEqual(ctrls.sort(), ['gable', 'pitch'], 'a nook only offers its roof');
   await page.keyboard.press('Control+z');
   await page.waitForFunction(() => !window.mimimaker.kit.shell);
   assert.deepEqual(page.errors, []);
