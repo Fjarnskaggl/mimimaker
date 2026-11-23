@@ -118,3 +118,45 @@ test('UI: fan and turntable have a size field; switching away drops it', () => {
   setEffect(led, 'steady');
   assert.equal(led.sizeMm, undefined);
 });
+
+// ---- review follow-ups
+import { ledMapSVG } from '../src/ledmap.js';
+import { circuitSummaryModel } from '../src/ui/t5.js';
+import { guideHTML } from '../src/guide.js';
+
+test('summaries call motors and sound parts what they are, not LEDs', () => {
+  const r = compileKit(kitWith([fan]));
+  assert.equal(r.lighting.circuit.what, '1 motor or sound part');
+  assert.doesNotMatch(ledMapSVG(r), /1 LED/);
+  assert.doesNotMatch(guideHTML(kitWith([fan]), r), /1 LED powered/);
+  const rows = Object.fromEntries(circuitSummaryModel(r.lighting.circuit).rows);
+  assert.ok(!('LEDs' in rows));
+  assert.match(Object.values(rows).join(' '), /1 motor or sound part/);
+  const r2 = compileKit(kitWith([fan, wall()]));
+  assert.equal(r2.lighting.circuit.what, '1 LED and 1 motor or sound part');
+});
+
+test('a motor start-up surge over the supply\'s limit is a warning; motors on USB get a 5 V warning', () => {
+  const two = planCircuit([effectLoad({ effect: 'fan' }), effectLoad({ effect: 'fan' })], 'aa2');
+  assert.match(two.warnings.filter((w) => w.level === 'warn').map((w) => w.msg).join(' '), /start/i);
+  const usb = planCircuit([effectLoad({ effect: 'fan' })], 'usb');
+  assert.match(usb.warnings.map((w) => w.msg).join(' '), /3 V motor/);
+});
+
+test('blade and platform sizes are kept between 20 and 200 mm', () => {
+  const r = compileKit(kitWith([{ ...table, sizeMm: -5 }]));
+  const disc = r.parts.find((p) => /turntable/.test(p.name));
+  assert.ok(Math.abs(disc.w - 20) < 0.5);
+});
+
+test('a fan off the ceiling is an error and cuts no shaft hole, blades or motor steps', () => {
+  const r = compileKit(kitWith([{ mount: 'wall', wall: 'back', pos: 80, elev: 150, effect: 'fan' }]));
+  assert.ok(r.warnings.some((w) => w.level === 'error' && /ceiling/.test(w.msg)));
+  assert.equal(r.lighting.parts.length, 0);
+  assert.doesNotMatch(r.lighting.steps.join(' '), /motor mount/);
+});
+
+test('motor steps only mention the mounts the kit has', () => {
+  const steps = compileKit(kitWith([fan])).lighting.steps.join(' ');
+  assert.doesNotMatch(steps, /turntable/);
+});
