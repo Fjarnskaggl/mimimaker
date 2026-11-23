@@ -6,8 +6,9 @@
 // code. That is evidence the tests describe new behaviour rather than being
 // written afterwards to match it.
 //
-// Pure refactors can opt out by putting "No-behaviour-change: <why>" in a
-// commit message; the full test suite still runs in CI.
+// Pure refactors that change no tests can opt out by putting
+// "No-behaviour-change: <why>" in a commit message; the full test suite still
+// runs in CI. A branch that does change tests is always checked, note or not.
 //
 //   node scripts/check-test-first.js [base]   (default base: origin/main)
 
@@ -32,7 +33,7 @@ export function classify(files) {
 
 export function verdict({ source, tests, failsOnBase, passesOnHead, refactor = false }) {
   if (!source.length) return { ok: true, reason: 'No app source changed.' };
-  if (refactor) return { ok: true, reason: 'Declared refactor (No-behaviour-change); existing tests must still pass.' };
+  if (refactor && !tests.length) return { ok: true, reason: 'Declared refactor (No-behaviour-change); existing tests must still pass.' };
   if (!tests.length) return { ok: false, reason: `Source changed (${source.join(', ')}) but no tests were added or changed. Write a failing test first.` };
   if (!failsOnBase) return { ok: false, reason: `The changed tests already pass on the base branch, so they don't show the new behaviour: ${tests.join(', ')}. Add a test that fails without your change.` };
   if (!passesOnHead) return { ok: false, reason: `The changed tests fail on this branch: ${tests.join(', ')}.` };
@@ -51,7 +52,7 @@ export function checkTestFirst({ cwd = process.cwd(), base = 'origin/main' } = {
   const { source, unitTests, e2eTests } = classify(changed);
   const tests = [...unitTests, ...e2eTests];
   const refactor = REFACTOR.test(git('log', '--format=%B', `${mergeBase}..HEAD`));
-  if (!source.length || refactor || !tests.length) return verdict({ source, tests, refactor });
+  if (!source.length || !tests.length) return verdict({ source, tests, refactor });
 
   // Run the branch's tests against the base branch's code.
   const tmp = mkdtempSync(join(tmpdir(), 'test-first-'));
