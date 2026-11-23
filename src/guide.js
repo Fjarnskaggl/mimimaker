@@ -5,16 +5,64 @@ import { TOOL_NAMES } from './materials.js';
 import { renderScene } from './preview3d.js';
 import { ledMapSVG, ledRows, powerName } from './ledmap.js';
 import { buildSteps, stepJointKinds } from './build/steps.js';
+import { machineFamily, machineSettingsLine } from './export/machines.js';
+import { laserFileName, DEFAULT_KERF, LASER_COLORS } from './export/laser.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
+// Blade names per machine family (#22). A laser has no blades.
+const SILHOUETTE_BLADES = { fine: 'AutoBlade', knife: 'Kraft Blade', rotary: 'Rotary Blade' };
+const bladeName = (family, tool) => (family === 'silhouette' ? SILHOUETTE_BLADES[tool] || 'AutoBlade' : TOOL_NAMES[tool]);
+
+/** "You'll need" tools sentence and the cutting section, per machine family. */
+function cuttingFor(family, machine, { tools, scored, drawLabels }) {
+  if (family === 'laser') {
+    const kerf = machine.kerf ?? DEFAULT_KERF;
+    return {
+      need: `${esc(machine.name)} with a honeycomb or slatted bed`,
+      heading: 'Cutting on a laser cutter',
+      steps: [
+        'Each sheet comes as an <code>.svg</code> and a <code>.dxf</code> in millimetres. Import one into your laser software at 100% scale (don\'t resize).',
+        `Set the layers: <span class="chip" style="background:${LASER_COLORS.cut}">red</span> = cut through, <span class="chip" style="background:${LASER_COLORS.score}">blue</span> = light score for folds, <b>black</b> = engrave (part numbers).`,
+        `The cut paths are already kerf-compensated for ${kerf} mm, so don't add an offset in the software.`,
+        'Run a small test cut on a scrap of each material to set power and speed, then cut the sheet. Check the parts drop out before you move the material.',
+      ],
+    };
+  }
+  if (family === 'silhouette') {
+    return {
+      need: `${esc(machine.name)} with: ${tools.map(esc).join(', ')}${drawLabels ? ', a sketch pen' : ''}`,
+      heading: 'Cutting in Silhouette Studio',
+      steps: [
+        'Each sheet comes as an <code>.svg</code> and a <code>.dxf</code> in millimetres. In the free Basic edition, open the <code>.dxf</code>; Designer edition and up can open the <code>.svg</code>, which keeps the colours. Open it at its original size.',
+        `Set the line actions: <span class="chip" style="background:${LAYER_COLORS.cut}">black</span> = Cut${scored ? `, <span class="chip" style="background:${LAYER_COLORS.score}">magenta</span> = Score or Sketch` : ''}.`,
+        'Choose the matching material, blade and passes from each sheet\'s settings line below. For board, tape the edges to the mat and check the cut is through before unloading.',
+      ],
+    };
+  }
+  return {
+    need: `${esc(machine.name)} with: ${tools.map(esc).join(', ')}${scored ? ', Scoring Stylus or Scoring Wheel' : ''}${drawLabels ? ', a fine-tip pen' : ''}`,
+    heading: 'Cutting in Cricut Design Space',
+    steps: [
+      'Open a new project and <b>Upload → Upload Image</b> each <code>.svg</code> sheet file. Insert it at its original size (it\'s in millimetres — don\'t resize).',
+      `With the sheet selected, click <b>Ungroup</b>, then set each layer's operation: <span class="chip" style="background:${LAYER_COLORS.cut}">black</span> = Basic Cut${scored ? `, <span class="chip" style="background:${LAYER_COLORS.score}">magenta</span> = Score` : ''}${drawLabels ? `, <span class="chip" style="background:${LAYER_COLORS.draw}">blue</span> = Pen (part numbers)` : ''}.`,
+      'Select everything from one sheet and click <b>Attach</b> so the score/pen lines stay on their parts and the layout is kept.',
+      'Click <b>Make</b>, choose the matching material setting (e.g. <i>Chipboard 2 mm</i>, <i>Basswood 1/16"</i>, <i>Medium Cardstock</i>), and use a fresh blade. For board, tape the edges to the mat and check the cut is through before unloading — you can\'t realign it afterwards.',
+    ],
+  };
+}
+
 export function guideHTML(kit, compiled) {
   const { groups, sheets, usedMats, machine, dims, parts } = compiled;
+  const family = machineFamily(machine);
+  const laser = family === 'laser';
   const sheetCounts = usedMats.map((m) => ({ m, n: sheets.filter((s) => s.material.id === m.id).length }));
-  const tools = [...new Set(usedMats.map((m) => m.tool))].map((t) => TOOL_NAMES[t]);
+  const tools = [...new Set(usedMats.map((m) => bladeName(family, m.tool)))];
   const scored = parts.some((p) => p.scores.length);
+  const cutting = cuttingFor(family, machine, { tools, scored, drawLabels: kit.drawLabels });
+  const fileName = (s) => (laser ? laserFileName(s, 'svg') : sheetFileName(s));
 
-  const materialRows = sheetCounts.map(({ m, n }) => `<tr><td><span class="sw" style="background:${m.color}"></span>${esc(m.name)}</td><td>${m.thickness} mm</td><td>${n} × ${m.sheet[0]}×${m.sheet[1]} mm</td><td>${esc(TOOL_NAMES[m.tool])}</td></tr>`).join('');
+  const materialRows = sheetCounts.map(({ m, n }) => `<tr><td><span class="sw" style="background:${m.color}"></span>${esc(m.name)}</td><td>${m.thickness} mm</td><td>${n} × ${m.sheet[0]}×${m.sheet[1]} mm</td>${laser ? '' : `<td>${esc(bladeName(family, m.tool))}</td>`}</tr>`).join('');
 
   const matOf = new Map(groups.map((g) => [g.title, g.material]));
   const steps = buildSteps(kit, compiled).map((st) => {
@@ -42,7 +90,7 @@ export function guideHTML(kit, compiled) {
   const sheetBlocks = sheets.map((s) => `
     <figure class="sheet">
       ${sheetPreviewSVG(s)}
-      <figcaption>${esc(s.material.name)} — sheet ${s.index}/${s.count} · <code>${sheetFileName(s)}</code></figcaption>
+      <figcaption>${esc(s.material.name)} — sheet ${s.index}/${s.count} · <code>${fileName(s)}</code><br>${esc(machineSettingsLine(s, machine))}</figcaption>
     </figure>`).join('');
 
   return `<!doctype html>
@@ -89,20 +137,17 @@ export function guideHTML(kit, compiled) {
     <div>
       <h1>${esc(kit.name)}</h1>
       <p class="sub">1:${kit.scale} miniature room kit · finished size ${dims.W.toFixed(0)} × ${dims.D.toFixed(0)} × ${dims.H.toFixed(0)} mm · ${parts.length} parts on ${sheets.length} sheet${sheets.length === 1 ? '' : 's'}</p>
-      <table><tr><th>Material</th><th>Thick</th><th>Sheets</th><th>Blade</th></tr>${materialRows}</table>
+      <table><tr><th>Material</th><th>Thick</th><th>Sheets</th>${laser ? '' : '<th>Blade</th>'}</tr>${materialRows}</table>
     </div>
     ${renderScene(compiled.faces3d)}
   </div>
 
   <h2>You'll need</h2>
-  <p>${esc(machine.name)} with: ${tools.map(esc).join(', ')}${scored ? ', Scoring Stylus or Scoring Wheel' : ''}${kit.drawLabels ? ', a fine-tip pen' : ''}${lit ? `, ${compiled.lighting.leds.length} pre-wired 3 V micro LEDs and a ${esc(powerName(compiled.lighting).toLowerCase())}` : ''}. Strong-grip mat for board, standard grip for card, fabric grip for felt. PVA / tacky glue, a glue stick, masking tape, a craft knife and a metal ruler for clean-up.</p>
+  <p>${cutting.need}${lit ? `, ${compiled.lighting.leds.length} pre-wired 3 V micro LEDs and a ${esc(powerName(compiled.lighting).toLowerCase())}` : ''}.${laser ? '' : ' Strong-grip mat for board, standard grip for card, fabric grip for felt.'} PVA / tacky glue, a glue stick, masking tape, a craft knife and a metal ruler for clean-up.</p>
 
-  <h2>Cutting in Cricut Design Space</h2>
+  <h2>${cutting.heading}</h2>
   <ol class="ds">
-    <li>Open a new project and <b>Upload → Upload Image</b> each <code>.svg</code> sheet file. Insert it at its original size (it's in millimetres — don't resize).</li>
-    <li>With the sheet selected, click <b>Ungroup</b>, then set each layer's operation: <span class="chip" style="background:${LAYER_COLORS.cut}">black</span> = Basic Cut${scored ? `, <span class="chip" style="background:${LAYER_COLORS.score}">magenta</span> = Score` : ''}${kit.drawLabels ? `, <span class="chip" style="background:${LAYER_COLORS.draw}">blue</span> = Pen (part numbers)` : ''}.</li>
-    <li>Select everything from one sheet and click <b>Attach</b> so the score/pen lines stay on their parts and the layout is kept.</li>
-    <li>Click <b>Make</b>, choose the matching material setting (e.g. <i>Chipboard 2 mm</i>, <i>Basswood 1/16"</i>, <i>Medium Cardstock</i>), and use a fresh blade. For board, tape the edges to the mat and check the cut is through before unloading — you can't realign it afterwards.</li>
+    ${cutting.steps.map((x) => `<li>${x}</li>`).join('\n    ')}
   </ol>
 
   <h2>Assembly</h2>
