@@ -68,8 +68,8 @@
   --control-h: 36px; /* Buttons, inputs and selects. */
   --control-h-sm: 28px; /* Compact buttons, segments and chips inside panels. */
   --topbar-h: 60px; /* The header with the kit name and the step nav. */
-  --rail-w: 56px; /* The left tool rail. */
-  --drawer-w: 320px; /* The library drawer when open. */
+  --rail-w: 64px; /* The left tool rail. */
+  --drawer-w: 340px; /* The library drawer when open. */
   --inspector-w: 340px; /* The right inspector. */
   --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --font-sans: Figtree, "Segoe UI", system-ui, -apple-system, sans-serif;

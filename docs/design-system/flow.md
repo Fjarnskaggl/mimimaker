@@ -4,7 +4,7 @@ The app follows the order a kit is made in: **Design → Light → Make → Buil
 
 ## Start
 
-A full-screen choice with `display-xl` heading "Make a tiny world": the room types (8) and book-nook shells as large cards, plus "Open a file" and "Blank room". Scale and machine are asked once here and remembered (both can be changed later in Make).
+A full-screen choice with `display-xl` heading "Make a tiny world": every room type and book-nook shell as large cards, plus "Open a file" and "Blank room". Scale and machine are asked once here and remembered (both can be changed later in Make).
 
 ## 1 · Design
 

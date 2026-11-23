@@ -1,15 +1,11 @@
 // The app's CSS variables (styles.css) must match the design system's tokens
-// (docs/design-system/tokens.json) in both themes. Known differences are listed
-// below so they stay visible until someone decides which side is right.
+// (docs/design-system/tokens.json) in both themes. Change both together.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const tokens = JSON.parse(readFileSync(new URL('../docs/design-system/tokens.json', import.meta.url), 'utf8'));
 const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
-
-// Layout sizes where the app and the design system disagree today.
-const KNOWN_DIFFERENCES = { 'rail-w': '64px', 'drawer-w': '340px' };
 
 const norm = (v) => v.replace(/\s+/g, ' ').replace(/([(,\s])0\./g, '$1.').trim().toLowerCase();
 
@@ -36,9 +32,9 @@ test('spacing, radius and fonts match the design system', () => {
   for (const [name, value] of Object.entries(tokens.type.families)) assert.equal(light[`font-${name}`], norm(value), `--font-${name}`);
 });
 
-test('layout sizes match the design system, apart from the listed known differences', () => {
+test('layout sizes match the design system', () => {
   for (const t of tokens.layout.tokens) {
-    assert.equal(light[t.name], norm(KNOWN_DIFFERENCES[t.name] ?? t.value), `--${t.name}`);
+    assert.equal(light[t.name], norm(t.value), `--${t.name}`);
   }
 });
 

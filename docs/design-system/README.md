@@ -1,6 +1,6 @@
 # mimimaker design system
 
-> **In this repo.** The design system for the app: principles and voice (this page), the flow (`flow.md`), Mimi (`mimi.md`), tokens (`tokens.css`, `tokens.json`), components (`components/<Name>/README.md`, with a `preview.html` you can open in a browser and the shared `components/bundle.css`), and the icon, logo and Mimi SVGs (`assets/`). UI work follows it. `test/design-tokens.test.js` checks that the variables in `styles.css` match `tokens.json`; the two layout sizes where the app differs today are listed in that test.
+> **In this repo.** The design system for the app: principles and voice (this page), the flow (`flow.md`), Mimi (`mimi.md`), tokens (`tokens.css`, `tokens.json`), components (`components/<Name>/README.md`, with a `preview.html` you can open in a browser and the shared `components/bundle.css`), and the icon, logo and Mimi SVGs (`assets/`). UI work follows it. `test/design-tokens.test.js` checks that the variables in `styles.css` match `tokens.json`, so change both together.
 
 mimimaker turns a room idea into a miniature kit you can cut on a Cricut or laser, light with LEDs and build at the kitchen table. The interface should feel like a tidy workbench: the model in the middle, the right tool within reach, everything else put away.
 
