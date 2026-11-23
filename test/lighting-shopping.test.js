@@ -81,3 +81,15 @@ test('text and CSV for the guide and the zip', () => {
   assert.match(csv.at(-1), /^,Total/);
   assert.equal(shoppingListCSV({ items: [{ qty: 1, name: 'a "quoted", item', note: '', cost: { low: 1, high: 2 } }], total: { low: 1, high: 2 } }).split('\n')[1], '1,"a ""quoted"", item",,1.00,2.00');
 });
+
+import { shoppingFile } from '../src/lighting/shopping.js';
+
+test('shoppingFile: a ready-to-zip CSV, or nothing without lights', () => {
+  const f = shoppingFile(lit([wall()]));
+  assert.equal(f.name, 'shopping-list.csv');
+  assert.equal(f.type, 'text/csv');
+  assert.match(f.data, /^Qty,Item/);
+  assert.match(f.data, /micro LED/);
+  assert.equal(shoppingFile(lit([])), null);
+  assert.equal(shoppingFile({ enabled: false }), null);
+});
