@@ -35,7 +35,7 @@ import { kitCutFiles, machineReadme } from './export/machines.js';
 import { kitHandCutFiles } from './export/handcut.js';
 // T2 shells
 import { shellSection, applyRoomLocks, appendRoofControls } from './ui/t2.js';
-import { remixCredit, openedSharedText } from './ui/t7.js'; // T7 remix credits
+import { remixCredit, openedSharedText } from './ui/t7.js';
 // [T5] lighting UI
 import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
