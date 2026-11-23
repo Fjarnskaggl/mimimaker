@@ -137,3 +137,32 @@ test('two-storey: compiles as a kit with no errors', () => {
   const groups = new Set(r.parts.map((p) => p.group));
   for (const g of ['Shell', 'Upper floor', 'Stairs', 'Internal walls']) assert.ok(groups.has(g), g);
 });
+
+test('review: the ground-floor wall goes in before the upper floor closes over it', () => {
+  const sh = house({}, 2);
+  const at = (re) => sh.steps.findIndex((s) => re.test(s.text));
+  const groundWall = at(/ground-floor wall/i), upperFloor = at(/upper floor's tabs/i);
+  assert.ok(groundWall >= 0 && upperFloor >= 0);
+  assert.ok(groundWall < upperFloor, 'ground wall first');
+  const upstairsWall = at(/upstairs wall/i);
+  assert.ok(upstairsWall > upperFloor, 'upstairs wall after the upper floor');
+});
+
+test('review: auto stairs keep a walkable pitch, even in deep or shallow gaps', () => {
+  for (const g of [{ w: 200, h: 230, d: 300 }, gap, { w: 120, h: 300, d: 140 }]) {
+    const st = house({}, 2, g).twostorey.stair;
+    const pitch = st.rise / st.going;
+    assert.ok(pitch >= 0.4 && pitch <= 1.2, `pitch ${pitch.toFixed(2)} in ${JSON.stringify(g)}`);
+  }
+  // too shallow for any walkable stair: a message about this shell's own controls
+  assert.throws(() => house({}, 2, { w: 120, h: 230, d: 60 }), /upper floor|gap depth/i);
+  assert.throws(() => house({ steps: 40 }, 2), (e) => !/landing lower/.test(e.message));
+});
+
+test('review: no light hangs in the stairwell', () => {
+  const t = 2;
+  const sh = house({ stairWidth: 80 }, t);
+  const { width: sw } = sh.twostorey.stair;
+  const upstairs = sh.lights.filter((l) => l.p[2] > sh.twostorey.floorTop);
+  for (const l of upstairs) assert.ok(l.p[0] > t + sw, `light at x=${l.p[0].toFixed(1)} is over the floor`);
+});
