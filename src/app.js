@@ -20,6 +20,8 @@ import { itemSize } from './catalog.js';
 import { renderScene } from './preview3d.js';
 import { sheetPreviewSVG } from './svg.js';
 import { guideHTML } from './guide.js';
+// T4
+import { buildCompanion } from './ui/t4.js';
 import { makeZip } from './zip.js';
 import { icon, MIMI, MARK } from './ui/art.js';
 import { checksSummary } from './ui/checks.js';
@@ -917,6 +919,7 @@ function renderBuild(el) {
       inArtifact ? null : h('button', { type: 'button', class: 'mm-btn', onclick: () => frame.contentWindow?.print() }, 'Print guide'),
       h('button', { type: 'button', class: 'mm-btn', onclick: () => download(`${slug(kit.name)}-guide.html`, html, 'text/html') }, ic('download'), 'Download guide')),
     frame));
+  buildCompanion(el.querySelector('.page'), kit, compiled); // T4
 }
 
 // ---------------------------------------------------------------- export

@@ -27,7 +27,16 @@ export function buildSteps(kit, compiled, graph = jointGraph(kit, compiled)) {
   const steps = [];
   const push = (step) => {
     const mine = new Set(step.parts);
-    const joints = graph.joints.filter((j) => (mine.has(j.a) && (built.has(j.b) || mine.has(j.b))) || (mine.has(j.b) && built.has(j.a)));
+    // placing a piece and gluing its boxes together are joints of their own
+    // steps (place / finish), not of building any one box
+    const own = (j) => j.note === 'place in room' || j.note === 'boxes of one piece';
+    const joints = step.kind === 'place'
+      ? graph.joints.filter((j) => j.note === 'place in room' && nodeById.get(j.a)?.group === step.group)
+      : [
+        ...graph.joints.filter((j) => !own(j) && ((mine.has(j.a) && (built.has(j.b) || mine.has(j.b))) || (mine.has(j.b) && built.has(j.a)))),
+        ...(step.joins || []),
+      ];
+    delete step.joins;
     step.parts.forEach((id) => built.add(id));
     steps.push({ kind: 'build', unit: null, cureMin: 0, ...step, joints, n: steps.length + 1 });
   };
@@ -133,6 +142,7 @@ export function buildSteps(kit, compiled, graph = jointGraph(kit, compiled)) {
     if (units.length && (flats.length || boxJoins.length)) {
       push({
         title: flats.length ? `Finish the ${lc(g.title)}` : `Join the ${lc(g.title)}`, group: g.title, unit: units[0], parts: flats.map((n) => n.id), cureMin: CURE.flat,
+        joins: boxJoins,
         text: [
           ...flats.map((n) => `Glue the ${lc(n.name)} (#${n.id}) in place.`),
           ...boxJoins.map((j) => `Attach the ${lc(unitName(nodeById.get(j.a).unit))} to the ${lc(unitName(nodeById.get(j.b).unit))}.`),
