@@ -64,7 +64,8 @@ test('the slopes are finger-jointed into the gable: every point of the joint str
         }
       }
     }
-    assert.ok(samples > 0 && inSlopes > samples * 0.2 && inSlopes < samples * 0.8, 'both gable and tabs take part');
+    // a few sparse tabs (see jointSegments): the gable keeps most of the strip
+    assert.ok(samples > 0 && inSlopes > samples * 0.05 && inSlopes < samples * 0.5, `both gable and tabs take part (${inSlopes}/${samples})`);
   }
 });
 
