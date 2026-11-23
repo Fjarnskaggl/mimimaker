@@ -21,7 +21,7 @@ import { rectPoly, archPoly, ellipsePoly, cleanPolygon } from '../geometry.js';
 
 export const ALLEY_DEFAULTS = {
   buildings: 3, layers: 2, cavity: 6, perspective: 0.6, horizon: 0.4,
-  windowW: 8, windowH: 12, litRatio: 0.6, seed: 1, backdrop: true, backCavity: 6,
+  windowW: 8, windowH: 12, litRatio: 0.5, seed: 1, backdrop: true, backCavity: 6,
 };
 
 export const ALLEY_PARAMS = [
@@ -89,7 +89,7 @@ function layoutWindows({ a, b, roofA, roofB, side, roof, bottom, bridge, winW, w
     const w = winW * s;
     if (cur + w > end + 1e-9) break;
     cols.push({ u0: cur, w, s });
-    cur += w + Math.max(bridge, winW * 0.9 * s);
+    cur += w + Math.max(bridge, winW * 1.3 * s);
   }
   if (!cols.length) return { windows: [], skipped: 0 };
   // centre the columns on the face
@@ -101,7 +101,7 @@ function layoutWindows({ a, b, roofA, roofB, side, roof, bottom, bridge, winW, w
     const h = winH * col.s;
     if (col.w < MIN_HOLE || h < MIN_HOLE) { skipped++; continue; }
     const top = Math.min(roofAt(u0), roofAt(u0 + col.w)) - roofGap;
-    const pitch = winH * 1.8;
+    const pitch = winH * 2.1;
     let lastTop = -Infinity;
     for (let k = 0; ; k++) {
       const vc = vAt(pitch * (1.2 + k), col.s);
@@ -202,7 +202,9 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {} }, params) {
     for (let j = nb - 1; j >= 0; j--) outline.push([blds[j].y1, blds[j].roofBack], [blds[j].y0, blds[j].roofFront]);
     const wins = blds.flatMap((b) => b.windows);
     const baseHoles = wins.filter((w) => w.lit).map((w) => toPanel(windowPoly(w)));
-    const baseScores = wins.filter((w) => !w.lit).flatMap((w) => edgesOf(toPanel(windowPoly(w))));
+    // unlit windows are drawn (pen) on the front-most layer, where they're seen
+    const drawn = (list) => list.filter((w) => !w.lit).flatMap((w) => edgesOf(toPanel(windowPoly(w))));
+    const baseScores = layers === 1 ? drawn(wins) : [];
     parts.push({
       key: `${side}-base`, name: `${sideName} facade`, group, role: 'layer', side, layer: 0,
       polys: [toPanel(cleanPolygon(outline)), ...baseHoles], scores: baseScores, plane: facePlane(0),
@@ -217,7 +219,9 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {} }, params) {
         parts.push({
           key: `${side}-relief${L}-${b.index}`, name: `${sideName} relief ${L} · building ${b.index + 1}`, group,
           role: 'layer', side, layer: L, building: b.id,
-          polys: [toPanel(poly), ...b.windows.map((w) => toPanel(windowPoly(w, L * FRAME)))], scores: [], plane: facePlane(L),
+          // light only needs to pass the lit windows; the rest of the relief stays whole
+          polys: [toPanel(poly), ...b.windows.filter((w) => w.lit).map((w) => toPanel(windowPoly(w, L * FRAME)))],
+          scores: L === layers - 1 ? drawn(b.windows) : [], plane: facePlane(L),
         });
         glue(`${side}-relief${L}-${b.index}`, L === 1 ? `${side}-base` : `${side}-relief${L - 1}-${b.index}`);
       }
