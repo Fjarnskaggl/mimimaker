@@ -152,7 +152,7 @@ export function buildAlley({ W, D, H, t, fingerWidth }, params) {
   const wsum = weights.reduce((a, b) => a + b, 0);
 
   const parts = [], lights = [], steps = [], joints = [];
-  const glue = (a, b) => joints.push({ a, b, kind: 'glue-flat' });
+  const glue = (a, b) => joints.push({ a, b, kind: 'flat' });
   const buildings = [];
   const groupOf = { left: 'Left facade', right: 'Right facade' };
   let skippedTotal = 0;

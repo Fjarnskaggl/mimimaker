@@ -4,7 +4,7 @@
 // buildShell(spec, { t, fingerWidth }) → {
 //   type, dims: { W, D, H, t, inner: { x0, y0, z0, W, D, H } },
 //   parts: [{ key, name, group, role, material?, polys: [outline, ...holes], scores, plane: { o, U, V, n } }],
-//   joints: [{ a: partKey, b: partKey, kind: 'finger' | 'slot' | 'glue-tab' | 'glue-flat' }],
+//   joints: [{ a: partKey, b: partKey, kind: 'finger' | 'slot' | 'glue-tab' | 'flat' (see build/joints.js JOINT_KINDS) }],
 //   lights: [{ p: [x, y, z], color, … }],  // suggested LED spots
 //   steps: [{ group, text }], warnings: [{ level, msg }], minFinger, …type-specific data
 // }

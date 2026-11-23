@@ -182,7 +182,7 @@ test('alley joints: every spacer, layer and backdrop is glued to what it touches
       assert.ok(mine.length >= 2, `${p.key} holds two things together`);
     }
     for (const p of sh.parts.filter((q) => q.role === 'layer' && q.layer > 0)) {
-      assert.ok(sh.joints.some((j) => j.kind === 'glue-flat' && [j.a, j.b].includes(p.key)), `${p.key} glued to the layer below`);
+      assert.ok(sh.joints.some((j) => j.kind === 'flat' && [j.a, j.b].includes(p.key)), `${p.key} glued to the layer below`);
     }
   }
 });
