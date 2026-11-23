@@ -207,3 +207,49 @@ test('Realistic 3D: zoom holds through redraws in the Light step', async () => {
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('3D shortcuts stay out of the way: not from a focused list button, not in the Light step', async () => {
+  const page = await open();
+  const n = await page.evaluate(() => window.mimimaker.kit.items.length);
+  await page.click('[data-select-item="1"]'); // focus stays on the list button
+  const x0 = await page.evaluate(() => window.mimimaker.kit.items[1].x);
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Backspace');
+  assert.equal(await page.evaluate(() => window.mimimaker.kit.items.length), n, 'nothing removed from a focused button');
+  assert.equal(await page.evaluate(() => window.mimimaker.kit.items[1].x), x0, 'nothing nudged');
+  // a piece picked on Design isn't still selected, invisibly, on Light
+  const p = await pointFor(page, 1);
+  await page.mouse.click(p.x, p.y);
+  await page.click('[data-step=light]');
+  await page.locator('.stage').hover({ position: { x: 5, y: 5 } });
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press('Delete');
+  assert.equal(await page.evaluate(() => window.mimimaker.kit.items.length), n, 'Delete on Light removes nothing');
+  await page.close();
+});
+
+test('clicking a window in the 3D view keeps a window picked from the list', async () => {
+  const page = await open();
+  assert.ok(await page.locator('[data-select-opening="0"]').count(), 'the starter room has a window');
+  await page.click('[data-select-opening="0"]');
+  const kind = () => page.locator('#sidebar .insp-kind').first().textContent();
+  const before = await kind();
+  // the back wall, above the furniture, where the window is
+  const box = await page.locator('.stage svg').boundingBox();
+  await page.mouse.click(box.x + box.width * 0.45, box.y + box.height * 0.3);
+  assert.equal(await kind(), before, 'still on the window');
+  await page.close();
+});
+
+test('hover clears when the pieces change under it, and the stage keeps its grab cursor', async () => {
+  const page = await open();
+  const p = await pointFor(page, 2);
+  await page.mouse.move(p.x, p.y);
+  await page.waitForFunction(() => document.querySelector('.stage path.hover'), null, { timeout: 2000 });
+  await page.mouse.click(p.x, p.y);
+  await page.keyboard.press('Delete'); // indexes shift: no other piece may inherit the hover
+  assert.deepEqual(await hovered(page), []);
+  assert.equal(await page.evaluate(() => document.querySelector('.stage').t6hover ?? null), null);
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.stage .scene-svg')).cursor), 'grab');
+  await page.close();
+});
