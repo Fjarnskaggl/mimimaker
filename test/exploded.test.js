@@ -139,6 +139,6 @@ test('a "$" in a step title does not break the SVG', () => {
   const { compiled, steps } = setup(kit);
   const step = steps.find((s) => s.kind === 'place' && s.group === kit.items[0].name);
   const svg = explodedViewSVG(kit, compiled, steps, step.n);
-  assert.ok(svg.includes(`aria-label="Exploded view of step ${step.n}: Place the shelf $' $&"`));
+  assert.ok(svg.includes(`aria-label="Exploded view of step ${step.n}: Place the shelf $' $&amp;"`));
   assert.equal((svg.match(/<svg/g) || []).length, 1);
 });

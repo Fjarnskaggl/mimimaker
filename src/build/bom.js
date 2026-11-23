@@ -63,13 +63,16 @@ export function billOfMaterials(kit, compiled, steps = buildSteps(kit, compiled)
 
   // ------------------------------------------------------------ lights
   const lights = shoppingList(compiled.lighting)?.items || [];
+  // a shell's suggested LED spots, until T5 plans their wiring (#16)
+  const spots = compiled.lighting?.enabled ? 0 : compiled.shell?.lights?.length || 0;
+  if (spots) lights.push(line('shell-leds', spots, 'Pre-wired 3 V micro LED, warm white', "one for each lit spot the shell suggests; add a battery box with switch", [0.3, 1]));
 
   const all = [...sheetLines, ...supplies, ...lights];
   const total = all.reduce((t, i) => ({ low: t.low + i.cost.low, high: t.high + i.cost.high }), { low: 0, high: 0 });
 
   // -------------------------------------------------------------- time
-  // planned LEDs, plus the spots a shell suggests until T5 plans their wiring (#16)
-  const leds = (compiled.lighting?.enabled ? compiled.lighting.leds?.length || 0 : 0) + (compiled.shell?.lights?.length || 0);
+  // planned LEDs, or the shell's suggested spots (both are on the bill above)
+  const leds = (compiled.lighting?.enabled ? compiled.lighting.leds?.length || 0 : 0) + spots;
   const cutMin = sheets.reduce((s, sh) => s + estimateCutMinutes(sh), 0);
   let assemblyMin = 0, glueMin = 0;
   steps.forEach((st, i) => {
@@ -80,6 +83,7 @@ export function billOfMaterials(kit, compiled, steps = buildSteps(kit, compiled)
     const next = steps[i + 1];
     if (st.kind !== 'info' && (!next || next.group === st.group || next.kind === 'place')) glueMin += st.cureMin || 0;
   });
+  assemblyMin += MIN_PER_LED * spots; // no wiring step for shell spots yet
   const time = { cutMin, assemblyMin, glueMin, totalMin: cutMin + assemblyMin + glueMin };
 
   return { sheets: sheetLines, supplies, lights, total, note: BOM_NOTE, difficulty: difficulty(compiled, steps, leds), time };

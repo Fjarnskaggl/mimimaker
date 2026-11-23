@@ -73,11 +73,16 @@ export function faceParts(kit, compiled) {
       const hi = j < ks.length ? owner[ks[j]] : Infinity;
       let window = cand.filter((p) => p.id > lo && p.id < hi && !used.has(p.id));
       if (!window.length) window = cand.filter((p) => !used.has(p.id));
-      if (!window.length) window = cand;
       const run = ks.slice(i, j);
-      run.forEach((k, r) => { owner[k] = (window.length === run.length ? window[r] : window[0])?.id ?? null; });
-      if (window.length === run.length) window.forEach((p) => used.add(p.id));
-      else if (window[0]) used.add(window[0].id);
+      if (window.length) {
+        // one face each when the counts agree, else split the run in order
+        run.forEach((k, r) => { owner[k] = window[Math.min(window.length - 1, Math.floor((r * window.length) / run.length))].id; });
+        window.forEach((p) => used.add(p.id));
+      } else {
+        // nothing left to hand out: the faces belong with their neighbour
+        const near = i > 0 ? owner[ks[i - 1]] : j < ks.length ? owner[ks[j]] : null;
+        run.forEach((k) => { owner[k] = near; });
+      }
       i = j;
     }
   }
@@ -141,6 +146,15 @@ export function explodedFaces(kit, compiled, steps = buildSteps(kit, compiled), 
     const inStep = new Set(step.parts);
     const unitFaces = faces.filter((f) => f.moving || graph.nodes.find((x) => x.id === f.part)?.unit === step.unit);
     const mid = centre(unitFaces);
+    // the open front: from the unit's back panel towards its middle (world −y without one)
+    const backNode = graph.nodes.find((x) => x.unit === step.unit && x.face === 'back' && builtAt.get(x.id) <= n);
+    const back = backNode ? facesOf(backNode.id) : [];
+    let front = [0, -1, 0];
+    if (back.length) {
+      const bn = back[0].source.n;
+      const s = dot(sub(mid, centre(back)), bn);
+      if (Math.abs(s) > 1e-6) front = mul(bn, Math.sign(s));
+    }
     for (const id of movingIds) {
       const mine = facesOf(id);
       if (!mine.length) continue;
@@ -155,7 +169,7 @@ export function explodedFaces(kit, compiled, steps = buildSteps(kit, compiled), 
         const along = dot(sub(c, mid), nrm);
         const size = span(mine);
         const slides = graph.joints.some((j) => j.kind === 'slot' && (j.a === id || j.b === id) && !inStep.has(j.a === id ? j.b : j.a));
-        dir = !slides && Math.abs(along) > 0.15 * size ? mul(nrm, Math.sign(along)) : [0, -1, 0];
+        dir = !slides && Math.abs(along) > 0.15 * size ? mul(nrm, Math.sign(along)) : front;
       } else {
         // a part glued onto something already built comes off along its face
         const built = partners.map(facesOf).flat();
@@ -190,5 +204,5 @@ export function explodedViewSVG(kit, compiled, steps = buildSteps(kit, compiled)
   const svg = renderScene(faces, { yaw: opts.yaw ?? -32, pitch: opts.pitch ?? 26 });
   return svg
     .replace('class="scene-svg"', 'class="scene-svg exploded"')
-    .replace(/aria-label="[^"]*"/, `aria-label="Exploded view of step ${n}: ${String(step.title).replace(/[&<>"]/g, '')}"`);
+    .replace(/aria-label="[^"]*"/, () => `aria-label="Exploded view of step ${n}: ${String(step.title).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])}"`);
 }

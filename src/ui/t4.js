@@ -110,7 +110,7 @@ function exploded(svg) {
 /** "What you'll need": sheets, supplies, lights, cost, difficulty and time. */
 function bomDetails(kit, compiled, steps) {
   let bom;
-  try { bom = billOfMaterials(kit, compiled, steps); } catch { return null; }
+  try { bom = billOfMaterials(kit, compiled, steps); } catch (err) { console.error('bill of materials', err); return null; }
   const list = (title, items) => (items.length ? [el('h4', {}, title), el('ul', {}, items.map((i) => el('li', {},
     el('span', {}, `${i.qty}×`), el('span', {}, i.name), el('span', { class: 'cost' }, money(i.cost)), el('small', {}, i.note))))] : []);
   const t = bom.time;
@@ -136,7 +136,7 @@ export function buildCompanion(page, kit, compiled) {
   const graph = jointGraph(kit, compiled);
   const views = new Map(); // step n → exploded view SVG (drawn on first visit)
   const viewOf = (n) => {
-    if (!views.has(n)) { try { views.set(n, explodedViewSVG(kit, compiled, steps, n, { graph })); } catch { views.set(n, null); } }
+    if (!views.has(n)) { try { views.set(n, explodedViewSVG(kit, compiled, steps, n, { graph })); } catch (err) { console.error('exploded view', err); views.set(n, null); } }
     return views.get(n);
   };
   const bomPanel = bomDetails(kit, compiled, steps);
