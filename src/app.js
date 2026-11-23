@@ -15,7 +15,7 @@ import { History } from './history.js';
 import { collisions, moveItem, rotateItem, slideOnWall, snap, itemParams, findFreeSpot } from './plan.js';
 import { planSVG, posOnWall } from './planview.js';
 import { fitCoupon, couponSVG, calibrate, estimateCutMinutes, formatMinutes } from './make.js';
-import { shareHash, kitFromHash, decodeKit, shareSummary, linkSizeNote } from './share.js';
+import { shareHash, kitFromHash, decodeKit, shareSummary, linkSizeNote, unwrapKitFile } from './share.js';
 import { itemSize } from './catalog.js';
 import { renderScene } from './preview3d.js';
 import { sheetPreviewSVG } from './svg.js';
@@ -36,7 +36,7 @@ import { kitHandCutFiles } from './export/handcut.js';
 import { kitPrintCutFiles } from './export/printcut.js';
 // T2 shells
 import { shellSection, applyRoomLocks, appendRoofControls, syncShellRoom, shellWiresLights } from './ui/t2.js';
-import { remixCredit, openedSharedText } from './ui/t7.js';
+import { remixCredit, openedSharedText, openSubmitDialog } from './ui/t7.js';
 // [T5] lighting UI
 import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
@@ -1084,13 +1084,14 @@ async function init() {
   nameInput.value = kit.name;
   nameInput.addEventListener('input', () => { kit.name = nameInput.value; changed(); });
   $('#btn-new').addEventListener('click', openStart);
+  $('#btn-submit').addEventListener('click', () => { closePops(); openSubmitDialog($('#submit'), kit, { h, download, ic }); }); // T7
   $('#btn-save').addEventListener('click', () => { closePops(); download(`${slug(kit.name)}.json`, JSON.stringify(kit, null, 2), 'application/json'); });
   $('#file-open').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     closePops();
     try {
-      replaceKit(normalizeKit(JSON.parse(await file.text())), `Opened ${file.name}.`);
+      replaceKit(normalizeKit(unwrapKitFile(JSON.parse(await file.text()))), `Opened ${file.name}.`); // T7: kits/ files open too
     } catch (err) {
       toast(`That file couldn't be opened: ${err.message}`, 'error');
     }

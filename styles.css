@@ -110,6 +110,7 @@ button:hover, .button:hover, .mm-btn:hover { background: var(--surface-sunken); 
 .mm-btn--sm.mm-btn--icon { width: var(--control-h-sm); }
 button:disabled, .mm-btn:disabled { opacity: .45; cursor: not-allowed; background: var(--surface); }
 .mm-btn--quiet:disabled { background: transparent; }
+.mm-btn--primary:disabled { color: var(--ink); border-color: var(--line-control); }
 .armed, .danger-armed { border-color: var(--danger); color: var(--danger); }
 
 /* --------------------------------------------------------------- header */
@@ -569,3 +570,22 @@ dialog.start::backdrop { background: rgba(10, 15, 13, .45); }
 /* T7 share box: design summary and long-link warning */
 .share-summary { margin: 0; font: 600 13px/18px var(--font-sans); overflow-wrap: anywhere; }
 .share-warn { color: var(--warning); background: var(--warning-soft); padding: 6px 8px; border-radius: 6px; overflow-wrap: anywhere; }
+
+/* ------------------------------------------------- T7 submit dialog */
+dialog.submit {
+  width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; border: 0;
+  border-radius: var(--radius-lg); background: var(--paper); color: var(--ink); box-shadow: var(--shadow-float);
+}
+dialog.submit::backdrop { background: rgba(10, 15, 13, .45); }
+.submit-inner { display: grid; gap: var(--space-3); padding: var(--space-5); }
+.submit-head { display: flex; align-items: center; gap: var(--space-3); }
+.submit-head h2 { margin: 0; font: 700 24px/30px var(--font-display); }
+.submit-head button { margin-left: auto; }
+.submit-remix { margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--surface-sunken); font-size: 14px; }
+.submit-field .hint { font-weight: 400; letter-spacing: 0; }
+.submit-field textarea { resize: vertical; }
+.submit-problems { margin: 0; padding-left: 1.2em; color: var(--danger); font-size: 13px; }
+.submit-problems:empty { display: none; }
+.submit-actions { display: flex; gap: var(--space-2); }
+.submit-steps a, .submit-inner > .hint a { color: var(--ink); }
+.submit-steps { margin: 0; padding-left: 1.2em; display: grid; gap: var(--space-1); font-size: 14px; }
