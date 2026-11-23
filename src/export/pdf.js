@@ -48,6 +48,12 @@ export class PdfCanvas {
   closePath() { this.ops.push('h'); return this; }
   stroke() { this.ops.push('S'); return this; }
   fill() { this.ops.push('f*'); return this; }
+  /** Cubic Bézier from the current point to (x, y), control points in mm. */
+  curveTo(x1, y1, x2, y2, x, y) { this.ops.push(`${this.X(x1)} ${this.Y(y1)} ${this.X(x2)} ${this.Y(y2)} ${this.X(x)} ${this.Y(y)} c`); return this; }
+  /** 0 = butt, 1 = round, 2 = square line ends. */
+  lineCap(style) { this.ops.push(`${style} J`); return this; }
+  /** Restrict later drawing (until restore) to the current path, even-odd (holes stay out). */
+  clip() { this.ops.push('W* n'); return this; }
   rect(x, y, w, h) { this.ops.push(`${this.X(x)} ${this.Y(y + h)} ${num(w * MM)} ${num(h * MM)} re`); return this; }
   /** Restrict later drawing (until restore) to a rectangle. */
   clipRect(x, y, w, h) { this.ops.push(`${this.X(x)} ${this.Y(y + h)} ${num(w * MM)} ${num(h * MM)} re W n`); return this; }
