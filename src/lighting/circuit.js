@@ -1,5 +1,5 @@
 // Circuit model for the room's lights: every LED is wired in parallel
-// across one supply (2×AA box, CR2032 coin cell or a USB lead).
+// across one supply (2×AA or 2×AAA box, CR2032 coin cell or a USB lead).
 //
 // All numbers are deliberately conservative ESTIMATES, not measurements:
 // each LED is assumed to draw its worst-case 20 mA, battery capacities are
@@ -15,6 +15,11 @@ export const SUPPLIES = {
     // [up to this peak mA, fraction of capacity you actually get]
     derate: [[25, 0.8], [100, 0.65], [250, 0.5], [Infinity, 0.35]],
   },
+  aaa2: {
+    id: 'aaa2', name: '2×AAA battery box with switch', short: '2×AAA battery box', volts: 3,
+    capacityMAh: 800, recommendedMA: 120, maxMA: 250,
+    derate: [[25, 0.75], [100, 0.55], [250, 0.4], [Infinity, 0.3]],
+  },
   cr2032: {
     id: 'cr2032', name: 'CR2032 coin-cell holder with switch', short: 'CR2032 coin cell', volts: 3,
     capacityMAh: 220, recommendedMA: 20, maxMA: 45,
@@ -26,7 +31,7 @@ export const SUPPLIES = {
   },
 };
 
-const BIGGER = { cr2032: 'a 2×AA battery box', aa2: 'a USB lead', usb: 'two USB leads, each powering half the lights' };
+const BIGGER = { cr2032: 'a 2×AA battery box', aaa2: 'a 2×AA battery box', aa2: 'a USB lead', usb: 'two USB leads, each powering half the lights' };
 
 /** Worst-case current and typical forward voltage for each LED colour. */
 const SPECS = {

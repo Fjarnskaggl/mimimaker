@@ -7,6 +7,7 @@ import { EFFECTS, effectOf } from '../lighting/effects.js';
 
 export const SUPPLY_OPTIONS = [
   ['aa2', '2×AA battery box'],
+  ['aaa2', '2×AAA battery box'],
   ['cr2032', 'CR2032 coin cell'],
   ['usb', 'USB lead (5 V)'],
 ];
@@ -180,7 +181,7 @@ export function renderMountField(power, onChange) {
 // ------------------------------------------------------------ hidden base switch
 
 export const SWITCH_AT_OPTIONS = [['front', 'Front, by the left corner'], ['left', 'Left side, near the front'], ['right', 'Right side, near the front']];
-export const SWITCH_KIND_OPTIONS = [['touch', 'Touch switch'], ['push', 'Push switch (6 mm)']];
+export const SWITCH_KIND_OPTIONS = [['touch', 'Touch switch'], ['board', 'Touch breakout (20 × 29 mm)'], ['push', 'Push switch (6 mm)']];
 
 const pick = (key, label, options, current, onPick) => el('label', { class: 'field' }, label,
   el('select', { 'data-t5': key, onchange: (e) => onPick(e.target.value) }, options.map(([v, text]) => {

@@ -10,7 +10,7 @@ export const PRICE_NOTE = 'Prices are rough estimates in US dollars from typical
 
 const PRICES = {
   led: [0.3, 1], candle: [0.5, 1.5], fairy: [2, 6], stripReel: [3, 8],
-  'box-aa2': [1, 3], 'cells-aa': [0.5, 1.5], 'box-cr2032': [1, 2.5], 'cells-cr2032': [0.5, 1.5],
+  'box-aa2': [1, 3], 'cells-aa': [0.5, 1.5], 'box-aaa2': [1, 3], 'cells-aaa': [0.5, 1.5], 'touch-board': [6, 9], 'box-cr2032': [1, 2.5], 'cells-cr2032': [0.5, 1.5],
   'usb-lead': [2, 5], 'usb-socket': [0.5, 2], 'push-switch': [0.3, 1], 'touch-switch': [0.5, 2],
 };
 const STRIP_REEL_MM = 500;
@@ -82,6 +82,9 @@ export function shoppingList(lighting) {
     } else {
       add('usb-lead', 1, SUPPLIES.usb.name, base ? '5 V; comes in through the hatch, its inline switch left on' : '5 V; any USB phone charger powers it', 'usb-lead');
     }
+  } else if (supply === 'aaa2') {
+    add('box-aaa2', 1, SUPPLIES.aaa2.name, boxNote, 'box-aaa2');
+    add('cells-aaa', 2, 'AAA alkaline battery', '1.5 V each, 3 V together', 'cells-aaa');
   } else if (supply === 'cr2032') {
     add('box-cr2032', 1, SUPPLIES.cr2032.name, boxNote, 'box-cr2032');
     add('cells-cr2032', 1, 'CR2032 coin cell', '3 V lithium', 'cells-cr2032');
@@ -92,8 +95,9 @@ export function shoppingList(lighting) {
 
   // hidden base: its own switch, by the front corner
   if (base) {
-    const kind = lighting.power.base?.switch?.kind === 'push' ? 'push' : 'touch';
-    if (kind === 'push') add('push-switch', 1, '6 mm latching push switch', `fits the ${SWITCHES.push.hole} mm hole in the base`, 'push-switch');
+    const kind = lighting.power.base?.switch?.kind || 'touch';
+    if (kind === 'board') add('touch-board', 1, 'Capacitive touch toggle breakout (AT42QT1012, e.g. Adafruit 1375)', '20 × 29 mm; sits in the switch mount behind the round hole in the base', 'touch-board');
+    else if (kind === 'push') add('push-switch', 1, '6 mm latching push switch', `fits the ${SWITCHES.push.hole} mm hole in the base`, 'push-switch');
     else add('touch-switch', 1, '3 V capacitive touch switch module (TTP223-style, latching)', 'about 15 × 11 mm; sits in the switch mount behind the round hole in the base', 'touch-switch');
   }
 
