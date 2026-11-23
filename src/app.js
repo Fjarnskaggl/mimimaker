@@ -301,6 +301,7 @@ function roomInspector() {
     inspHead('Room', 'The room', `${cm(r.width)} × ${cm(r.depth)} × ${cm(r.height)} cm · 1:${kit.scale}`),
     roomSection(),
     shellSection(kit, { h, section, numberField, selectField, checkField, changed, restructured }), // T2 shells
+    texturePicker({ section, selectField, getKit: () => kit, setKit: (next) => { kit = next; update(); } }), // T6 textures
     section('Furniture & decor', [
       items.length ? h('div', { class: 'insp-list' }, items) : h('p', { class: 'hint' }, 'No pieces yet.'),
       h('div', { class: 'add-row' }, h('button', { type: 'button', class: 'mm-btn mm-btn--sm', onclick: openDrawer }, ic('plus'), 'Add a piece')),
@@ -632,7 +633,6 @@ function build3d(bar) {
     bar.append(night);
   }
   bar.append(rendererToggle(drawScene)); // T6
-  if (view.step === 'design') bar.append(texturePicker(() => kit, (next) => { kit = next; update(); })); // T6
   const foot = h('div', { class: 'stage-foot' },
     h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit' : 'Drag to orbit · edit pieces on the plan or in the list'),
     h('div', { class: 'orbit' }, h('label', {}, 'Rotate', yaw), h('label', {}, 'Tilt', pitch)));
