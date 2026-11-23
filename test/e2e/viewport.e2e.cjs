@@ -160,3 +160,22 @@ test('clicking empty space in the 3D view clears the selection, as on the plan',
   assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Room', 'inspector back on the room');
   await page.close();
 });
+
+test('Light step: pieces are not pickable in the room view (their inspector lives on Design)', async () => {
+  const page = await open();
+  await page.click('[data-step=light]');
+  const p = await pointFor(page, 0);
+  assert.ok(p, 'piece 0 is visible');
+  await page.mouse.move(p.x, p.y);
+  await page.waitForTimeout(100);
+  assert.deepEqual(await hovered(page), [], 'no hover outline');
+  await page.mouse.click(p.x, p.y);
+  assert.deepEqual(await outlined(page), [], 'no outline on a piece you can’t edit here');
+  assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Lighting');
+  // picking a light from the list stays selected after a click in the room
+  await page.click('[data-select-led="0"]');
+  await page.mouse.click(p.x, p.y);
+  assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Light', 'the LED stays selected');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
