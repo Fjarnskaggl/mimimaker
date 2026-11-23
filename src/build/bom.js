@@ -3,28 +3,41 @@
 // build steps, so it always matches the cut files and the guide.
 //
 // billOfMaterials(kit, compiled, steps?) → {
-//   sheets:   [{ id, qty, name, note, cost: { low, high } }]   one line per material
+//   sheets:   [{ id, qty, name, note, cost: { low, high, currency }, unpriced }]   one line per material
 //   supplies: [{ id, qty, name, note, cost }]                   glue, acetate, vellum
 //   lights:   T5's shoppingList items (LEDs, power), unchanged
-//   total: { low, high }, note,
+//   totals: [{ currency, low, high }]   one per currency
+//   total:  the single total when there is one currency, else null
+//   currency, note,
 //   difficulty: { level, score, reasons[] },
 //   time: { cutMin, assemblyMin, glueMin, totalMin },   glueMin: waiting that can't overlap other work
 // }
-// Prices are loose US-dollar ranges, like the lighting shopping list's.
+// Sheets cost what the material library says (T3: each material's price per
+// sheet, in the kit's currency). Glue and lights are loose US-dollar ranges,
+// like the lighting shopping list's, and say so.
 
 import { estimateCutMinutes, formatMinutes } from '../make.js';
 import { shoppingList } from '../lighting/shopping.js';
 import { buildSteps } from './steps.js';
+import { kitMaterialCost } from '../export/cost.js';
+import { defaultCurrency, formatMoney } from '../materials.js';
 
-export const BOM_NOTE = 'Prices are rough estimates in US dollars from typical craft and online shops, for whole sheets and packs — check your local shop. Times are for a first build; cutting runs on the machine while you start gluing.';
+const TIME_NOTE = 'Times are for a first build; cutting runs on the machine while you start gluing.';
+export const BOM_NOTE = `Sheet prices come from your material library (edit them on the Make step). Glue and light prices are rough estimates in US dollars from typical craft and online shops — check your local shop. ${TIME_NOTE}`;
+const bomNote = (currency) => (currency === '$' ? BOM_NOTE
+  : `Sheet prices come from your material library, in ${currency.trim()} (edit them on the Make step). Glue and light prices are rough estimates in US dollars from typical craft and online shops — check your local shop. ${TIME_NOTE}`);
+
+/** The kit's currency symbol: its own, else guessed from the browser's language. */
+export const bomCurrency = (kit) => kit.currency || defaultCurrency(typeof navigator !== 'undefined' ? navigator.language || '' : '');
+
+/** "$1.50" for an exact cost, "$1.00–2.50" for a range. */
+export function costText({ low, high, currency = '$' }) {
+  return Math.abs(high - low) < 0.005 ? formatMoney(low, currency) : `${formatMoney(low, currency)}–${(Math.round(high * 100) / 100).toFixed(2)}`;
+}
+/** The bill's total(s): "$11.45–30.80", or "€8.00 + $5.50–15.00" across currencies. */
+export const totalText = (bom) => bom.totals.map(costText).join(' + ');
 export const DIFFICULTY = ['Beginner', 'Intermediate', 'Advanced'];
 
-/** Price of one sheet, by material id, else by kind. */
-const SHEET_PRICES = {
-  chip2: [1, 2.5], chip15: [0.8, 2], bass16: [2, 4], bass08: [1.5, 3],
-  card110: [0.3, 0.8], card65: [0.15, 0.5], paper: [0.3, 1], acetate: [0.5, 1.5], felt: [0.3, 1],
-};
-const KIND_PRICES = { board: [1, 3], card: [0.2, 0.8], fabric: [0.3, 1] };
 const SUPPLY_PRICES = { pva: [2, 5], stick: [1, 3], clear: [3, 6], acetate: [0.5, 1.5], vellum: [0.5, 1.5] };
 
 /** Minutes of hands-on work per step: a base, plus each part and joint. */
@@ -35,16 +48,22 @@ const MIN_PER_LED = 5;
 
 const line = (id, qty, name, note, [low, high]) => ({ id, qty, name, note, cost: { low: low * qty, high: high * qty } });
 
-export function billOfMaterials(kit, compiled, steps = buildSteps(kit, compiled)) {
+export function billOfMaterials(kit, compiled, steps = buildSteps(kit, compiled), { currency = bomCurrency(kit) } = {}) {
   const { sheets, usedMats, parts, groups } = compiled;
   const kindOf = new Map(usedMats.map((m) => [m.id, m.kind]));
 
   // ------------------------------------------------------------ sheets
-  const sheetLines = usedMats.map((m) => {
-    const qty = sheets.filter((s) => s.material.id === m.id).length;
-    const [w, h] = m.sheet;
-    return line(m.id, qty, `${m.name} sheet`, `${w} × ${h} mm`, SHEET_PRICES[m.id] || KIND_PRICES[m.kind] || KIND_PRICES.card);
-  }).filter((l) => l.qty > 0);
+  // from the material library, so Build and Make agree on what the sheets cost
+  const lib = kitMaterialCost(sheets, { currency });
+  const sheetLines = lib.lines.map((l) => {
+    const m = usedMats.find((x) => x.id === l.id);
+    const size = m?.sheet ? `${m.sheet[0]} × ${m.sheet[1]} mm` : '';
+    return {
+      id: l.id, qty: l.sheets, name: `${l.name} sheet`, unpriced: l.unpriced,
+      note: [size, l.unpriced ? 'no price set — add one on the Make step' : `${formatMoney(l.pricePerSheet, currency)} each`].filter(Boolean).join(' · '),
+      cost: { low: l.cost, high: l.cost, currency },
+    };
+  });
 
   // ---------------------------------------------------------- supplies
   const supplies = [];
@@ -68,7 +87,17 @@ export function billOfMaterials(kit, compiled, steps = buildSteps(kit, compiled)
   if (spots) lights.push(line('shell-leds', spots, 'Pre-wired 3 V micro LED, warm white', "one for each lit spot the shell suggests; add a battery box with switch", [0.3, 1]));
 
   const all = [...sheetLines, ...supplies, ...lights];
-  const total = all.reduce((t, i) => ({ low: t.low + i.cost.low, high: t.high + i.cost.high }), { low: 0, high: 0 });
+  const byCur = new Map();
+  for (const i of all) {
+    const cur = i.cost.currency || '$';
+    const t = byCur.get(cur) || { currency: cur, low: 0, high: 0 };
+    t.low += i.cost.low;
+    t.high += i.cost.high;
+    byCur.set(cur, t);
+  }
+  // the kit's own currency first
+  const totals = [...byCur.values()].sort((a, b) => (b.currency === currency) - (a.currency === currency));
+  const total = totals.length === 1 ? totals[0] : null;
 
   // -------------------------------------------------------------- time
   // planned LEDs, or the shell's suggested spots (both are on the bill above)
@@ -86,7 +115,7 @@ export function billOfMaterials(kit, compiled, steps = buildSteps(kit, compiled)
   assemblyMin += MIN_PER_LED * spots; // no wiring step for shell spots yet
   const time = { cutMin, assemblyMin, glueMin, totalMin: cutMin + assemblyMin + glueMin };
 
-  return { sheets: sheetLines, supplies, lights, total, note: BOM_NOTE, difficulty: difficulty(compiled, steps, leds), time };
+  return { sheets: sheetLines, supplies, lights, totals, total, currency, note: bomNote(currency), difficulty: difficulty(compiled, steps, leds), time };
 }
 
 /** A score from what makes a kit fiddly, with the reasons in plain words. */
@@ -106,21 +135,19 @@ function difficulty(compiled, steps, leds) {
   return { level, score, reasons };
 }
 
-const money = (v) => v.toFixed(2);
-
 /** Plain-text bill of materials, e.g. for a download or the zip. */
 export function bomText(bom) {
   const out = ['Bill of materials', ''];
   const section = (title, list) => {
     if (!list.length) return;
     out.push(title);
-    for (const i of list) out.push(`${String(i.qty).padStart(3)} × ${i.name} — ${i.note} (≈ $${money(i.cost.low)}–${money(i.cost.high)})`);
+    for (const i of list) out.push(`${String(i.qty).padStart(3)} × ${i.name} — ${i.note} (≈ ${costText(i.cost)})`);
     out.push('');
   };
   section('Sheets', bom.sheets);
   section('Glue and supplies', bom.supplies);
   section('Lights', bom.lights);
-  out.push(`Estimated total: $${money(bom.total.low)}–${money(bom.total.high)}`);
+  out.push(`Estimated total: ${totalText(bom)}`);
   out.push(`Difficulty: ${bom.difficulty.level} (${bom.difficulty.reasons.join(', ')})`);
   out.push(`Build time: about ${formatMinutes(bom.time.totalMin)} — cutting ${formatMinutes(bom.time.cutMin)}, assembly ${formatMinutes(bom.time.assemblyMin)}, glue setting ${formatMinutes(bom.time.glueMin)}`);
   out.push('', bom.note, '');
