@@ -546,3 +546,6 @@ dialog.start::backdrop { background: rgba(10, 15, 13, .45); }
 /* T7 remix credit, under the room inspector's heading */
 .remix-credit { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
 .remix-credit a { color: inherit; }
+/* T7 share box: design summary and long-link warning */
+.share-summary { margin: 0; font: 600 13px/18px var(--font-sans); overflow-wrap: anywhere; }
+.share-warn { color: var(--warning); background: var(--warning-soft); padding: 6px 8px; border-radius: 6px; overflow-wrap: anywhere; }

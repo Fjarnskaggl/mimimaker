@@ -107,7 +107,8 @@ export function bundle(entry) {
 
 /**
  * The single-file page: index.html's body with styles.css and the bundled
- * JS inlined. Remote stylesheets (the web fonts), the robots meta and the icon carry over
+ * JS inlined. Remote stylesheets (the web fonts), the robots and description
+ * metas, the link-preview (og:/twitter:) metas and the icon carry over
  * from index.html's head; `fragment` leaves out the html/head/body shell.
  */
 export function buildPage({ html, css, js, fragment = false }) {
@@ -115,6 +116,7 @@ export function buildPage({ html, css, js, fragment = false }) {
   const remote = [...html.matchAll(/<link rel="(?:stylesheet|preconnect)" href="https:[^"]*"[^>]*>/g)].map((m) => m[0]).join('\n');
   const icon = html.match(/<link rel="icon"[^>]*>/)?.[0] || '';
   const robots = html.match(/<meta name="robots"[^>]*>/)?.[0] || '';
+  const metas = [...html.matchAll(/<meta (?:name="(?:description|twitter:[\w:]+)"|property="og:[\w:]+")[^>]*>/g)].map((m) => m[0]).join('\n');
   const bodyInner = html.match(/<body>([\s\S]*)<\/body>/)[1].replace(/<script[^>]*src="src\/app\.js"[^>]*><\/script>/, '');
   const page = `${title}
 ${remote}
@@ -132,6 +134,7 @@ ${js.replace(/<\/script/gi, '<\\/script')}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${robots}
+${metas}
 ${icon}
 </head>
 <body>

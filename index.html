@@ -6,6 +6,12 @@
   <meta name="robots" content="noindex">
   <title>mimimaker</title>
   <meta name="description" content="Design miniature room kits, light them with LEDs and cut them on a Cricut or laser. Free, no account.">
+  <!-- Preview-card text for chat and social link unfurls (share links carry the design in the #hash, which servers never see) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="mimimaker">
+  <meta property="og:title" content="A miniature room kit made in mimimaker">
+  <meta property="og:description" content="Open this link to get your own copy of the design: edit it, light it with LEDs and cut it on a Cricut or laser. Free, no account.">
+  <meta name="twitter:card" content="summary">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M8 42V16h6.4v-4h6.4v4h6.4v-4h6.4v4h6.4v26z' fill='%23b98f5e' stroke='%2318211e' stroke-width='2.5' stroke-linejoin='round'/%3E%3Crect x='14' y='22' width='8' height='8' rx='1.5' fill='%23f5f4ef' stroke='%2318211e' stroke-width='2'/%3E%3Crect x='26' y='22' width='8' height='8' rx='1.5' fill='%23f5f4ef' stroke='%2318211e' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,6 +56,7 @@
     </div>
     <div id="share-pop" class="share-pop" hidden role="dialog" aria-label="Share link">
       <label for="share-url">Share this design: free, no account needed</label>
+      <p id="share-summary" class="share-summary"></p>
       <div class="share-row"><input id="share-url" readonly><button id="share-copy" type="button" class="mm-btn mm-btn--sm">Copy</button><button id="share-close" type="button" class="mm-btn mm-btn--sm mm-btn--quiet mm-btn--icon" data-icon="close" aria-label="Close"></button></div>
       <p id="share-note" class="hint"></p>
     </div>
