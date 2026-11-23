@@ -79,3 +79,41 @@ test('two-storey: a spiral stair in the corner, up through the stairwell', () =>
     assert.ok(sh.steps.some((s) => s.group === 'Stairs' && /dowel/i.test(s.text)), 'steps say which post to buy');
   }
 });
+
+const twoStorey = (params, g = { w: 120, h: 230, d: 180 }, t = 2) => buildShell({ type: 'twostorey', gap: g, clearance: 2, params: { stairs: 'spiral', ...params } }, { t });
+
+test('review: the auto radius always fits a cuttable spiral, with a real landing and a real floor', () => {
+  for (const g of [{ w: 72, h: 230, d: 180 }, { w: 120, h: 230, d: 75 }, { w: 120, h: 230, d: 180 }]) {
+    for (const spiralRadius of [0, 50]) {
+      const sh = twoStorey({ spiralRadius }, g);
+      const st = sh.twostorey.stair;
+      const Di = sh.dims.D - 2, Wi = sh.dims.W - 4;
+      assert.ok(Di - st.run >= 25 - 1e-9, `landing ${(Di - st.run).toFixed(1)} mm in ${JSON.stringify(g)}`);
+      assert.ok(Wi - st.width >= 30 - 1e-9, `floor beside the stairwell in ${JSON.stringify(g)}`);
+    }
+  }
+  // too small for any spiral: a clear message, not a broken floor
+  assert.throws(() => twoStorey({}, { w: 50, h: 230, d: 180 }), /spiral|straight|wider/i);
+});
+
+test('review: the post stands in a locating hole at the centre of the spiral', () => {
+  const sh = twoStorey({});
+  const [cx, cy] = sh.twostorey.stair.center;
+  const floor = sh.parts.find((p) => p.key === 'shell-bottom');
+  assert.ok(floor.polys.slice(1).some((h) => {
+    const xs = h.map(([x]) => x), ys = h.map(([, y]) => y);
+    return Math.abs((Math.min(...xs) + Math.max(...xs)) / 2 - cx) < 0.01 && Math.abs((Math.min(...ys) + Math.max(...ys)) / 2 - cy) < 0.01;
+  }), 'a hole in the floor at the post');
+  const step = sh.steps.find((s) => /dowel/i.test(s.text)).text;
+  assert.match(step, /hole/i);
+  assert.doesNotMatch(step, /first baluster's tread points/);
+  // and it ends below the roof
+  assert.ok(sh.twostorey.stair.post.length <= sh.dims.H - 2 * 2);
+});
+
+test('review: stair controls say which stair they apply to', () => {
+  const label = (k) => SHELLS.twostorey.params.find((p) => p.key === k).label;
+  assert.match(label('stairWidth'), /straight/i);
+  assert.match(label('risers'), /straight/i);
+  assert.match(label('spiralRadius'), /spiral/i);
+});
