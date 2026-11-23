@@ -2,6 +2,7 @@
 
 import { sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { TOOL_NAMES } from './materials.js';
+import { shoppingList } from './lighting/shopping.js';
 import { renderScene } from './preview3d.js';
 import { ledMapSVG, ledRows, powerName } from './ledmap.js';
 import { buildSteps, stepJointKinds } from './build/steps.js';
@@ -38,6 +39,14 @@ export function guideHTML(kit, compiled) {
   <p>${compiled.lighting.leds.length} LED${compiled.lighting.leds.length === 1 ? '' : 's'} powered by a ${esc(powerName(compiled.lighting).toLowerCase())}. The map shows the room from behind, unfolded flat: wire holes are already cut, and each coloured line is that LED's wire route to the power box.</p>
   <div class="ledmap">${ledMapSVG(compiled, { standalone: true })}</div>
   <table><tr><th>LED</th><th>Name</th><th>Mounted on</th><th>Colour</th><th>Lead needed</th></tr>${ledRows(compiled).map((r) => `<tr><td><span class="sw" style="background:${r.wireColor}"></span>${r.label}</td><td>${esc(r.name || '—')}</td><td>${r.where}</td><td>${esc(r.color)}</td><td>≥ ${r.leadCm} cm</td></tr>`).join('')}</table>` : '';
+
+  // What to buy for the lights (#57): T5's shopping list, prices always labelled as estimates.
+  const money = (v) => v.toFixed(2);
+  const list = lit ? shoppingList(compiled.lighting) : null;
+  const buying = list ? `
+  <h2>What to buy for the lights</h2>
+  <table class="buying"><tr><th>Qty</th><th>Item</th><th>Note</th><th>Est. cost</th></tr>${list.items.map((i) => `<tr class="buy"><td>${i.qty}</td><td>${esc(i.name)}</td><td>${esc(i.note)}</td><td>$${money(i.cost.low)}–${money(i.cost.high)}</td></tr>`).join('')}<tr class="total"><td></td><td><b>Estimated total</b></td><td></td><td><b>$${money(list.total.low)}–${money(list.total.high)}</b></td></tr></table>
+  <p class="buying-note">${esc(list.note)} The kit zip also includes this list as <code>shopping-list.csv</code>.</p>` : '';
 
   const sheetBlocks = sheets.map((s) => `
     <figure class="sheet">
@@ -81,6 +90,9 @@ export function guideHTML(kit, compiled) {
   .ds li { margin: 4px 0; }
   .ledmap { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 12px 0; break-inside: avoid; }
   .ledmap svg { width: 100%; height: auto; display: block; }
+  .buying td:nth-child(2), .buying td:nth-child(3) { white-space: normal; }
+  .buying td:nth-child(3) { color: var(--muted); }
+  .buying-note { color: var(--muted); font-size: 13px; }
   .chip { display:inline-block; padding: 0 6px; border-radius: 4px; color:#fff; font-size: 12px; font-weight: 600; }
   @media (max-width: 640px) { .hero { grid-template-columns: 1fr; } }
   @media print { body { padding: 0; } h2 { break-after: avoid; } }
@@ -109,6 +121,7 @@ export function guideHTML(kit, compiled) {
   ${steps}
 
   ${lighting}
+  ${buying}
 
   <h2>Cut sheets</h2>
   <div class="sheets">${sheetBlocks}</div>
