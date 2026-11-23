@@ -85,6 +85,7 @@ export function compileKit(kit) {
       layer, color, opacity: opts.opacity ?? 1, cull: opts.cull ?? false, glow: !!opts.glow, item: currentItem,
       thickness: opts.thickness, // mm of material behind the face (solid parts only; WebGL viewer)
       ...(opts.material ? { material: opts.material } : {}), // the material it is cut from: picks its texture (T6)
+      ...(opts.print ? { print: true } : {}), // wallpaper / floor covering: wears the printed pattern
       polys: polys2d.map((poly) => poly.map((p) => xf.p(map(p)))), n: xf.n(plane.n),
     });
   };
@@ -239,8 +240,9 @@ export function compileKit(kit) {
         .map((poly) => poly.map(([x, y]) => [x - u0, y - v0]));
       const polys = [outline, ...windowHoles];
       addPart(g, `${cap(wall)} wallpaper`, wm, polys);
+      parts.at(-1).print = true; // T3 prints the wallpaper pattern on it
       const fr = faceFrame(wall, W, D, H, t + 0.15, 'inner');
-      add3d(1, polys, { ...fr, o: v3.add(fr.o, v3.add(v3.mul(fr.U, u0), v3.mul(fr.V, v0))) }, worldXf, wm.color, { material: wm.id });
+      add3d(1, polys, { ...fr, o: v3.add(fr.o, v3.add(v3.mul(fr.U, u0), v3.mul(fr.V, v0))) }, worldXf, wm.color, { material: wm.id, print: true });
     }
     g.steps.push(`Glue wallpaper ${fmtIds(g.parts)} to the inside of each wall with a glue stick or spray adhesive before adding furniture. Line the cut-outs up with the window and door openings.`);
   }
@@ -251,7 +253,8 @@ export function compileKit(kit) {
     const poly = rectPoly(0, 0, Wi - 2 * m, Di - m);
     const ledHoles = (lighting.holes.bottom || []).map((h) => h.map(([x, y]) => [x - t - m, y]));
     addPart(g, 'Floor covering', fm, [poly, ...ledHoles]);
-    add3d(1, [poly, ...ledHoles], { o: [t + m, 0, t + 0.1], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, worldXf, fm.color, { material: fm.id });
+    parts.at(-1).print = true; // T3 prints the floor pattern on it
+    add3d(1, [poly, ...ledHoles], { o: [t + m, 0, t + 0.1], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, worldXf, fm.color, { material: fm.id, print: true });
     g.steps.push(`Glue floor covering #${g.parts[0]} onto the floor. Tip: score faint lines across it every few mm for floorboards.`);
   }
 

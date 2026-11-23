@@ -156,12 +156,22 @@ function bookSpines({ width, height, mm, r, p }) {
 // real mm on the material (not scaled), and each is drawn to repeat on a
 // small tile in the 3D view. colors: [material, darker, lighter].
 
+// Calls emit(x, y) for (x, y) and each whole-tile shift of it that still
+// reaches into the box, so a shape cut off at one edge carries on at the
+// opposite one and the tile repeats without a seam.
+function wrapped(width, height, x, y, [x0, y0, x1, y1], emit) {
+  for (const dx of [0, -width, width]) for (const dy of [0, -height, height]) {
+    if (x + dx + x1 > 0 && x + dx + x0 < width && y + dy + y1 > 0 && y + dy + y0 < height) emit(x + dx, y + dy);
+  }
+}
+
 function chipboard({ width, height, r, p }) {
   const shapes = [];
   const n = Math.round((width * height) / 22);
   for (let i = 0; i < n; i++) {
     const w = 0.25 + r() * (r() < 0.15 ? 1.1 : 0.45), h = w * (0.4 + 0.6 * r());
-    shapes.push({ type: 'rect', x: r() * width, y: r() * height, w, h, fill: r() < 0.6 ? p.colors[1] : p.colors[2], opacity: Math.round(50 + 45 * r()) / 100 });
+    const fill = r() < 0.6 ? p.colors[1] : p.colors[2], opacity = Math.round(50 + 45 * r()) / 100;
+    wrapped(width, height, r() * width, r() * height, [0, 0, w, h], (x, y) => shapes.push({ type: 'rect', x, y, w, h, fill, opacity }));
   }
   return shapes;
 }
@@ -170,14 +180,23 @@ function woodGrain({ width, height, r, p }) {
   const shapes = [];
   // a couple of soft growth bands, then fine wavy grain lines across the width
   for (let k = 0; k < 3; k++) {
-    shapes.push({ type: 'rect', x: 0, y: r() * height, w: width, h: height * (0.04 + 0.08 * r()), fill: p.colors[2], opacity: 0.45 });
+    const h = height * (0.04 + 0.08 * r());
+    wrapped(width, height, 0, r() * height, [0, 0, width, h], (x, y) => shapes.push({ type: 'rect', x, y, w: width, h, fill: p.colors[2], opacity: 0.45 }));
   }
-  const waves = Math.max(1, Math.round(width / 30)); // whole waves, so the tile repeats
-  for (let y = r() * 0.8; y < height; y += 0.6 + r() * 1.1) {
-    const amp = 0.15 + r() * 0.35, step = width / (waves * 2);
-    let d = `M0 ${f(y)}`;
-    for (let i = 0; i < waves * 2; i++) d += `Q${f(step * (i + 0.5))} ${f(y + (i % 2 ? -amp : amp) * 2)} ${f(step * (i + 1))} ${f(y)}`;
-    shapes.push({ type: 'path', d, stroke: r() < 0.75 ? p.colors[1] : p.colors[2], width: 0.08 + r() * 0.14 });
+  const waves = Math.max(1, Math.round(width / 30)); // whole waves, so the tile repeats across
+  const step = width / (waves * 2);
+  const gaps = [];
+  for (let y = 0; y < height;) { const g = 0.6 + r() * 1.1; gaps.push(g); y += g; }
+  const k = height / gaps.reduce((a, b) => a + b, 0); // stretch the spacing to fill the tile exactly
+  let y0 = 0;
+  for (const g of gaps) {
+    const amp = 0.15 + r() * 0.35, stroke = r() < 0.75 ? p.colors[1] : p.colors[2], w = 0.08 + r() * 0.14;
+    wrapped(width, height, 0, y0, [0, -2 * amp - w, width, 2 * amp + w], (x, y) => {
+      let d = `M0 ${f(y)}`;
+      for (let i = 0; i < waves * 2; i++) d += `Q${f(step * (i + 0.5))} ${f(y + (i % 2 ? -amp : amp) * 2)} ${f(step * (i + 1))} ${f(y)}`;
+      shapes.push({ type: 'path', d, stroke, width: w });
+    });
+    y0 += g * k;
   }
   return shapes;
 }
@@ -186,32 +205,38 @@ function cardFibre({ width, height, r, p }) {
   const shapes = [];
   const n = Math.round((width * height) / 30);
   for (let i = 0; i < n; i++) {
-    const x = r() * width, y = r() * height, a = r() * Math.PI, l = 0.6 + r() * 1.6;
+    const a = r() * Math.PI, l = 0.6 + r() * 1.6;
     const dx = Math.cos(a) * l, dy = Math.sin(a) * l;
-    shapes.push({ type: 'path', d: `M${f(x)} ${f(y)}Q${f(x + dx / 2 + dy * 0.2)} ${f(y + dy / 2 - dx * 0.2)} ${f(x + dx)} ${f(y + dy)}`, stroke: r() < 0.5 ? p.colors[1] : p.colors[2], width: 0.07 });
+    const stroke = r() < 0.5 ? p.colors[1] : p.colors[2];
+    wrapped(width, height, r() * width, r() * height, [-l, -l, l, l], (x, y) => shapes.push({
+      type: 'path', d: `M${f(x)} ${f(y)}Q${f(x + dx / 2 + dy * 0.2)} ${f(y + dy / 2 - dx * 0.2)} ${f(x + dx)} ${f(y + dy)}`, stroke, width: 0.07,
+    }));
   }
   return shapes;
 }
 
-function felt({ width, height, r, p }) {
+function felt({ width, height, r }) {
   const shapes = [];
   const n = Math.round((width * height) / 26);
   for (let i = 0; i < n; i++) {
-    shapes.push({ type: 'use', motif: true, symbol: r() < 0.5 ? 'fuzz' : 'fuzzLight', x: r() * width, y: r() * height, angle: Math.round(r() * 360), size: Math.round(12 + r() * 12) / 10 });
+    const symbol = r() < 0.5 ? 'fuzz' : 'fuzzLight', angle = Math.round(r() * 360), size = Math.round(12 + r() * 12) / 10;
+    wrapped(width, height, r() * width, r() * height, [-size, -size, size, size], (x, y) => shapes.push({ type: 'use', motif: true, symbol, x, y, angle, size }));
   }
   return shapes;
 }
 
 function clearSheet({ width, height, r, p }) {
   const shapes = [];
-  // faint diagonal sheen streaks, like light on clear plastic
-  for (let x = -height + r() * 10; x < width; x += 6 + r() * 14) {
-    const w = 0.8 + r() * 3;
-    shapes.push({ type: 'path', d: `M${f(x)} ${f(height)}L${f(x + height)} 0L${f(x + height + w)} 0L${f(x + w)} ${f(height)}Z`, fill: p.colors[2], opacity: 0.35 + 0.3 * r() });
+  // faint diagonal sheen streaks, like light on clear plastic; on a square
+  // tile the 45° streaks line up across every edge
+  const streak = (x, w, opacity) => shapes.push({ type: 'path', d: `M${f(x)} ${f(height)}L${f(x + height)} 0L${f(x + height + w)} 0L${f(x + w)} ${f(height)}Z`, fill: p.colors[2], opacity });
+  for (let x = r() * 10; x < width; x += 6 + r() * 14) {
+    const w = 0.8 + r() * 3, opacity = Math.round(35 + 30 * r()) / 100;
+    for (let k = -2; k <= 1; k++) if (x + k * width < width && x + k * width + height + w > 0) streak(x + k * width, w, opacity);
   }
   for (let i = 0; i < 6; i++) {
-    const x = r() * width, y = r() * height, l = 2 + r() * 6;
-    shapes.push({ type: 'path', d: `M${f(x)} ${f(y)}L${f(x + l)} ${f(y - l)}`, stroke: p.colors[1], width: 0.06 });
+    const l = 2 + r() * 6;
+    wrapped(width, height, r() * width, r() * height, [0, -l, l, 0], (x, y) => shapes.push({ type: 'path', d: `M${f(x)} ${f(y)}L${f(x + l)} ${f(y - l)}`, stroke: p.colors[1], width: 0.06 }));
   }
   return shapes;
 }

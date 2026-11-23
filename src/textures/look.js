@@ -63,9 +63,9 @@ export function resolveLook(kit) {
 }
 
 /**
- * Which material a 3D face is made of, where it matters for texturing:
- * the face's own `material` if the compiler gives one, else wallpaper for
- * vertical overlays and flooring for upward ones. Null for everything else.
+ * Which material a 3D face is cut from: the face's own `material` (the
+ * compiler names it on every cut part), else, for faces without one,
+ * wallpaper for vertical overlays and flooring for upward ones, and null.
  */
 export function faceMaterial(face, kit) {
   if (face.material) return face.material;
@@ -77,6 +77,7 @@ export function faceMaterial(face, kit) {
 }
 
 // ------------------------------------------------------ raw material finishes
+const PRINTABLE = new Set(TEXTURES.filter((t) => t.kind !== 'material').map((t) => t.id));
 const FINISH_BY_MATERIAL = { chip2: 'chipboard', chip15: 'chipboard', bass16: 'wood-grain', bass08: 'wood-grain', card110: 'card-fibre', card65: 'card-fibre', paper: 'card-fibre', acetate: 'clear-sheet', felt: 'felt' };
 const FINISH_BY_KIND = { board: 'wood-grain', card: 'card-fibre', fabric: 'felt' };
 
@@ -108,7 +109,9 @@ export function materialFinish(mat) {
 export function faceTexture(face, kit, look = resolveLook(kit)) {
   if (face.glow) return null;
   const id = faceMaterial(face, kit);
-  if (id && look[id]) return look[id];
+  // printed: wallpaper and floor covering (faces from older compiles: the overlay layer)
+  const printed = face.print || (!face.material && face.layer === 1);
+  if (printed && id && look[id] && PRINTABLE.has(look[id].id)) return look[id];
   const mat = kit?.materials?.find((m) => m.id === id);
   return materialFinish(mat || { id: `face-${face.color}`, kind: face.thickness > 0 ? 'board' : 'card', color: face.color });
 }
@@ -161,7 +164,7 @@ export function textureChoice(kit, material) {
 
 /** A copy of the kit with the picker value applied (empty overrides are removed). */
 export function setTextureChoice(kit, material, value) {
-  if (value && value !== 'none' && !TEXTURES.some((t) => t.id === value)) throw new Error(`Unknown texture "${value}"`);
+  if (value && value !== 'none' && !PRINTABLE.has(value)) throw new Error(`Unknown texture "${value}"`);
   const textures = { ...(kit.look?.textures || {}) };
   if (!value) delete textures[material];
   else textures[material] = value === 'none' ? null : { id: value };
