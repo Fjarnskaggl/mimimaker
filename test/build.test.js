@@ -13,9 +13,9 @@ test('single-file build bundles nested modules into one valid script', () => {
   execFileSync(process.execPath, ['scripts/build-single.js', out], { stdio: 'pipe' });
   const html = readFileSync(out, 'utf8');
   for (const m of ['app', 'preview3d', 'ui/t6', 'render/webgl', 'render/scene', 'render/three-loader']) {
-    assert.ok(html.includes(`// ---- src/${m}.js`), `bundles src/${m}.js`);
+    assert.ok(html.includes(`// ---- ${m}.js`), `bundles src/${m}.js`);
   }
-  assert.equal((html.match(/\/\/ ---- src\/preview3d\.js/g) || []).length, 1, 'shared module bundled once');
+  assert.equal((html.match(/\/\/ ---- preview3d\.js/g) || []).length, 1, 'shared module bundled once');
   const js = html.match(/<script>([\s\S]*)<\/script>/)[1];
   assert.doesNotThrow(() => new vm.Script(js), 'bundle parses');
   assert.ok(!/^\s*import\s/m.test(js));

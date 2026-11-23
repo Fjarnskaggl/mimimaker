@@ -6,47 +6,61 @@
 // --fragment omits <!doctype>/<html>/<head>/<body> (for hosts that add them).
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join, posix, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+// import { a, b as c } from './x.js'   |   import * as ns from '../dir/y.js'
+const IMPORT_RE = /^import\s*(\{[^}]*\}|\*\s+as\s+[\w$]+)\s*from\s*'(\.{1,2}\/[\w./-]+)\.js';\s*$/gm;
+
+/**
+ * Bundle an ES-module graph (relative imports only) into one script.
+ * Module keys are paths relative to the entry's folder without ".js"
+ * (e.g. "geometry", "pieces/load"); each module is evaluated once.
+ */
+export function bundle(entry) {
+  const root = dirname(resolve(entry));
+  const keyOf = (abs) => relative(root, abs).split('\\').join('/').replace(/\.js$/, '');
+  const order = [];
+  const seen = new Set();
+  const visit = (abs) => {
+    const key = keyOf(abs);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const src = readFileSync(abs, 'utf8');
+    for (const m of src.matchAll(IMPORT_RE)) visit(resolve(dirname(abs), `${m[2]}.js`));
+    order.push({ key, abs, src });
+  };
+  visit(resolve(entry));
+
+  const transform = ({ key, abs, src }) => {
+    const exports = [];
+    let body = src.replace(IMPORT_RE, (_, clause, spec) => {
+      const dep = JSON.stringify(keyOf(resolve(dirname(abs), `${spec}.js`)));
+      if (clause.startsWith('*')) return `const ${clause.replace(/^\*\s+as\s+/, '').trim()} = __m[${dep}];`;
+      const binds = clause.slice(1, -1).split(',').map((n) => n.trim()).filter(Boolean).map((n) => n.replace(/\s+as\s+/, ': '));
+      return `const { ${binds.join(', ')} } = __m[${dep}];`;
+    });
+    body = body.replace(/^export\s+(async\s+function|function|const|let|class)\s+([\w$]+)/gm, (_, kw, id) => {
+      exports.push(id);
+      return `${kw} ${id}`;
+    });
+    if (/^\s*(import|export)\s/m.test(body)) {
+      throw new Error(`Unsupported import/export syntax in ${relative(root, abs)} (use named exports and relative imports)`);
+    }
+    return `// ---- ${key}.js\n__m[${JSON.stringify(key)}] = (() => {\n${body}\nreturn { ${exports.join(', ')} };\n})();\n`;
+  };
+  const js = `(() => {\n'use strict';\nconst __m = {};\n${order.map(transform).join('\n')}\n})();`;
+  return { js, modules: order.map((m) => m.key) };
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
 const root = resolve(new URL('..', import.meta.url).pathname);
 const args = process.argv.slice(2);
 const fragment = args.includes('--fragment');
 const out = resolve(args.find((a) => !a.startsWith('--')) || join(root, 'dist/mimimaker.html'));
+const { js, modules } = bundle(join(root, 'src/app.js'));
+const order = modules;
 
-const IMPORT_RE = /^import\s*\{([^}]*)\}\s*from\s*'(\.{1,2}\/[\w./-]+)\.js';[^\n]*$/gm;
-
-// Module ids are paths under src/ without ".js" (e.g. "kit", "render/webgl");
-// imports are resolved relative to the importing module.
-const resolveId = (from, spec) => posix.normalize(posix.join(posix.dirname(from), spec));
-
-// Collect modules in dependency order starting from app.js.
-const order = [];
-const seen = new Set();
-function visit(name) {
-  if (seen.has(name)) return;
-  seen.add(name);
-  const src = readFileSync(join(root, 'src', `${name}.js`), 'utf8');
-  for (const m of src.matchAll(IMPORT_RE)) visit(resolveId(name, m[2]));
-  order.push({ name, src });
-}
-visit('app');
-
-function transform({ name, src }) {
-  const exports = [];
-  let body = src.replace(IMPORT_RE, (_, names, from) => {
-    const binds = names.split(',').map((n) => n.trim()).filter(Boolean)
-      .map((n) => n.replace(/\s+as\s+/, ': '));
-    return `const { ${binds.join(', ')} } = __m[${JSON.stringify(resolveId(name, from))}];`;
-  });
-  body = body.replace(/^export\s+(async\s+function|function|const|let|class)\s+([\w$]+)/gm, (_, kw, id) => {
-    exports.push(id);
-    return `${kw} ${id}`;
-  });
-  if (/^\s*(import|export)\s/m.test(body)) throw new Error(`Unsupported import/export syntax in ${name}.js`);
-  return `// ---- src/${name}.js\n__m[${JSON.stringify(name)}] = (() => {\n${body}\nreturn { ${exports.join(', ')} };\n})();\n`;
-}
-
-const js = `(() => {\n'use strict';\nconst __m = {};\n${order.map(transform).join('\n')}\n})();`;
 const css = readFileSync(join(root, 'styles.css'), 'utf8');
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 const title = html.match(/<title>[\s\S]*?<\/title>/)[0];
@@ -75,3 +89,4 @@ ${page}</body>
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, doc);
 console.log(`wrote ${out} (${(doc.length / 1024).toFixed(0)} KB, ${order.length} modules)`);
+}

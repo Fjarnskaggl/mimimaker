@@ -13,7 +13,8 @@ import { fitCoupon, couponSVG, calibrate, estimateCutMinutes, formatMinutes } fr
 import { shareHash, kitFromHash, decodeKit } from './share.js';
 import { itemSize } from './catalog.js';
 import { renderScene } from './preview3d.js';
-import { drawStage, rendererToggle } from './ui/t6.js'; // T6: WebGL viewer + SVG fallback
+// T6: WebGL viewer + SVG fallback
+import { drawStage, rendererToggle } from './ui/t6.js';
 import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { guideHTML } from './guide.js';
 import { makeZip } from './zip.js';
