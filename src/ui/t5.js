@@ -182,3 +182,19 @@ export function renderMountField(power, onChange) {
 export function renderShoppingButton(onDownload) {
   return el('button', { type: 'button', class: 'mm-btn mm-btn--sm', 'data-t5': 'shopping', title: 'Parts to buy, with rough prices (CSV)', onclick: onDownload }, 'Shopping list');
 }
+
+// ------------------------------------------------------------ cable cover
+
+/** Turn the back-wall cable cover on or off; off is stored as nothing. */
+export function setCover(lighting, on) {
+  if (on) lighting.cover = { ...(lighting.cover || {}), enabled: true };
+  else delete lighting.cover;
+  return lighting;
+}
+
+/** "Hide wires behind a cover" checkbox, built with the app's checkField. ui: { checkField, restructured } */
+export function renderCoverField(lighting, ui) {
+  const field = ui.checkField('Hide wires behind a cover (back wall)', !!lighting.cover?.enabled, (v) => { setCover(lighting, v); ui.restructured(); });
+  field.querySelector('input')?.setAttribute('data-t5', 'cover');
+  return field;
+}

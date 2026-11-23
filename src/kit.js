@@ -245,7 +245,7 @@ export function compileKit(kit) {
       add3d(1.8, [ellipsePoly(led.u, led.v, 2, 2, 16)], fr, worldXf, hex, { glow: true });
     }
     const powerName = POWER_KINDS[lighting.power.kind] || POWER_KINDS.battery;
-    newGroup('Lighting', null, {
+    const lightGroup = newGroup('Lighting', null, { // [T5] kept in a variable for the cable cover
       steps: [
         `You need ${lighting.leds.length} pre-wired 3 V micro LEDs (fairy-light or "grain of wheat" style, with built-in resistors) and a ${powerName.toLowerCase()}. The LED map lists the minimum lead length for each.`,
         `The ${lighting.holeDiameter.toFixed(1)} mm wire holes are already cut. Poke each LED's wires through its hole from the inside before gluing in furniture; a dab of hot glue or tacky glue holds the bulb.`,
@@ -255,6 +255,8 @@ export function compileKit(kit) {
       ],
       parts: [],
     });
+    for (const p of lighting.parts || []) addPart(lightGroup, p.name, getMat(p.material || (p.role === 'frame' ? room.material : room.trimMaterial), 'Lighting'), p.polys); // [T5] cable cover
+    lightGroup.steps.push(...(lighting.steps || [])); // [T5] cable cover
   }
 
   // ---------------------------------------------------- furniture and decor
