@@ -140,6 +140,22 @@ test('texture picker: change the floor, switch a texture off, undo; only shown w
   await page.close();
 });
 
+test('texture picker: the popover stays on screen at phone width', async () => {
+  const page = await open();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await switchOn(page);
+  await page.click('#texture-btn');
+  await page.waitForSelector('#texture-pop', { state: 'visible' });
+  const box = await page.locator('#texture-pop').boundingBox();
+  assert.ok(box.x >= 0 && box.x + box.width <= 390, `popover spans ${box.x.toFixed(0)}…${(box.x + box.width).toFixed(0)} of 390 px`);
+  for (const sel of await page.locator('#texture-pop select').all()) {
+    const b = await sel.boundingBox();
+    assert.ok(b.x >= 0 && b.x + b.width <= 390, 'select fully visible');
+  }
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('WebGL viewer: dragging orbits the camera and the picture changes', async () => {
   const page = await open();
   await switchOn(page);
