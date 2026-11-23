@@ -100,6 +100,29 @@ test('WebGL viewer: walls and floor wear the room paletteâ€™s textures; the cafÃ
   await page.close();
 });
 
+test('WebGL viewer: every mesh but the LED glows wears a texture, in each room type and a shell (raw board, card and felt where nothing prints)', async () => {
+  const page = await open();
+  await switchOn(page);
+  const check = async (what) => {
+    await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().texturesReady, null, { timeout: 15000 });
+    const s = await sample(page);
+    assert.equal(s.untextured, 0, `${what}: ${s.untextured} of ${s.meshes} meshes have no texture`);
+    return s;
+  };
+  const first = await check('reading nook');
+  for (const id of ['chipboard', 'wood-grain', 'card-fibre', 'felt']) assert.ok(first.textures.includes(id), `${id} in ${first.textures}`);
+  for (const id of ['cafe', 'bakery', 'music-room']) {
+    await page.locator(`.rt-card[data-room="${id}"]`).evaluate((e) => { e.click(); e.click(); });
+    await page.waitForFunction((rt) => window.mimimaker.kit.roomType === rt, id);
+    await check(id);
+  }
+  await page.locator('[data-panel=shell] select[data-shell=type]').selectOption('twostorey');
+  await page.waitForFunction(() => window.mimimaker.kit.shell?.type === 'twostorey');
+  await check('two-storey shell');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('texture picker: change the floor, switch a texture off, undo; only shown with Realistic 3D', async () => {
   const page = await open();
   await page.click('[data-step=design]');
@@ -120,8 +143,9 @@ test('texture picker: change the floor, switch a texture off, undo; only shown w
   assert.deepEqual(await page.evaluate((m) => window.mimimaker.kit.look.textures[m], floorMat), { id: 'tiles' });
 
   await floor.selectOption('none');
-  await page.waitForFunction((n) => document.querySelector('.stage').t6viewer.sample().textured < n, before);
-  assert.ok(!(await textures()).includes('tiles'));
+  // no printed pattern: the floor shows its plain cardstock instead
+  await page.waitForFunction(() => !document.querySelector('.stage').t6viewer.sample().textures.includes('tiles'));
+  assert.equal(await page.evaluate(() => document.querySelector('.stage').t6viewer.sample().textured), before, 'still textured, as plain card');
 
   // undo goes back to tiles, and the picker follows
   await page.waitForTimeout(500); // let the edit settle into its own undo step

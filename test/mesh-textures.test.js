@@ -95,16 +95,18 @@ test('every cut part’s 3D faces name the material it is cut from (fan blades a
 });
 
 test('printed parts look in 3D like their print-then-cut sheet', () => {
+  let checked = 0;
   for (const [name, kit] of scenes()) {
     const compiled = compileKit(kit);
     const look = resolveLook(kit);
     const printed = new Map(printableParts(compiled, kit).map(({ part, look: l }) => [part.material, l]));
-    assert.ok(printed.size, `${name} prints something`);
     for (const f of compiled.faces3d) {
       if (f.glow || !printed.has(f.material)) continue;
       assert.deepEqual(faceTexture(f, kit, look), printed.get(f.material), `${name}: ${f.material} face`);
+      checked++;
     }
   }
+  assert.ok(checked > 50, `printed faces checked: ${checked}`);
 });
 
 test('unprinted parts show their raw material: chipboard, basswood, card and felt each look different', () => {
