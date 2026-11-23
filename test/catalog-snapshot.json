@@ -1,97 +1,104 @@
 {
  "bookshelf": {
   "label": "Bookshelf",
+  "meta": "2ce82159df21f0aa",
   "components": [
    "box:Bookshelf"
   ],
   "cases": {
-   "defaults@board": "58990c02a41511e7",
-   "defaults@card": "eb8698ebbaf348e2",
-   "min@board": "3c3e61f692919090",
-   "min@card": "3c3e61f692919090",
-   "max@board": "5711ad945791d313",
-   "max@card": "17f39e2b8296c465"
+   "defaults@board": "c594581bce8416ea",
+   "defaults@card": "cea3a9842628e3d4",
+   "min@board": "8f2617bf889eb3e5",
+   "min@card": "8f2617bf889eb3e5",
+   "max@board": "51bd394a92be8d40",
+   "max@card": "16b52c0024db86b6"
   }
  },
  "cabinet": {
   "label": "Cabinet / dresser",
+  "meta": "3493ef562a4725f5",
   "components": [
    "box:Cabinet"
   ],
   "cases": {
-   "defaults@board": "5f3c3c2bda3ce22b",
-   "defaults@card": "83094235ce57c6e1",
-   "min@board": "a6560a385da2302b",
-   "min@card": "a6560a385da2302b",
-   "max@board": "c20eb3d14251f4d5",
-   "max@card": "c20eb3d14251f4d5",
-   "style=drawers@board": "5f3c3c2bda3ce22b",
-   "style=drawers@card": "83094235ce57c6e1",
-   "style=doors@board": "b0338c41676bf44a",
-   "style=doors@card": "70c2b1d84b7e1a11",
-   "style=plain@board": "09cd9d1bae98d326",
-   "style=plain@card": "09cd9d1bae98d326"
+   "defaults@board": "6daabb1a1f26dfd1",
+   "defaults@card": "e805f5054de596e3",
+   "min@board": "02c35f722e0b0a7f",
+   "min@card": "02c35f722e0b0a7f",
+   "max@board": "4b503561c8a03bcf",
+   "max@card": "4b503561c8a03bcf",
+   "style=drawers@board": "6daabb1a1f26dfd1",
+   "style=drawers@card": "e805f5054de596e3",
+   "style=doors@board": "b79d4bd3ddf928f3",
+   "style=doors@card": "3f8362a9967d9609",
+   "style=plain@board": "eee378c4dcb77ac0",
+   "style=plain@card": "eee378c4dcb77ac0"
   }
  },
  "table": {
   "label": "Table",
+  "meta": "7918e50c94ef77e3",
   "components": [
    "box:Table"
   ],
   "cases": {
-   "defaults@board": "d2bcb882006439f6",
-   "defaults@card": "d2bcb882006439f6",
-   "min@board": "aab93a93fd04b5f0",
-   "min@card": "aab93a93fd04b5f0",
-   "max@board": "9fb01b005c6e65cb",
-   "max@card": "9fb01b005c6e65cb"
+   "defaults@board": "9e7a2a87eb79299c",
+   "defaults@card": "9e7a2a87eb79299c",
+   "min@board": "a6ce891033730237",
+   "min@card": "a6ce891033730237",
+   "max@board": "b383cb1c27bda62f",
+   "max@card": "b383cb1c27bda62f"
   }
  },
  "chair": {
   "label": "Chair",
+  "meta": "0c3993cfe8181fb3",
   "components": [
    "box:Seat",
    "flat:Backrest"
   ],
   "cases": {
-   "defaults@board": "74313bc3f22cabe0",
-   "defaults@card": "ec6448aeccbd1489",
-   "min@board": "add6ab5ee15ade9d",
-   "min@card": "b3ce94e3feebd052",
-   "max@board": "c1e5ee63d4d13999",
-   "max@card": "323fe4b574f829a4"
+   "defaults@board": "090465ddf3e899d5",
+   "defaults@card": "1170b86b2a3c2139",
+   "min@board": "713086114659be60",
+   "min@card": "9040b12c3d0392d7",
+   "max@board": "7631a77b1dcce55b",
+   "max@card": "4ef7c2cda98dff3b"
   }
  },
  "bench": {
   "label": "Bench / coffee table",
+  "meta": "5c67405a815759c2",
   "components": [
    "box:Bench"
   ],
   "cases": {
-   "defaults@board": "1802ff8efb834934",
-   "defaults@card": "1802ff8efb834934",
-   "min@board": "b4765b827541afe6",
-   "min@card": "b4765b827541afe6",
-   "max@board": "7501e687a69215c8",
-   "max@card": "7501e687a69215c8"
+   "defaults@board": "ba2112f49edacaaa",
+   "defaults@card": "ba2112f49edacaaa",
+   "min@board": "a79f3f9564617f45",
+   "min@card": "a79f3f9564617f45",
+   "max@board": "10f64c2bf7f96088",
+   "max@card": "10f64c2bf7f96088"
   }
  },
  "desk": {
   "label": "Desk",
+  "meta": "e4fbeb59f37460d9",
   "components": [
    "box:Desk"
   ],
   "cases": {
-   "defaults@board": "feb0bcb344c179bd",
-   "defaults@card": "feb0bcb344c179bd",
-   "min@board": "f9afdd527546030e",
-   "min@card": "f9afdd527546030e",
-   "max@board": "a791fa06d6aa4609",
-   "max@card": "a791fa06d6aa4609"
+   "defaults@board": "c5064743beea1e7b",
+   "defaults@card": "c5064743beea1e7b",
+   "min@board": "285b5efa77072489",
+   "min@card": "285b5efa77072489",
+   "max@board": "123e1d512c6236b6",
+   "max@card": "123e1d512c6236b6"
   }
  },
  "sofa": {
   "label": "Sofa",
+  "meta": "5176436bb4671bfa",
   "components": [
    "box:Seat",
    "box:Left arm",
@@ -99,16 +106,17 @@
    "flat:Back"
   ],
   "cases": {
-   "defaults@board": "2d5a24169344c9d3",
-   "defaults@card": "ffbd7d3a0731689d",
-   "min@board": "d53c468483eb8d1c",
-   "min@card": "daab1d0b952a91a1",
-   "max@board": "c2fc2d1ec3a6a9a0",
-   "max@card": "eed7a276aa3a2154"
+   "defaults@board": "9e58eebddbaf8833",
+   "defaults@card": "8260f693f31c8455",
+   "min@board": "b118740699eb18b8",
+   "min@card": "5526a9724146a687",
+   "max@board": "cf14031ab976b25b",
+   "max@card": "32aa6d5d1887e881"
   }
  },
  "armchair": {
   "label": "Armchair",
+  "meta": "571d77fe4bc80525",
   "components": [
    "box:Seat",
    "box:Left arm",
@@ -116,433 +124,462 @@
    "flat:Back"
   ],
   "cases": {
-   "defaults@board": "a019589c14cc5a94",
-   "defaults@card": "83a240e723262148",
-   "min@board": "e9dcad2aa6251b3a",
-   "min@card": "dc13b822aed89341",
-   "max@board": "92568727a1ddc957",
-   "max@card": "15e3834a74f2e7cc"
+   "defaults@board": "9a6355ebc5ea3ca5",
+   "defaults@card": "5e579f81d4af55fd",
+   "min@board": "5419718b509ef0a2",
+   "min@card": "02ee66d18ac68e70",
+   "max@board": "30b23741a0ec3505",
+   "max@card": "b7a6ea6ed65059b6"
   }
  },
  "fireplace": {
   "label": "Fireplace",
+  "meta": "d35df383c3c75839",
   "components": [
    "box:Fireplace",
    "box:Mantel"
   ],
   "cases": {
-   "defaults@board": "8da1b88eee3c1d33",
-   "defaults@card": "e82889d4eada652f",
-   "min@board": "2668e070c17ef0aa",
-   "min@card": "9d970559fac8acfb",
-   "max@board": "d5ecbcf6865a7cd9",
-   "max@card": "8223b90ba7173f6e"
+   "defaults@board": "9b4424c78e5c12c9",
+   "defaults@card": "44cb9bb868bb814e",
+   "min@board": "8b11e34a59a73fdd",
+   "min@card": "68563f40af3993de",
+   "max@board": "e6c0a42f56af066c",
+   "max@card": "aaa888fa5795ee6f"
   }
  },
  "tvstand": {
   "label": "TV / media unit",
+  "meta": "5bef66be90762479",
   "components": [
    "box:Media unit"
   ],
   "cases": {
-   "defaults@board": "9b7f9da528b262fc",
-   "defaults@card": "5521e724106048be",
-   "min@board": "a8d10b89b7955ccf",
-   "min@card": "a8d10b89b7955ccf",
-   "max@board": "43a5da96da39849f",
-   "max@card": "52df708f40659127"
+   "defaults@board": "9f17b1791bee71e1",
+   "defaults@card": "6fa58048adbe027a",
+   "min@board": "e282646a5398fca3",
+   "min@card": "e282646a5398fca3",
+   "max@board": "e0f584f88af676e2",
+   "max@card": "e3c9dcc074089672"
   }
  },
  "floorlamp": {
   "label": "Floor lamp",
+  "meta": "6e292e778973fca7",
   "components": [
    "box:Base",
    "flat:Pole",
    "box:Shade"
   ],
   "cases": {
-   "defaults@board": "b4de0a262638ff90",
-   "defaults@card": "b4de0a262638ff90",
-   "min@board": "2a7d2c8841de5c01",
-   "min@card": "2a7d2c8841de5c01",
-   "max@board": "a82e3f7225b14a69",
-   "max@card": "a82e3f7225b14a69"
+   "defaults@board": "45d39d39d9bbe91c",
+   "defaults@card": "45d39d39d9bbe91c",
+   "min@board": "ef97595b6c2970d4",
+   "min@card": "ef97595b6c2970d4",
+   "max@board": "75c5f7843f202306",
+   "max@card": "75c5f7843f202306"
   }
  },
  "bed": {
   "label": "Bed",
+  "meta": "69a026d740d518b5",
   "components": [
    "box:Bed base",
    "flat:Headboard"
   ],
   "cases": {
-   "defaults@board": "3c706c51ce645311",
-   "defaults@card": "2672daf12e09b872",
-   "min@board": "b87cfdd9b2057397",
-   "min@card": "00f3867880ec3de8",
-   "max@board": "3afba49d7b7ad57e",
-   "max@card": "0fc829ceb0df627e"
+   "defaults@board": "66b39efdb225d503",
+   "defaults@card": "8ed807a6dfd3ba6e",
+   "min@board": "4cc84bf0718fee18",
+   "min@card": "1052725b8f629e64",
+   "max@board": "74f1d48cb7e15f4a",
+   "max@card": "c7432ce97e61bbf8"
   }
  },
  "nightstand": {
   "label": "Nightstand",
+  "meta": "6c0deb7a2541bf84",
   "components": [
    "box:Nightstand"
   ],
   "cases": {
-   "defaults@board": "95dab2a341cb6e58",
-   "defaults@card": "be2f86343cb0b228",
-   "min@board": "0a1602bb172f79fe",
-   "min@card": "0a1602bb172f79fe",
-   "max@board": "81675f2dc717bdac",
-   "max@card": "cec6ece764614265"
+   "defaults@board": "05ccc7f3d56e5f64",
+   "defaults@card": "0fb75d36c9862a66",
+   "min@board": "21a5af19744d7f82",
+   "min@card": "21a5af19744d7f82",
+   "max@board": "0742ef832228dfaf",
+   "max@card": "b7b9d68cf1a44002"
   }
  },
  "dresser": {
   "label": "Chest of drawers",
+  "meta": "a8b6be3007e6da0d",
   "components": [
    "box:Dresser"
   ],
   "cases": {
-   "defaults@board": "2e273a2f83c603da",
-   "defaults@card": "492acb2f6a380d4c",
-   "min@board": "14292fa2170d47ed",
-   "min@card": "fe045af9bf0bf797",
-   "max@board": "a527e81eeeaca1a4",
-   "max@card": "b8a1b9032f88eff7"
+   "defaults@board": "f819111be00e0e66",
+   "defaults@card": "88bbb3cd42ef9be3",
+   "min@board": "af275e259d995350",
+   "min@card": "9e856c1972070b30",
+   "max@board": "f874b3cd46166311",
+   "max@card": "35d51effcd938f16"
   }
  },
  "wardrobe": {
   "label": "Wardrobe",
+  "meta": "0a4bc398f912934f",
   "components": [
    "box:Wardrobe"
   ],
   "cases": {
-   "defaults@board": "6018519e258e057f",
-   "defaults@card": "83b5daec361ddb87",
-   "min@board": "3cad881a7dccb40d",
-   "min@card": "3cad881a7dccb40d",
-   "max@board": "27ab650507b4b202",
-   "max@card": "fbb75900eb47b3e9"
+   "defaults@board": "f7d83b50da70ab7f",
+   "defaults@card": "73791bdd36d40665",
+   "min@board": "f9b936827ad57585",
+   "min@card": "f9b936827ad57585",
+   "max@board": "799cad1e18b76a57",
+   "max@card": "29853b321e3c6435"
   }
  },
  "counter": {
   "label": "Base cabinet",
+  "meta": "c77cdba3024183a0",
   "components": [
    "box:Base cabinet"
   ],
   "cases": {
-   "defaults@board": "45811a8c8568b899",
-   "defaults@card": "8ef4cbdb2087294e",
-   "min@board": "98e830234150af65",
-   "min@card": "98e830234150af65",
-   "max@board": "1e372b4f6611cdbd",
-   "max@card": "62b8af107dd612bf"
+   "defaults@board": "88f21544e4baa1bb",
+   "defaults@card": "19e5869d33dbb9e6",
+   "min@board": "482124e8b8a58c43",
+   "min@card": "482124e8b8a58c43",
+   "max@board": "a870a3ea9bd58748",
+   "max@card": "b47f47c242787a63"
   }
  },
  "sink": {
   "label": "Sink unit",
+  "meta": "edb355ce76f46acf",
   "components": [
    "box:Sink unit"
   ],
   "cases": {
-   "defaults@board": "90e7d2a6fc3617c4",
-   "defaults@card": "4d0511b4d1145eab",
-   "min@board": "eea72d887f2b0952",
-   "min@card": "1c206fc94fb85bfe",
-   "max@board": "a542772e3487aeb3",
-   "max@card": "66b12c5b76485e19"
+   "defaults@board": "fe519cdb9d248f44",
+   "defaults@card": "7158723fa22d495c",
+   "min@board": "f209be8e394532f8",
+   "min@card": "4ec3c7a2eee79d2c",
+   "max@board": "11998c821fac5849",
+   "max@card": "53ebf91829fa8914"
   }
  },
  "stove": {
   "label": "Stove",
+  "meta": "808b6a3373cdcfda",
   "components": [
    "box:Stove"
   ],
   "cases": {
-   "defaults@board": "b45ee95bc5bf32e3",
-   "defaults@card": "9cf506178dd39a15",
-   "min@board": "4a803feba4f5c949",
-   "min@card": "2a5835186bf043b9",
-   "max@board": "ce5425e80455676f",
-   "max@card": "1c91c9340dfaaf8d"
+   "defaults@board": "e8e5cf73f79a2d92",
+   "defaults@card": "e2c86986bd2297ce",
+   "min@board": "ce945f51159e29a9",
+   "min@card": "44de16898937e6ac",
+   "max@board": "0fbc322d3e2d01cc",
+   "max@card": "2a22e5f6d682aa8f"
   }
  },
  "fridge": {
   "label": "Fridge",
+  "meta": "4f7fd9393bbacf47",
   "components": [
    "box:Fridge"
   ],
   "cases": {
-   "defaults@board": "2033dd80c5bd5470",
-   "defaults@card": "919ef1c7ce5c07c3",
-   "min@board": "222e8dea5bc8ce81",
-   "min@card": "7dffaeaa88dec7e6",
-   "max@board": "f5aab170770823de",
-   "max@card": "cc1a6538852c7ea9"
+   "defaults@board": "51216e3bb94c3865",
+   "defaults@card": "07248cacd60b3418",
+   "min@board": "e9ab1516c75784dc",
+   "min@card": "2aff3e87e35b481b",
+   "max@board": "969c1b5b14eddac0",
+   "max@card": "295b79143160b2bd"
   }
  },
  "uppercabinet": {
   "label": "Wall cabinet",
+  "meta": "80b2cb41f7e685e3",
   "components": [
    "box:Wall cabinet"
   ],
   "cases": {
-   "defaults@board": "8957a28dad62f980",
-   "defaults@card": "2623d7e65cfd206a",
-   "min@board": "131544840154aa9f",
-   "min@card": "131544840154aa9f",
-   "max@board": "c5add26bebeb0ea6",
-   "max@card": "443c9d8e4953bd54"
+   "defaults@board": "75d698cd60e0bbc9",
+   "defaults@card": "95504d7f7bc01c7b",
+   "min@board": "07695a6159cda733",
+   "min@card": "07695a6159cda733",
+   "max@board": "08a879ed190efeca",
+   "max@card": "258af00578bcdc75"
   }
  },
  "wallshelf": {
   "label": "Open wall shelf",
+  "meta": "a33dc3a3b14c32bf",
   "components": [
    "box:Wall shelf"
   ],
   "cases": {
-   "defaults@board": "55ac3a11ce128be8",
-   "defaults@card": "282324da3af33a63",
-   "min@board": "18e035091bb05d3c",
-   "min@card": "18e035091bb05d3c",
-   "max@board": "38ddd591155b5257",
-   "max@card": "686c169349fdb28f"
+   "defaults@board": "ba7a1e94ac353cc4",
+   "defaults@card": "b8883f2d5a1779e4",
+   "min@board": "228e85bd29c3b265",
+   "min@card": "228e85bd29c3b265",
+   "max@board": "b1089d6dc4357e67",
+   "max@card": "432abe6c4b838467"
   }
  },
  "bathtub": {
   "label": "Bathtub",
+  "meta": "33753272749693b9",
   "components": [
    "box:Bathtub"
   ],
   "cases": {
-   "defaults@board": "b85a03b000ec7b86",
-   "defaults@card": "b85a03b000ec7b86",
-   "min@board": "ece32c342b521c84",
-   "min@card": "ece32c342b521c84",
-   "max@board": "76eb82676d78392b",
-   "max@card": "76eb82676d78392b"
+   "defaults@board": "7217d02432cd02ce",
+   "defaults@card": "7217d02432cd02ce",
+   "min@board": "905185c6e7e02a21",
+   "min@card": "905185c6e7e02a21",
+   "max@board": "0ca8a196846587c2",
+   "max@card": "0ca8a196846587c2"
   }
  },
  "vanity": {
   "label": "Vanity",
+  "meta": "0919913248655d70",
   "components": [
    "box:Vanity"
   ],
   "cases": {
-   "defaults@board": "664736178c7ddaa9",
-   "defaults@card": "5a8e0314bd1a27ee",
-   "min@board": "ff140b081eb24c72",
-   "min@card": "05f3961756e56691",
-   "max@board": "da0dc9c05424a109",
-   "max@card": "944a7c2b9db43597"
+   "defaults@board": "91b74b21cf1b65f1",
+   "defaults@card": "3f22f88701a2cc88",
+   "min@board": "b4ea3189b8028557",
+   "min@card": "059946e4e62a901c",
+   "max@board": "2f12d06113815c05",
+   "max@card": "0e534fcfcbae85b3"
   }
  },
  "toilet": {
   "label": "Toilet",
+  "meta": "85c510153972868b",
   "components": [
    "box:Bowl",
    "box:Tank"
   ],
   "cases": {
-   "defaults@board": "44fd18790e411777",
-   "defaults@card": "44fd18790e411777",
-   "min@board": "97d1c7d3596317fa",
-   "min@card": "97d1c7d3596317fa",
-   "max@board": "2aa1bae3937e69af",
-   "max@card": "2aa1bae3937e69af"
+   "defaults@board": "d8e04b224bbc97bf",
+   "defaults@card": "d8e04b224bbc97bf",
+   "min@board": "dace964556959c71",
+   "min@card": "dace964556959c71",
+   "max@board": "9ac4b3e4cd7bcb9b",
+   "max@card": "9ac4b3e4cd7bcb9b"
   }
  },
  "cafecounter": {
   "label": "Shop counter",
+  "meta": "0bd4cac9647a7133",
   "components": [
    "box:Counter"
   ],
   "cases": {
-   "defaults@board": "567b30795d3e22a1",
-   "defaults@card": "4136a048eeefb216",
-   "min@board": "edc2725a662f2b0f",
-   "min@card": "edc2725a662f2b0f",
-   "max@board": "851250cf292c8d6c",
-   "max@card": "69a68bf6c360cc66"
+   "defaults@board": "4781e9442769d5f4",
+   "defaults@card": "a6ec8b2260f6364f",
+   "min@board": "248df509f894f6dc",
+   "min@card": "248df509f894f6dc",
+   "max@board": "0b095607d5168e9f",
+   "max@card": "4670cf4348229885"
   }
  },
  "stool": {
   "label": "Bar stool",
+  "meta": "e9fd5d2570b0e864",
   "components": [
    "box:Stool"
   ],
   "cases": {
-   "defaults@board": "5c7a64989f948ac1",
-   "defaults@card": "5c7a64989f948ac1",
-   "min@board": "257bedc508e71fab",
-   "min@card": "257bedc508e71fab",
-   "max@board": "101268a6c33b3ef2",
-   "max@card": "101268a6c33b3ef2"
+   "defaults@board": "f1303cbc54239d0d",
+   "defaults@card": "f1303cbc54239d0d",
+   "min@board": "fdd04e72d39afe9b",
+   "min@card": "fdd04e72d39afe9b",
+   "max@board": "c4f75a375d4ef914",
+   "max@card": "c4f75a375d4ef914"
   }
  },
  "cafetable": {
   "label": "Café table",
+  "meta": "f299e6e7154841a3",
   "components": [
    "box:Café table"
   ],
   "cases": {
-   "defaults@board": "df2e40307c03611d",
-   "defaults@card": "df2e40307c03611d",
-   "min@board": "8c7e410eb6210dfc",
-   "min@card": "8c7e410eb6210dfc",
-   "max@board": "b86772d1a627a900",
-   "max@card": "b86772d1a627a900"
+   "defaults@board": "43610c0408db6fde",
+   "defaults@card": "43610c0408db6fde",
+   "min@board": "71d73a48fcce97e9",
+   "min@card": "71d73a48fcce97e9",
+   "max@board": "2ba557a54cbae227",
+   "max@card": "2ba557a54cbae227"
   }
  },
  "displayshelf": {
   "label": "Display shelving",
+  "meta": "48c51bdc5cb5e4f6",
   "components": [
    "box:Display shelving"
   ],
   "cases": {
-   "defaults@board": "b344b619700e4234",
-   "defaults@card": "f6a5955ef60729fd",
-   "min@board": "d8a56d17eda51d09",
-   "min@card": "3f12e93be668d0ff",
-   "max@board": "ec332d2e55936f3c",
-   "max@card": "740835dd97dcdb6d"
+   "defaults@board": "0693aa66c26589be",
+   "defaults@card": "97186a5cb9805326",
+   "min@board": "75a7d75d27e5c511",
+   "min@card": "586bb3776f651a8a",
+   "max@board": "cca3db044ab2f153",
+   "max@card": "cd1c854f17e1ac8f"
   }
  },
  "chalkboard": {
   "label": "Menu board",
+  "meta": "6f2e54d7c7a2c266",
   "components": [
    "flat:Menu board"
   ],
   "cases": {
-   "defaults@board": "ba0e731c9254c5dd",
-   "defaults@card": "ba0e731c9254c5dd",
-   "min@board": "f9e6ee1734a29bad",
-   "min@card": "f9e6ee1734a29bad",
-   "max@board": "af88f35ff379088a",
-   "max@card": "af88f35ff379088a"
+   "defaults@board": "21002a94d6f8246f",
+   "defaults@card": "21002a94d6f8246f",
+   "min@board": "62aeaff88bf13ce9",
+   "min@card": "62aeaff88bf13ce9",
+   "max@board": "4569b9e746b143a9",
+   "max@card": "4569b9e746b143a9"
   }
  },
  "ladder": {
   "label": "Library ladder",
+  "meta": "3eda8a075550de0f",
   "components": [
    "flat:Ladder"
   ],
   "cases": {
-   "defaults@board": "a91ac86ed33e5741",
-   "defaults@card": "a91ac86ed33e5741",
-   "min@board": "f792354b324853c0",
-   "min@card": "f792354b324853c0",
-   "max@board": "92d5bae319cccf07",
-   "max@card": "92d5bae319cccf07"
+   "defaults@board": "a5fe1c14e846f333",
+   "defaults@card": "a5fe1c14e846f333",
+   "min@board": "f393e2bd7e0ea7a2",
+   "min@card": "f393e2bd7e0ea7a2",
+   "max@board": "6db5671d73501538",
+   "max@card": "6db5671d73501538"
   }
  },
  "books": {
   "label": "Book stack",
+  "meta": "4bda8fd91e5fd74a",
   "components": [
    "box:Book 1",
    "box:Book 2",
    "box:Book 3"
   ],
   "cases": {
-   "defaults@board": "d04bc782365786ee",
-   "defaults@card": "d04bc782365786ee",
-   "min@board": "969ab71212310325",
-   "min@card": "969ab71212310325",
-   "max@board": "b827f70f316fc348",
-   "max@card": "b827f70f316fc348"
+   "defaults@board": "e629c4ec8a23a6e2",
+   "defaults@card": "e629c4ec8a23a6e2",
+   "min@board": "c448b31fce6481f6",
+   "min@card": "c448b31fce6481f6",
+   "max@board": "83bc6857217f438d",
+   "max@card": "83bc6857217f438d"
   }
  },
  "rug": {
   "label": "Rug",
+  "meta": "79ad57f327d3875d",
   "components": [
    "flat:Rug"
   ],
   "cases": {
-   "defaults@board": "90c8dec30a9258ce",
-   "defaults@card": "90c8dec30a9258ce",
-   "min@board": "618e704178a39511",
-   "min@card": "618e704178a39511",
-   "max@board": "a27a5d465ee56f75",
-   "max@card": "a27a5d465ee56f75",
-   "shape=oval@board": "90c8dec30a9258ce",
-   "shape=oval@card": "90c8dec30a9258ce",
-   "shape=rect@board": "50ea44d1f04622a9",
-   "shape=rect@card": "50ea44d1f04622a9",
-   "shape=round@board": "e3cce92326964df1",
-   "shape=round@card": "e3cce92326964df1"
+   "defaults@board": "618b97c3118a698a",
+   "defaults@card": "618b97c3118a698a",
+   "min@board": "4d97195c9522fae8",
+   "min@card": "4d97195c9522fae8",
+   "max@board": "d7abaa861b72e107",
+   "max@card": "d7abaa861b72e107",
+   "shape=oval@board": "618b97c3118a698a",
+   "shape=oval@card": "618b97c3118a698a",
+   "shape=rect@board": "ea8aecb5b3f7c405",
+   "shape=rect@card": "ea8aecb5b3f7c405",
+   "shape=round@board": "87adfb9727fbc266",
+   "shape=round@card": "87adfb9727fbc266"
   }
  },
  "plant": {
   "label": "Potted plant",
+  "meta": "6a51dd2b4ff12558",
   "components": [
    "box:Pot",
    "flat:Leaves"
   ],
   "cases": {
-   "defaults@board": "6061a86933026033",
-   "defaults@card": "6061a86933026033",
-   "min@board": "73ebd47d7a404c81",
-   "min@card": "73ebd47d7a404c81",
-   "max@board": "f6f366b959c182b7",
-   "max@card": "f6f366b959c182b7"
+   "defaults@board": "0903b65ea63f8fe8",
+   "defaults@card": "0903b65ea63f8fe8",
+   "min@board": "696a9f11152e7725",
+   "min@card": "696a9f11152e7725",
+   "max@board": "1005f67012e58dd7",
+   "max@card": "1005f67012e58dd7"
   }
  },
  "frame": {
   "label": "Picture frame",
+  "meta": "b0cc9e8577babba0",
   "components": [
    "flat:Frame"
   ],
   "cases": {
-   "defaults@board": "b5526fc08a5c2ad7",
-   "defaults@card": "b5526fc08a5c2ad7",
-   "min@board": "7b29a95a751889c3",
-   "min@card": "7b29a95a751889c3",
-   "max@board": "f8a75612b7f7a3a8",
-   "max@card": "f8a75612b7f7a3a8"
+   "defaults@board": "1abff1401208f77c",
+   "defaults@card": "1abff1401208f77c",
+   "min@board": "ea2a1eeed219b27f",
+   "min@card": "ea2a1eeed219b27f",
+   "max@board": "63f0d39b5bb92b37",
+   "max@card": "63f0d39b5bb92b37"
   }
  },
  "mirror": {
   "label": "Round mirror / clock",
+  "meta": "228dfbaa7b34eb56",
   "components": [
    "flat:Mirror rim"
   ],
   "cases": {
-   "defaults@board": "12057c965754d113",
-   "defaults@card": "12057c965754d113",
-   "min@board": "4669dd74b7282218",
-   "min@card": "4669dd74b7282218",
-   "max@board": "3444a979eaca23b5",
-   "max@card": "3444a979eaca23b5"
+   "defaults@board": "f719f10ccad20369",
+   "defaults@card": "f719f10ccad20369",
+   "min@board": "85d5e935fe1ec5dd",
+   "min@card": "85d5e935fe1ec5dd",
+   "max@board": "e77fc429865e8571",
+   "max@card": "e77fc429865e8571"
   }
  },
  "tv": {
   "label": "Wall TV",
+  "meta": "988faf04433c7f0c",
   "components": [
    "flat:TV"
   ],
   "cases": {
-   "defaults@board": "f08d6e216ee00c0f",
-   "defaults@card": "f08d6e216ee00c0f",
-   "min@board": "08a43e135fb9ade9",
-   "min@card": "08a43e135fb9ade9",
-   "max@board": "fc55d93f90afb78a",
-   "max@card": "fc55d93f90afb78a"
+   "defaults@board": "eb210d7920830140",
+   "defaults@card": "eb210d7920830140",
+   "min@board": "d3ba56c28e2ce0a7",
+   "min@card": "d3ba56c28e2ce0a7",
+   "max@board": "f79961953b35f7e3",
+   "max@card": "f79961953b35f7e3"
   }
  },
  "curtains": {
   "label": "Curtains",
+  "meta": "ff216897a69a9bc2",
   "components": [
    "flat:Left curtain",
    "flat:Right curtain"
   ],
   "cases": {
-   "defaults@board": "d69167be55556861",
-   "defaults@card": "d69167be55556861",
-   "min@board": "174d664be4dd4718",
-   "min@card": "174d664be4dd4718",
-   "max@board": "c9e6baa59d98bf9e",
-   "max@card": "c9e6baa59d98bf9e"
+   "defaults@board": "15a07911a32c3d86",
+   "defaults@card": "15a07911a32c3d86",
+   "min@board": "7f118838d87f54ec",
+   "min@card": "7f118838d87f54ec",
+   "max@board": "9cc5adc6667bfa6c",
+   "max@card": "9cc5adc6667bfa6c"
   }
  }
 }
