@@ -258,3 +258,44 @@ test('hover clears when the pieces change under it, and the stage keeps its grab
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.stage .scene-svg')).cursor), 'grab');
   await page.close();
 });
+
+const viewBoxWidth = (page) => page.evaluate(() => Number(document.querySelector('.stage svg.scene-svg').getAttribute('viewBox').split(' ')[2]));
+
+test('the sketch view zooms with the wheel, like Realistic 3D, and keeps it through redraws', async () => {
+  const page = await open();
+  const w0 = await viewBoxWidth(page);
+  const box = await page.locator('.stage').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -400);
+  await page.waitForFunction((w) => Number(document.querySelector('.stage svg.scene-svg').getAttribute('viewBox').split(' ')[2]) < w * 0.8, w0, { timeout: 10000 });
+  const w1 = await viewBoxWidth(page);
+  assert.equal(await page.evaluate(() => window.scrollY), 0, 'the page itself does not scroll');
+  await page.click('[data-select-item="1"]'); // redraw
+  assert.equal(await viewBoxWidth(page), w1, 'zoom kept after a selection');
+  await page.locator('input[aria-label=Rotate]').fill('10');
+  assert.ok(await viewBoxWidth(page) < w0 * 0.8, 'zoom kept after orbiting');
+  await shot(page, 'svg-zoom');
+  // zooming out is bounded
+  for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 800);
+  await page.waitForTimeout(100);
+  assert.ok(await viewBoxWidth(page) <= w0 / 0.6 + 1, 'never smaller than 0.6x');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('zoom carries between the sketch view and Realistic 3D, and resets when another kit opens', async () => {
+  const page = await open();
+  const box = await page.locator('.stage').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -400);
+  await page.waitForFunction(() => Number(document.querySelector('.stage').dataset.zoom) > 1.2, null, { timeout: 10000 });
+  const z = Number(await page.locator('.stage').getAttribute('data-zoom'));
+  await page.click('#renderer-toggle');
+  await page.waitForSelector('.stage[data-renderer=webgl] canvas', { timeout: 15000 });
+  assert.equal((await shown(page)).zoom, z, 'Realistic 3D opens at the same zoom');
+  await page.locator('.rt-card[aria-label="Start from Little café"]').evaluate((e) => { e.click(); e.click(); });
+  await page.waitForFunction(() => /caf/i.test(window.mimimaker.kit.name) && Number(document.querySelector('.stage').dataset.zoom) === 1, null, { timeout: 10000 });
+  assert.equal((await shown(page)).zoom, 1, 'a new kit starts at 1x');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
