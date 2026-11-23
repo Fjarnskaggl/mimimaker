@@ -297,6 +297,37 @@ export function createViewer(THREE) {
         windowShadows: windows.children.filter((o) => o.isSpotLight).every((o) => o.castShadow),
       };
     },
+    /**
+     * Orbit once round the room, rendering `frames` frames back to back, and
+     * report the cost of a frame: fps, draw calls and triangles (shadow passes
+     * included) and how many lights cast shadows. Leaves the view as it was.
+     */
+    bench({ frames = 60 } = {}) {
+      const saved = view;
+      const gl = renderer.getContext();
+      const px = new Uint8Array(4);
+      let calls = 0, triangles = 0;
+      const yaw0 = Number(saved.yaw) || 0;
+      render();
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // warm up and sync
+      const t0 = performance.now();
+      for (let i = 0; i < frames; i++) {
+        view = { ...saved, yaw: yaw0 + (360 * i) / frames };
+        render();
+        calls = Math.max(calls, renderer.info.render.calls);
+        triangles = Math.max(triangles, renderer.info.render.triangles);
+      }
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // wait for the GPU
+      const ms = (performance.now() - t0) / frames;
+      let shadowLights = 0;
+      scene.traverseVisible((o) => { if (o.isLight && o.castShadow) shadowLights++; });
+      view = saved;
+      render();
+      return {
+        frames, msPerFrame: ms, fps: 1000 / ms, calls, triangles, shadowLights,
+        pixelRatio: renderer.getPixelRatio(), yawSpan: (360 * (frames - 1)) / frames,
+      };
+    },
     dispose() {
       resize?.disconnect();
       clear();

@@ -76,7 +76,8 @@ test('a tampered three.js is refused and the SVG preview stays', async () => {
 // The budget behind "60 fps orbit on a mid laptop": a frame of the café,
 // shadow pass included, stays under these counts. They are deterministic, so
 // CI can hold the line even though its software WebGL can't hit 60 fps.
-const BUDGET = { calls: 400, triangles: 150000, shadowLights: 1, pixelRatio: 2 };
+// Measured 2026-11-23: 59 calls, ~8.4k triangles, so there is room to grow.
+const BUDGET = { calls: 150, triangles: 50000, shadowLights: 1, pixelRatio: 2 };
 
 test('perf budget: orbiting the café stays inside the 60 fps budget', async () => {
   const page = await open();
@@ -85,7 +86,7 @@ test('perf budget: orbiting the café stays inside the 60 fps budget', async () 
   await page.locator('.rt-card[aria-label="Start from Little café"]').evaluate((e) => { e.click(); e.click(); });
   await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().textures.includes('brick'), null, { timeout: 10000 });
   const b = await page.evaluate(() => document.querySelector('.stage').t6viewer.bench({ frames: 60 }));
-  console.log(`# café orbit: ${b.fps.toFixed(1)} fps (${b.msPerFrame.toFixed(2)} ms/frame), ${b.calls} draw calls, ${b.triangles} triangles, ${b.shadowLights} shadow lights, pixel ratio ${b.pixelRatio}`);
+  console.log(`café orbit: ${b.fps.toFixed(1)} fps (${b.msPerFrame.toFixed(2)} ms/frame), ${b.calls} draw calls, ${b.triangles} triangles, ${b.shadowLights} shadow lights, pixel ratio ${b.pixelRatio}`);
   assert.equal(b.frames, 60);
   assert.ok(b.yawSpan >= 300, `orbits most of the way round (${b.yawSpan}°)`);
   assert.ok(b.calls > 0 && b.calls <= BUDGET.calls, `draw calls ${b.calls} <= ${BUDGET.calls}`);
