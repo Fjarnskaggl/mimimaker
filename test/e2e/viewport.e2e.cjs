@@ -89,3 +89,62 @@ test('selection is live in Realistic 3D: the list, Done and Escape update the vi
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+/** Item indexes drawn with the hover outline in the SVG preview. */
+const hovered = (page) => page.evaluate(() => [...new Set([...document.querySelectorAll('.stage path.hover')].map((p) => Number(p.dataset.item)))]);
+const pointFor = (page, i) => page.evaluate((k) => document.querySelector('.stage').t6pickPoint(k), i);
+
+test('hover feedback in the SVG preview: a piece lights up and the cursor says it can be clicked', async () => {
+  const page = await open();
+  const p = await pointFor(page, 2);
+  await page.mouse.move(p.x, p.y);
+  await page.waitForFunction(() => document.querySelector('.stage path.hover'), null, { timeout: 2000 });
+  assert.deepEqual(await hovered(page), [2]);
+  assert.equal(await page.evaluate(({ x, y }) => getComputedStyle(document.elementFromPoint(x, y)).cursor, p), 'pointer');
+  await shot(page, 'hover');
+  // off the pieces: no hover, the orbit cursor is back
+  const box = await page.locator('.stage').boundingBox();
+  await page.mouse.move(box.x + 4, box.y + box.height - 4);
+  await page.waitForFunction(() => !document.querySelector('.stage path.hover'), null, { timeout: 2000 });
+  // the hover survives a redraw (selecting re-renders the SVG)
+  await page.mouse.move(p.x, p.y);
+  await page.waitForFunction(() => document.querySelector('.stage path.hover'), null, { timeout: 2000 });
+  await page.click('[data-select-item="0"]');
+  await page.mouse.move(p.x + 1, p.y);
+  await page.waitForFunction(() => document.querySelector('.stage path.hover'), null, { timeout: 2000 });
+  assert.deepEqual(await hovered(page), [2]);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('hover feedback in Realistic 3D: the piece under the pointer is tinted, and cleared on leave', async () => {
+  const page = await open({ webgl: true });
+  const p = await pointFor(page, 2);
+  assert.ok(p, 'piece 2 is visible');
+  await page.mouse.move(p.x, p.y);
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().hovered === 2, null, { timeout: 2000 });
+  assert.equal(await page.evaluate(() => document.querySelector('.stage canvas').style.cursor), 'pointer');
+  await page.mouse.move(2, 2); // leave the stage
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().hovered === null, null, { timeout: 2000 });
+  assert.notEqual(await page.evaluate(() => document.querySelector('.stage canvas').style.cursor), 'pointer');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('keyboard shortcuts work on a piece picked in the 3D view, not only on the plan', async () => {
+  const page = await open();
+  const items = () => page.evaluate(() => window.mimimaker.kit.items.length);
+  const n = await items();
+  const p = await pointFor(page, 1);
+  await page.mouse.click(p.x, p.y);
+  const x0 = await page.evaluate(() => window.mimimaker.kit.items[1].x);
+  await page.keyboard.press('Shift+ArrowRight');
+  assert.ok(await page.evaluate((x) => window.mimimaker.kit.items[1].x !== x, x0), 'arrow keys nudge it');
+  await page.keyboard.press('d');
+  assert.equal(await items(), n + 1, 'D duplicates it');
+  await page.keyboard.press('Delete');
+  assert.equal(await items(), n, 'Delete removes it');
+  assert.deepEqual(await outlined(page), [], 'and the outline goes with it');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
