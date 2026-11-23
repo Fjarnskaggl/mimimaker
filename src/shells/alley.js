@@ -151,7 +151,8 @@ export function buildAlley({ W, D, H, t, fingerWidth }, params) {
   const weights = Array.from({ length: nb }, (_, j) => Math.pow(r, j));
   const wsum = weights.reduce((a, b) => a + b, 0);
 
-  const parts = [], lights = [], steps = [];
+  const parts = [], lights = [], steps = [], joints = [];
+  const glue = (a, b) => joints.push({ a, b, kind: 'glue-flat' });
   const buildings = [];
   const groupOf = { left: 'Left facade', right: 'Right facade' };
   let skippedTotal = 0;
@@ -206,6 +207,7 @@ export function buildAlley({ W, D, H, t, fingerWidth }, params) {
       key: `${side}-base`, name: `${sideName} facade`, group, role: 'layer', side, layer: 0,
       polys: [toPanel(cleanPolygon(outline)), ...baseHoles], scores: baseScores, plane: facePlane(0),
     });
+    glue(`${side}-base`, 'shell-bottom');
 
     // relief layers: one panel per building per layer
     for (let L = 1; L < layers; L++) {
@@ -217,6 +219,7 @@ export function buildAlley({ W, D, H, t, fingerWidth }, params) {
           role: 'layer', side, layer: L, building: b.id,
           polys: [toPanel(poly), ...b.windows.map((w) => toPanel(windowPoly(w, L * FRAME)))], scores: [], plane: facePlane(L),
         });
+        glue(`${side}-relief${L}-${b.index}`, L === 1 ? `${side}-base` : `${side}-relief${L - 1}-${b.index}`);
       }
     }
 
@@ -238,6 +241,11 @@ export function buildAlley({ W, D, H, t, fingerWidth }, params) {
         key: `${side}-spacer${k}`, name: `${sideName} spacer ${k + 1}`, group, role: 'spacer', side,
         polys: [poly], scores: [], plane: { o: [x, ys, t], U: [1, 0, 0], V: [0, 0, 1], n: [0, -1, 0] },
       });
+      const key = `${side}-spacer${k}`;
+      glue(key, `shell-${side}`);
+      glue(key, `${side}-base`);
+      glue(key, 'shell-bottom');
+      if (k === spacerYs.length - 1) glue(key, 'shell-back');
     });
     backHoles.push(wireHole(side === 'left' ? t + c / 2 : W - t - c / 2));
 
@@ -293,6 +301,12 @@ export function buildAlley({ W, D, H, t, fingerWidth }, params) {
       { key: 'backdrop-spacer1', name: 'Backdrop spacer 2', group: 'Backdrop', role: 'spacer', side: 'back', polys: [rectPoly(0, 0, cb, hb)], scores: [],
         plane: { o: [sx1 - t, Di, t], U: [0, -1, 0], V: [0, 0, 1], n: [-1, 0, 0] } },
     );
+    glue('backdrop', 'shell-bottom');
+    for (const key of ['backdrop-spacer0', 'backdrop-spacer1']) {
+      glue(key, 'shell-back');
+      glue(key, 'backdrop');
+      glue(key, 'shell-bottom');
+    }
     backHoles.push(wireHole(W / 2));
     const lit = wins.filter((w) => w.lit);
     if (lit.length) {
@@ -305,6 +319,7 @@ export function buildAlley({ W, D, H, t, fingerWidth }, params) {
   // ---------------------------------------------------------------- shell
   const shell = nookWalls({ W, D, H, t, fingerWidth, holes: { back: backHoles } });
   parts.unshift(...shell.parts);
+  joints.unshift(...shell.joints);
 
   if (skippedTotal) {
     warnings.push({ level: 'info', msg: `${skippedTotal} window column${skippedTotal > 1 ? 's were' : ' was'} too small to cut at the back of the alley and left out — raise the window size or lower the perspective.` });
@@ -331,7 +346,7 @@ export function buildAlley({ W, D, H, t, fingerWidth }, params) {
   steps.push({ group: 'Shell', text: 'Test the lights, then glue the roof on. Paint the back wall above the skyline as sky.' });
 
   return {
-    parts, lights, steps, warnings, minFinger: shell.minFinger,
+    parts, joints, lights, steps, warnings, minFinger: shell.minFinger,
     alley: { layers, cavity: c, horizon: Vz, street: { x0: sx0, x1: sx1 }, buildings, backdrop: back },
   };
 }

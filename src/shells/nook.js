@@ -1,7 +1,7 @@
 // The basic book-nook shell: a finger-jointed box with an open front
 // (bottom, top, two sides, back), sized to slide into a shelf gap.
 
-import { buildBox, faceFrame } from '../box.js';
+import { buildBox, faceFrame, FACES } from '../box.js';
 
 export const SHELL_FACES = ['bottom', 'back', 'left', 'right', 'top'];
 const FACE_NAMES = { bottom: 'Floor', top: 'Roof', back: 'Back wall', left: 'Left wall', right: 'Right wall' };
@@ -19,13 +19,19 @@ export function nookWalls({ W, D, H, t, fingerWidth, holes = {} }) {
     scores: p.scores,
     plane: faceFrame(p.face, W, D, H, t, 'inner'),
   }));
-  return { parts, minFinger: res.minFinger };
+  // finger joints: every pair of walls that share an edge
+  const joints = [];
+  SHELL_FACES.forEach((f, i) => SHELL_FACES.slice(i + 1).forEach((g) => {
+    if (FACES[f].nb.includes(g)) joints.push({ a: `shell-${f}`, b: `shell-${g}`, kind: 'finger' });
+  }));
+  return { parts, joints, minFinger: res.minFinger };
 }
 
 export function buildNook(dims) {
-  const { parts, minFinger } = nookWalls(dims);
+  const { parts, joints, minFinger } = nookWalls(dims);
   return {
     parts,
+    joints,
     minFinger,
     lights: [],
     warnings: [],
