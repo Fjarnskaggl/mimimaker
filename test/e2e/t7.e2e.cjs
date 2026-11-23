@@ -90,3 +90,23 @@ test('phone: the credit wraps inside the inspector', async () => {
   await shot(page, 'credit-phone');
   await ctx.close();
 });
+
+test('saving a remix as a file and opening it again keeps the credit', async () => {
+  const ctx = await browser.newContext({ acceptDownloads: true });
+  const page = await openShared(ctx, kitchenHash);
+  await page.locator('#sidebar .remix-credit').waitFor({ timeout: 5000 });
+  await page.click('#btn-file');
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btn-save')]);
+  const file = await dl.path();
+  // a fresh browser, so nothing is remembered
+  const ctx2 = await browser.newContext();
+  const p2 = await ctx2.newPage();
+  await p2.goto(URL);
+  await p2.waitForFunction(() => window.mimimaker?.kit, null, { timeout: 8000 });
+  assert.equal(await p2.locator('#sidebar .remix-credit').count(), 0);
+  await p2.setInputFiles('#file-open', file);
+  await p2.locator('#sidebar .remix-credit').waitFor({ timeout: 5000 });
+  assert.match(await p2.locator('#sidebar .remix-credit').innerText(), /Remix of Cottage Kitchen by mimimaker/);
+  await ctx2.close();
+  await ctx.close();
+});

@@ -998,9 +998,10 @@ async function shareLink() {
 }
 
 // ------------------------------------------------------------------ start
+// T7: a room started from Start is not a remix, so it drops the remix credit.
+function freshRoom(next) { delete next.origin; return next; }
 function replaceKit(next, message) {
   kit = next;
-  delete kit.origin; // T7: a new room is not a remix
   $('#kit-name').value = kit.name;
   view.sel = null;
   thumbCache.clear();
@@ -1014,7 +1015,7 @@ function buildStart() {
   const dlg = $('#start');
   const cards = ROOM_TYPES.map((rt) => h('button', {
     class: 'rt-card', type: 'button', 'aria-label': `Start from ${rt.name}`, 'data-room': rt.id,
-    onclick: () => replaceKit(applyRoomType(kit, rt.id), `${rt.name} loaded. Click any piece to change it.`),
+    onclick: () => replaceKit(freshRoom(applyRoomType(kit, rt.id)), `${rt.name} loaded. Click any piece to change it.`),
   }, h('span', { class: 'thumb' }), h('strong', {}, rt.name), h('span', { class: 'rt-blurb' }, rt.blurb)));
   const blank = h('button', {
     id: 'start-blank', class: 'rt-card blank', type: 'button',
@@ -1023,7 +1024,7 @@ function buildStart() {
       Object.assign(next, { name: 'My room', items: [], openings: [], shell: null });
       delete next.roomType;
       next.lighting = { ...next.lighting, enabled: false, leds: [] };
-      replaceKit(next, 'Blank room ready. Add pieces from the Pieces drawer.');
+      replaceKit(freshRoom(next), 'Blank room ready. Add pieces from the Pieces drawer.');
     },
   }, h('span', { class: 'thumb' }, ic('plus')), h('strong', {}, 'Blank room'), h('span', { class: 'rt-blurb' }, 'An empty box at the current size. Add your own pieces.'));
   dlg.replaceChildren(h('div', { class: 'start-inner' },
