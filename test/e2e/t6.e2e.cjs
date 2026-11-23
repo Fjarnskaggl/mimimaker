@@ -89,7 +89,8 @@ test('WebGL viewer: walls and floor wear the room palette’s textures; the caf�
   await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().texturesReady, null, { timeout: 10000 });
   const s = await sample(page);
   assert.ok(s.textured >= 4, `textured meshes: ${s.textured}`);
-  assert.ok(s.textures.length >= 2, `textures: ${s.textures}`);
+  // the reading nook's palette: sprig wallpaper and plank floor (raw finishes alone don't count)
+  for (const id of ['wallpaper-sprig', 'wood-planks']) assert.ok(s.textures.includes(id), `${id} in ${s.textures}`);
   // switch to the café: its walls are brick
   await page.locator('.rt-card[aria-label="Start from Little café"]').evaluate((e) => { e.click(); e.click(); });
   await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().textures.includes('brick'), null, { timeout: 10000 });

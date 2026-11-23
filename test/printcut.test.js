@@ -164,7 +164,7 @@ test('parsePath rejects relative commands and missing numbers', () => {
 test('a part a hair over the print area is still split, never dropped', () => {
   const W = PRINT_AREA.w - 2 * PRINT_BLEED;
   const kit = defaultKit();
-  const part = { id: 1, name: 'Wide', group: 'Wallpaper', material: 'paper', w: W + 5e-10, h: 50, polys: [rectPoly(0, 0, W + 5e-10, 50)], scores: [] };
+  const part = { id: 1, name: 'Wide', group: 'Wallpaper', print: true, material: 'paper', w: W + 5e-10, h: 50, polys: [rectPoly(0, 0, W + 5e-10, 50)], scores: [] };
   const compiled = { parts: [part], usedMats: kit.materials.filter((m) => m.id === 'paper') };
   const { sheets, oversize } = printSheets(compiled, kit);
   assert.deepEqual(oversize, []);
