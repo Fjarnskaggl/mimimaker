@@ -33,6 +33,56 @@ export function profileFingers(L, t, n, keepEnds) {
   return out;
 }
 
+/**
+ * Where the tabs go on a jointed edge. Like store-bought miniature house kits,
+ * an edge gets as few tabs as hold it square instead of a comb of fingers:
+ * one in the middle of a short edge, two near the corners of a medium one (so
+ * the joint can't rack), and a third in the middle of a long one (so it can't
+ * bow). Tabs widen with the edge (about 12 % of it, from `fingerWidth` up to
+ * three times that) and no segment is narrower than `fingerWidth`, so there
+ * are no slivers for a blade to tear. An edge shorter than three finger widths
+ * gets no tab at all: one panel sits in a plain notch along the other.
+ *
+ * Returns an odd number of segments {a0, a1, tab} covering 0…L; the tabs are
+ * the odd ones. The higher-ranked panel keeps the even segments (and so both
+ * corners), its partner keeps the tabs (see profileJoint).
+ */
+export function jointSegments(L, fingerWidth) {
+  const fw = fingerWidth;
+  if (L < 3 * fw) return [{ a0: 0, a1: L, tab: false }];
+  let k = L < 60 ? 1 : L <= 160 ? 2 : 3;
+  let w = Math.min(Math.max(0.12 * L, fw), 3 * fw);
+  while (k > 1 && L < k * w + (k + 1) * fw) k--;
+  const cuts = [];
+  if (k === 1) {
+    w = Math.min(w, L / 3);
+    cuts.push((L - w) / 2);
+  } else {
+    // outer tabs centred ~20 % in from each corner, the rest spread between
+    const end = Math.min(Math.max(fw, 0.2 * L - w / 2), (L - k * w - (k - 1) * fw) / 2);
+    const gap = (L - 2 * end - k * w) / (k - 1);
+    for (let i = 0; i < k; i++) cuts.push(end + i * (w + gap));
+  }
+  const segs = [];
+  let a = 0;
+  for (const c of cuts) {
+    segs.push({ a0: a, a1: c, tab: false }, { a0: c, a1: c + w, tab: true });
+    a = c + w;
+  }
+  segs.push({ a0: a, a1: L, tab: false });
+  return segs;
+}
+
+/** Edge profile for one side of a sparse joint; `keepEnds` = the higher-ranked panel. */
+export function profileJoint(segs, t, keepEnds) {
+  return segs.map(({ a0, a1, tab }) => ({ a0, a1, d: tab === keepEnds ? t : 0 }));
+}
+
+/** Narrowest segment of a jointed edge (for the blade-size warning). */
+export function narrowestSegment(segs) {
+  return Math.min(...segs.map((s) => s.a1 - s.a0));
+}
+
 /** `count` evenly spaced tabs protruding by `t` (used for shelves). */
 export function profileTabs(L, t, count = 2) {
   const n = 2 * count + 1;

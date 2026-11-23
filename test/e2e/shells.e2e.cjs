@@ -281,3 +281,18 @@ test('shell panel: a two-storey house, with a stair picker and internal walls', 
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('shell panel: a two-storey house with a spiral stair', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await panel(page).locator('select[data-shell=type]').selectOption('twostorey');
+  await panel(page).locator('select[data-shell-param=stairs]').selectOption('spiral');
+  assert.equal((await kit(page)).shell.params.stairs, 'spiral');
+  await panel(page).locator('input[data-shell-param=spiralRadius]').fill('24');
+  assert.equal((await kit(page)).shell.params.spiralRadius, 24);
+  await page.waitForFunction(() => document.querySelectorAll('#view svg path, #view canvas').length > 10);
+  assert.equal(await page.locator('#warnings .warn.error').count(), 0, await page.locator('#warnings').innerText());
+  if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'shell-spiral.png') });
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

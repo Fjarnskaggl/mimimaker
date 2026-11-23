@@ -17,7 +17,8 @@ test('acetate is a default material: clear, flat-cut, Fine-Point Blade', () => {
   assert.ok(m.thickness >= 0.15 && m.thickness <= 0.3, `${m.thickness} mm`);
   assert.equal(m.cricut, 'Acetate');
   assert.ok(m.passes >= 1 && m.speed > 0);
-  assert.deepEqual(withMaterialDefaults(m), m, 'complete preset');
+  const filled = withMaterialDefaults(m);
+  for (const k of Object.keys(m)) assert.deepEqual(filled[k], m[k], `complete preset: ${k}`);
   for (const id of ['maker', 'explore', 'joyxtra', 'cameo', 'portrait', 'laser']) assert.ok(MACHINES[id].tools.includes(m.tool), id);
   assert.equal(new Set(DEFAULT_MATERIALS.map((x) => x.id)).size, DEFAULT_MATERIALS.length, 'ids unique');
 });

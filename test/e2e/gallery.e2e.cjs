@@ -36,8 +36,12 @@ test('gallery: cards render and "Open in mimimaker" opens that kit in the studio
   await page.goto(`${BASE}dist/e2e-gallery/index.html`);
   const cards = page.locator('.card');
   assert.equal(await cards.count(), readKits(path.join(ROOT, 'kits')).length);
-  // every render image actually loaded
-  const broken = await page.$$eval('.card img', (imgs) => imgs.filter((i) => !i.complete || !i.naturalWidth).map((i) => i.src));
+  // every render image actually loaded. They are loading="lazy", so the page's
+  // load event doesn't wait for them: make them eager and wait for each.
+  const broken = await page.$$eval('.card img', (imgs) => Promise.all(imgs.map((i) => {
+    i.loading = 'eager';
+    return i.complete ? i : new Promise((done) => { i.addEventListener('load', () => done(i), { once: true }); i.addEventListener('error', () => done(i), { once: true }); });
+  })).then((all) => all.filter((i) => !i.naturalWidth).map((i) => i.src)));
   assert.deepEqual(broken, []);
   await shot(page, 'desktop');
   await page.click('#kit-kitchen .open');

@@ -421,6 +421,23 @@ details.section > summary:has(.count)::after { margin-left: var(--space-2); }
 .mat-row input[type=number] { font-family: var(--font-mono); }
 .mat-row input[type=color] { padding: 0; }
 .mat-head { font: 600 12px/16px var(--font-sans); color: var(--ink-muted); }
+/* T3 material library */
+.mat-library { display: grid; gap: var(--space-3); }
+.mat-library .mat-row { grid-template-columns: 30px minmax(140px, 1fr) 72px 72px 72px 80px 236px; }
+.mat-actions { display: flex; gap: var(--space-1, 4px); }
+.mat-actions button[disabled] { opacity: .45; cursor: not-allowed; }
+.mat-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); padding: var(--space-2) var(--space-3); margin-left: 38px; background: var(--surface-sunken); border-radius: var(--radius-sm); }
+.mat-group { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; align-content: start; }
+.mat-group legend { font: 600 12px/16px var(--font-sans); color: var(--ink-muted); padding: 0 0 4px; }
+.mat-field { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: var(--space-2); font: 500 12px/16px var(--font-sans); color: var(--ink-muted); }
+.mat-field input, .mat-field select { width: 100%; min-width: 0; height: var(--control-h-sm); padding: 0 var(--space-2); border: 1px solid var(--line-control); border-radius: var(--radius-sm); background: var(--surface); font: 500 13px var(--font-sans); color: var(--ink); }
+.mat-lib-head { display: flex; gap: var(--space-4); align-items: flex-start; flex-wrap: wrap; }
+.mat-lib-head .mat-field { grid-template-columns: auto 56px; }
+.mat-cost { flex: 1; min-width: 220px; font: 500 13px/18px var(--font-sans); }
+.mat-cost ul { margin: 0; padding-left: 18px; color: var(--ink-muted); }
+.mat-cost em { color: var(--ink-muted); }
+.mat-total { margin-top: 4px; }
+.mat-lib-foot { display: flex; gap: var(--space-2); }
 
 /* ------------------------------------------------------- light: wiring */
 .wiring { display: grid; gap: var(--space-4); }
@@ -540,6 +557,9 @@ dialog.start::backdrop { background: rgba(10, 15, 13, .45); }
   .start-head h2 { font-size: 34px; line-height: 38px; }
   .start-head .mimi { width: 64px; }
   .mat-row { grid-template-columns: 30px minmax(120px, 1fr) 64px 64px 64px; }
+  .mat-library .mat-row { grid-template-columns: 30px minmax(120px, 1fr) 56px 56px 56px 64px; }
+  .mat-library .mat-row .mat-actions { grid-column: 2 / -1; }
+  .mat-settings { margin-left: 0; }
   .make-setup .field { width: 100%; }
   .page-head h2, .guide-tools h2 { font-size: 26px; line-height: 30px; }
 }
