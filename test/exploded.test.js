@@ -111,7 +111,8 @@ test('explodedViewSVG: an SVG for each build step with parts, none for wiring in
 test('shell kits get exploded views too', () => {
   const kit = { ...defaultKit(), shell: { type: 'staircase', gap, clearance: 2, params: {} } };
   const { compiled, steps } = setup(kit);
-  for (const s of steps) assert.ok(explodedViewSVG(kit, compiled, steps, s.n), `step ${s.n} ${s.title}`);
+  // the shell's own LEDs add an info step (wiring), which has no picture, as in room kits
+  for (const s of steps) if (s.kind !== 'info') assert.ok(explodedViewSVG(kit, compiled, steps, s.n), `step ${s.n} ${s.title}`);
 });
 
 test('furniture is built on the bench: its steps show the piece alone, not the room', () => {
