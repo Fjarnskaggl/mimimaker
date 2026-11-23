@@ -46,3 +46,45 @@ export function kitFromHash(hash) {
   const h = (hash || '').replace(/^#/, '');
   return h.startsWith(PREFIX) ? h.slice(PREFIX.length) : null;
 }
+
+// ------------------------------------------------------------ remix credits
+// A kit opened from the gallery or from someone's share link carries
+// `kit.origin`: where it came from. It travels with the design (saved in the
+// browser, in kit.json and in share links), so a remix of a remix still
+// credits the kit it started from. Starting a new room drops it.
+
+export const LICENCES = {
+  'CC-BY-4.0': { name: 'CC BY 4.0 (credit the author)', url: 'https://creativecommons.org/licenses/by/4.0/' },
+  'CC-BY-SA-4.0': { name: 'CC BY-SA 4.0 (credit, share remixes alike)', url: 'https://creativecommons.org/licenses/by-sa/4.0/' },
+  'CC-BY-NC-4.0': { name: 'CC BY-NC 4.0 (credit, no selling)', url: 'https://creativecommons.org/licenses/by-nc/4.0/' },
+  CC0: { name: 'CC0 (public domain)', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+};
+export const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const HANDLE_RE = /^[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,37}[A-Za-z0-9])?$/;
+
+/** The kit's origin as { id?, title, author?, licence? }, or null. Untrusted input is cleaned. */
+export function kitOrigin(kit) {
+  const o = kit?.origin;
+  if (!o || typeof o !== 'object' || typeof o.title !== 'string' || !o.title.trim()) return null;
+  const out = {};
+  if (typeof o.id === 'string' && ID_RE.test(o.id) && o.id.length <= 60) out.id = o.id;
+  out.title = o.title.trim().slice(0, 80);
+  if (typeof o.author === 'string' && HANDLE_RE.test(o.author)) out.author = o.author;
+  if (Object.hasOwn(LICENCES, o.licence)) out.licence = o.licence;
+  return out;
+}
+
+/** A copy of the kit that records `meta` (a gallery entry's meta) as its origin. */
+export function withOrigin(kit, meta) {
+  const out = structuredClone(kit);
+  out.origin = kitOrigin({ origin: meta });
+  if (!out.origin) delete out.origin;
+  return out;
+}
+
+/** "Remix of <title> by <author> · <licence>", or '' when there is no origin. */
+export function creditText(origin) {
+  const o = kitOrigin({ origin });
+  if (!o) return '';
+  return `Remix of ${o.title}${o.author ? ` by ${o.author}` : ''}${o.licence ? ` · ${LICENCES[o.licence].name}` : ''}`;
+}

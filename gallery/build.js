@@ -11,7 +11,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compileKit } from '../src/kit.js';
 import { renderScene } from '../src/preview3d.js';
-import { encodeKit } from '../src/share.js';
+import { encodeKit, withOrigin } from '../src/share.js';
 import { LICENCES, validateCollection } from './kits.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -56,7 +56,7 @@ export async function buildGallery(entries, { appUrl = '../' } = {}) {
   const cards = [];
   for (const entry of sorted) {
     renders[`renders/${entry.meta.id}.svg`] = renderScene(compileKit(entry.kit).faces3d, { yaw: -30, pitch: 24 });
-    cards.push(card(entry, byId, `${appUrl}#kit=${await encodeKit(entry.kit)}`));
+    cards.push(card(entry, byId, `${appUrl}#kit=${await encodeKit(withOrigin(entry.kit, entry.meta))}`));
   }
   const html = `<!doctype html>
 <html lang="en">

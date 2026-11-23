@@ -15,19 +15,13 @@
 //   }
 
 import { compileKit } from '../src/kit.js';
+import { LICENCES, ID_RE, HANDLE_RE } from '../src/share.js';
 
 export const FORMAT = 'mimimaker-kit';
 export const FORMAT_VERSION = 1;
 
-export const LICENCES = {
-  'CC-BY-4.0': { name: 'CC BY 4.0 (credit the author)', url: 'https://creativecommons.org/licenses/by/4.0/' },
-  'CC-BY-SA-4.0': { name: 'CC BY-SA 4.0 (credit, share remixes alike)', url: 'https://creativecommons.org/licenses/by-sa/4.0/' },
-  'CC-BY-NC-4.0': { name: 'CC BY-NC 4.0 (credit, no selling)', url: 'https://creativecommons.org/licenses/by-nc/4.0/' },
-  CC0: { name: 'CC0 (public domain)', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
-};
-
-const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const HANDLE_RE = /^[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,37}[A-Za-z0-9])?$/;
+// One licence list for the gallery and the app's remix credits.
+export { LICENCES };
 
 /** Wrap a kit and its metadata as a kits/ entry. */
 export function makeEntry(kit, { id, title, author, licence = 'CC-BY-4.0', remixedFrom = null, description = '', tags = [] }) {

@@ -36,6 +36,7 @@ import { kitHandCutFiles } from './export/handcut.js';
 import { kitPrintCutFiles } from './export/printcut.js';
 // T2 shells
 import { shellSection, applyRoomLocks, appendRoofControls, syncShellRoom, shellWiresLights } from './ui/t2.js';
+import { remixCredit, openedSharedText } from './ui/t7.js';
 // [T5] lighting UI
 import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
@@ -305,6 +306,7 @@ function roomInspector() {
     h('span', { class: 'k2' }, `${o.wall} wall`)));
   return [
     inspHead('Room', 'The room', `${cm(r.width)} × ${cm(r.depth)} × ${cm(r.height)} cm · 1:${kit.scale}`),
+    remixCredit(kit, { h }), // T7 remix credit
     roomSection(),
     shellSection(kit, { h, section, numberField, selectField, checkField, changed, restructured }), // T2 shells
     texturePicker({ section, selectField, getKit: () => kit, setKit: (next) => { kit = next; update(); } }), // T6 textures
@@ -992,6 +994,8 @@ async function shareLink() {
 }
 
 // ------------------------------------------------------------------ start
+// T7: a room started from Start is not a remix, so it drops the remix credit.
+function freshRoom(next) { delete next.origin; return next; }
 function replaceKit(next, message) {
   kit = next;
   $('#kit-name').value = kit.name;
@@ -1007,7 +1011,7 @@ function buildStart() {
   const dlg = $('#start');
   const cards = ROOM_TYPES.map((rt) => h('button', {
     class: 'rt-card', type: 'button', 'aria-label': `Start from ${rt.name}`, 'data-room': rt.id,
-    onclick: () => replaceKit(applyRoomType(kit, rt.id), `${rt.name} loaded. Click any piece to change it.`),
+    onclick: () => replaceKit(freshRoom(applyRoomType(kit, rt.id)), `${rt.name} loaded. Click any piece to change it.`),
   }, h('span', { class: 'thumb' }), h('strong', {}, rt.name), h('span', { class: 'rt-blurb' }, rt.blurb)));
   const blank = h('button', {
     id: 'start-blank', class: 'rt-card blank', type: 'button',
@@ -1016,7 +1020,7 @@ function buildStart() {
       Object.assign(next, { name: 'My room', items: [], openings: [], shell: null });
       delete next.roomType;
       next.lighting = { ...next.lighting, enabled: false, leds: [] };
-      replaceKit(next, 'Blank room ready. Add pieces from the Pieces drawer.');
+      replaceKit(freshRoom(next), 'Blank room ready. Add pieces from the Pieces drawer.');
     },
   }, h('span', { class: 'thumb' }, ic('plus')), h('strong', {}, 'Blank room'), h('span', { class: 'rt-blurb' }, 'An empty box at the current size. Add your own pieces.'));
   dlg.replaceChildren(h('div', { class: 'start-inner' },
@@ -1045,7 +1049,7 @@ async function init() {
   if (shared) {
     try {
       kit = normalizeKit(await decodeKit(shared));
-      setTimeout(() => toast(`Opened a shared design: ${kit.name}. Your own designs are untouched until you edit this one.`), 0);
+      setTimeout(() => toast(openedSharedText(kit)), 0); // T7
     } catch {
       setTimeout(() => toast('That share link is damaged, so your last design was opened instead.', 'error'), 0);
     }

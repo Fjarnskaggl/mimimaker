@@ -542,3 +542,7 @@ dialog.start::backdrop { background: rgba(10, 15, 13, .45); }
   .make-setup .field { width: 100%; }
   .page-head h2, .guide-tools h2 { font-size: 26px; line-height: 30px; }
 }
+
+/* T7 remix credit, under the room inspector's heading */
+.remix-credit { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.remix-credit a { color: inherit; }
