@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mimimaker — miniature kit designer</title>
+  <meta name="description" content="Design miniature room kits and export Cricut-ready cut files.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 14 16 5l12 9v13H4z' fill='%23c0603a'/%3E%3Crect x='13' y='18' width='6' height='9' fill='%23fff8ef'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 14 16 5l12 9v13H4z" fill="currentColor"/><rect x="13" y="18" width="6" height="9" fill="var(--bg)"/></svg>
+      <span>mimimaker</span>
+    </div>
+    <input id="kit-name" class="kit-name" aria-label="Kit name" spellcheck="false">
+    <div class="actions">
+      <button id="btn-new" class="ghost" type="button">New</button>
+      <label class="ghost button" for="file-open">Open…</label>
+      <input id="file-open" type="file" accept=".json,application/json" hidden>
+      <button id="btn-save" class="ghost" type="button">Save .json</button>
+      <button id="btn-zip" class="primary" type="button">Download kit (.zip)</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="sidebar" class="sidebar" aria-label="Kit settings"></aside>
+    <main class="main">
+      <div class="main-head">
+        <nav class="tabs" role="tablist">
+          <button role="tab" data-tab="preview" aria-selected="true">3D preview</button>
+          <button role="tab" data-tab="sheets" aria-selected="false">Cut sheets</button>
+          <button role="tab" data-tab="guide" aria-selected="false">Assembly guide</button>
+        </nav>
+        <div id="summary" class="summary"></div>
+      </div>
+      <div id="warnings" class="warnings" aria-live="polite"></div>
+      <section id="view" class="view"></section>
+    </main>
+  </div>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

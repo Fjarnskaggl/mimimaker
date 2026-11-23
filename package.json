@@ -1,0 +1,12 @@
+{
+  "name": "mimimaker",
+  "version": "0.1.0",
+  "description": "Design miniature room kits and export Cricut-ready cut files",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "MIT"
+}
