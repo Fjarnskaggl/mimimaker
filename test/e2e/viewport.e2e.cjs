@@ -148,3 +148,15 @@ test('keyboard shortcuts work on a piece picked in the 3D view, not only on the 
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('clicking empty space in the 3D view clears the selection, as on the plan', async () => {
+  const page = await open();
+  const p = await pointFor(page, 1);
+  await page.mouse.click(p.x, p.y);
+  assert.deepEqual(await outlined(page), [1]);
+  const box = await page.locator('.stage').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + 70); // above the room
+  assert.deepEqual(await outlined(page), [], 'outline cleared');
+  assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Room', 'inspector back on the room');
+  await page.close();
+});
