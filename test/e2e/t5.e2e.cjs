@@ -100,6 +100,25 @@ test('the power box can be mounted flush behind its wall', async () => {
   await page.close();
 });
 
+test('a light can become a ceiling fan with a blade-span field, and the kit cuts its blades', async () => {
+  const page = await open();
+  await page.evaluate(() => { window.mimimaker.kit.room.ceiling = true; window.mimimaker.refresh(); });
+  await page.click('[data-step=light]');
+  await page.click('[data-select-led="0"]');
+  await page.selectOption('select[data-t5=effect]', 'fan');
+  await page.fill('input[data-t5=sizeMm]', '70');
+  const res = await page.evaluate(() => ({
+    led: JSON.parse(JSON.stringify(window.mimimaker.kit.lighting.leds[0])),
+    parts: window.mimimaker.compiled.parts.map((p) => p.name),
+  }));
+  assert.equal(res.led.effect, 'fan');
+  assert.equal(res.led.sizeMm, 70);
+  assert.ok(res.parts.some((n) => /fan blades/.test(n)));
+  await shot(page, 'effect-fan', '#sidebar');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('a hidden base shows its switch fields and adds the base parts', async () => {
   const page = await open();
   await page.click('[data-step=light]');
