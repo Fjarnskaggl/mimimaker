@@ -94,3 +94,21 @@ test('the check passes on this repository', () => {
   const res = checkTestFirst({ cwd: resolve('.'), base: 'HEAD' });
   assert.equal(res.ok, true, res.reason);
 });
+
+test('verdict: a refactor note does not excuse tests that already pass on main', () => {
+  const res = verdict({ source: ['src/a.js'], tests: ['test/a.test.js'], failsOnBase: false, passesOnHead: true, refactor: true });
+  assert.equal(res.ok, false, 'changed tests are still checked');
+  assert.match(res.reason, /already pass/i);
+  assert.equal(verdict({ source: ['src/a.js'], tests: [], refactor: true }).ok, true, 'a pure refactor with no test changes still passes');
+});
+
+test('checkTestFirst still checks changed tests when one commit says No-behaviour-change', () => {
+  const r = repo();
+  writeFileSync(join(r.dir, 'test/add2.test.js'), "import { test } from 'node:test'; import assert from 'node:assert'; import { add } from '../src/add.js';\ntest('add again', () => assert.equal(add(2, 2), 4));\n");
+  writeFileSync(join(r.dir, 'src/add.js'), 'export const add = (a, b) => b + a;\n');
+  r.git('add', '-A'); r.git('commit', '-qm', 'Reorder operands\n\nNo-behaviour-change: screenshot only');
+  const res = checkTestFirst({ cwd: r.dir, base: 'main' });
+  r.done();
+  assert.equal(res.ok, false, res.reason);
+  assert.match(res.reason, /already pass/i);
+});
