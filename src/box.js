@@ -3,11 +3,12 @@
 // A box has outer dimensions W (x, width) × D (y, depth, front at y=0) ×
 // H (z, height) and any subset of its six faces. Every panel is drawn at its
 // full outer size; along each shared edge the t-wide strip is split into an
-// odd number of fingers, and the higher-ranked panel keeps the end fingers.
+// odd number of segments, a few tabs placed for stability (see jointSegments),
+// and the higher-ranked panel keeps the end segments.
 // Because ranks are a strict order, each corner cube ends up in exactly one
 // panel, so the parts interlock with no gaps and no overlaps.
 
-import { profilePlain, fingerCount, profileFingers, profileTabs, panelOutline, rectPoly } from './geometry.js';
+import { profilePlain, jointSegments, profileJoint, narrowestSegment, profileTabs, panelOutline, rectPoly } from './geometry.js';
 
 // Panel (u, v) axes and the neighbour on each edge (bottom, right, top, left).
 export const FACES = {
@@ -24,6 +25,17 @@ export const RANK = { bottom: 3, top: 3, front: 2, back: 2, left: 1, right: 1 };
 
 export function autoFingerWidth(t) {
   return Math.max(3, t * 3);
+}
+
+/**
+ * Smallest tab or notch (mm) a cutter makes cleanly in a material: below this
+ * the Knife Blade tears board and the Fine-Point Blade drags card, while a
+ * laser's thin kerf manages finer detail. Joints never go narrower.
+ */
+export const MIN_FEATURE = { knife: 3, rotary: 4, fine: 1.5, laser: 1 };
+export function minJointFeature(machine, material) {
+  if (machine?.family === 'laser') return MIN_FEATURE.laser;
+  return MIN_FEATURE[material?.tool] ?? MIN_FEATURE.fine;
 }
 
 /**
@@ -52,10 +64,12 @@ export function faceFrame(face, W, D, H, inset = 0, side = 'outer') {
  * @param {object} [o.holes] face -> polygons (panel coords) to cut out
  * @param {object} [o.scores] face -> [[p,q],…] score lines (panel coords)
  * @param {number[]} [o.shelves] z of each shelf's underside (mm from outer bottom)
+ * @param {number} [o.minFeature] smallest tab or notch the cutter makes cleanly
+ *   (mm, see minJointFeature); raises the finger width when it is smaller
  */
-export function buildBox({ W, D, H, t, faces, fingerWidth, holes = {}, scores = {}, shelves = [], clearance = 0.1 }) {
+export function buildBox({ W, D, H, t, faces, fingerWidth, holes = {}, scores = {}, shelves = [], clearance = 0.1, minFeature = 0 }) {
   const present = new Set(faces);
-  const fw = fingerWidth > 0 ? fingerWidth : autoFingerWidth(t);
+  const fw = Math.max(fingerWidth > 0 ? fingerWidth : autoFingerWidth(t), minFeature);
   let minFinger = Infinity;
   const slotHoles = { left: [], right: [], back: [] };
   const shelfPanels = [];
@@ -68,8 +82,10 @@ export function buildBox({ W, D, H, t, faces, fingerWidth, holes = {}, scores = 
     const y0 = present.has('front') ? t : 0;
     const y1 = present.has('back') ? D - t : D;
     const Ds = y1 - y0;
-    const side = profileTabs(Ds, t, Ds > 25 ? 2 : 1);
-    const back = present.has('back') ? profileTabs(Wi, t, Wi > 25 ? 2 : 1) : profilePlain(Wi);
+    // two tabs per edge when they stay at least minFeature wide, else one
+    const shelfTabs = (L) => (L > 25 && L / 5 >= minFeature ? 2 : 1);
+    const side = profileTabs(Ds, t, shelfTabs(Ds));
+    const back = present.has('back') ? profileTabs(Wi, t, shelfTabs(Wi)) : profilePlain(Wi);
     const outline = panelOutline(Wi, Ds, [profilePlain(Wi), side, back, side]);
     const c = clearance;
     for (const s of side) if (s.d < 0) {
@@ -90,9 +106,9 @@ export function buildBox({ W, D, H, t, faces, fingerWidth, holes = {}, scores = 
     const edges = FACES[f].nb.map((g, i) => {
       const L = i % 2 === 0 ? w : h;
       if (!present.has(g)) return profilePlain(L);
-      const n = fingerCount(L, fw);
-      minFinger = Math.min(minFinger, L / n);
-      return profileFingers(L, t, n, RANK[f] > RANK[g]);
+      const segs = jointSegments(L, fw);
+      minFinger = Math.min(minFinger, narrowestSegment(segs));
+      return profileJoint(segs, t, RANK[f] > RANK[g]);
     });
     panels.push({
       kind: 'panel',

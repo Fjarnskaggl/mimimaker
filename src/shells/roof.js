@@ -15,7 +15,7 @@
 // Axes as in box.js (x width, y depth with the front at y = 0, z up); the
 // roof sits on a box whose top is at z0.
 
-import { cleanPolygon, fingerCount, panelOutline, profilePlain } from '../geometry.js';
+import { cleanPolygon, jointSegments, narrowestSegment, panelOutline, profilePlain } from '../geometry.js';
 import { autoFingerWidth } from '../box.js';
 
 /** Rise of a gable roof over a box `W` wide in board `t` at `pitch` degrees. */
@@ -73,11 +73,11 @@ export function buildGableRoof({ W, D, t, pitch, z0, fingerWidth = 0 }) {
   sides.right.L = Lright;
   const ridgeGap = convexOverlap(rect(sides.right, Lright + 0.3), leftRect) ? hi - lo : 0.3;
 
-  // fingers along each slope's back edge: the gable keeps the even ones (and both ends)
+  // a few tabs along each slope's back edge (see jointSegments): the gable keeps the rest, and both ends
   for (const sd of Object.values(sides)) {
-    const n = fingerCount(sd.L, fw);
-    sd.segs = Array.from({ length: n }, (_, k) => ({ u0: (k * sd.L) / n, u1: ((k + 1) * sd.L) / n, tab: k % 2 === 1 }));
-    sd.minFinger = sd.L / n;
+    const segs = jointSegments(sd.L, fw);
+    sd.segs = segs.map(({ a0, a1, tab }) => ({ u0: a0, u1: a1, tab }));
+    sd.minFinger = narrowestSegment(segs);
   }
 
   // gable: on the back wall, up to the outer roof lines, notched where the tabs pass through

@@ -1,7 +1,7 @@
 // Compile a kit description into numbered parts, cut sheets, 3D preview
 // faces, assembly steps and warnings.
 
-import { buildBox, faceFrame } from './box.js';
+import { buildBox, faceFrame, autoFingerWidth, minJointFeature } from './box.js';
 import { foldNet, tabbedRect } from './fold.js';
 import { CATALOG, itemSize } from './catalog.js';
 import { MACHINES, TOOL_NAMES, effectiveSheet } from './materials.js';
@@ -87,6 +87,8 @@ export function compileKit(kit) {
       polys: polys2d.map((poly) => poly.map((p) => xf.p(map(p)))), n: xf.n(plane.n),
     });
   };
+  // Joint tabs never go narrower than the machine cuts cleanly in that material.
+  const jointWidth = (mat) => Math.max(fingerWidth > 0 ? fingerWidth : autoFingerWidth(mat.thickness), minJointFeature(machine, mat));
   const checkFingers = (minFinger, mat, what) => {
     if (mat.tool === 'knife' && minFinger < MIN_KNIFE_FEATURE) {
       warn(`${what}: finger joints are only ${minFinger.toFixed(1)} mm wide — the Knife Blade is cleaner above ${MIN_KNIFE_FEATURE} mm. Make it bigger, raise the finger width, or use thinner board.`);
@@ -137,16 +139,16 @@ export function compileKit(kit) {
   // >>> T2 shells
   const roomGroup = shellPrep ? null : newGroup('Room box', rm);
   if (shellPrep) {
-    shell = compileShell(shellPrep, { t, fingerWidth, holes, getMat, newGroup, addPart, add3d, warn, xf: worldXf });
+    shell = compileShell(shellPrep, { t, fingerWidth: jointWidth(rm), holes, getMat, newGroup, addPart, add3d, warn, xf: worldXf });
   } else if (rm.kind === 'board') { // <<< T2 shells
-    const res = buildBox({ W, D, H, t, faces: roomFaces, holes, fingerWidth });
+    const res = buildBox({ W, D, H, t, faces: roomFaces, holes, fingerWidth: jointWidth(rm), minFeature: minJointFeature(machine, rm) });
     checkFingers(res.minFinger, rm, 'Room box');
     for (const p of res.panels) {
       addPart(roomGroup, ROOM_FACE_NAMES[p.face], rm, [p.outline, ...p.holes]);
       add3d(0, [p.outline, ...p.holes], faceFrame(p.face, W, D, H, t, 'inner'), worldXf, rm.color, { thickness: t });
     }
     roomGroup.steps.push(
-      `Dry-fit the walls into the floor (${fmtIds(roomGroup.parts)}). The fingers only go together one way — the floor${room.ceiling ? ' and ceiling' : ''} own the corners.`,
+      `Dry-fit the walls into the floor (${fmtIds(roomGroup.parts)}). The tabs only go together one way — the floor${room.ceiling ? ' and ceiling' : ''} own the corners.`,
       'Glue one joint at a time with PVA or wood glue, checking the corners with a square (a book corner works). Let it set for 30 minutes.',
     );
   } else {
@@ -164,7 +166,7 @@ export function compileKit(kit) {
     if (rm.thickness < 0.7) warn(`The room box is cut from ${rm.name}; laminate two layers or back it with foam board so it stands up.`, 'info');
   }
   // >>> T2 roofs: kit.room.roof = { type: 'gable', pitch } puts a bevel-free gable roof on the box
-  if (!shellPrep) compileRoof(room, { W, D, H, t, fingerWidth, rm, newGroup, addPart, add3d, warn, xf: worldXf });
+  if (!shellPrep) compileRoof(room, { W, D, H, t, fingerWidth: jointWidth(rm), rm, newGroup, addPart, add3d, warn, xf: worldXf });
   // <<< T2 roofs
 
   // ------------------------------------------------------------ trim pieces
@@ -336,7 +338,7 @@ export function compileKit(kit) {
     if (mat.kind === 'board') {
       // open boxes show their insides, so only cull back faces of closed ones
       const closed = c.faces.length === 6;
-      const res = buildBox({ W: bw, D: bd, H: bh, t: mt, faces: c.faces, shelves: c.shelves || [], scores: c.scores || {}, holes: c.holes || {}, fingerWidth });
+      const res = buildBox({ W: bw, D: bd, H: bh, t: mt, faces: c.faces, shelves: c.shelves || [], scores: c.scores || {}, holes: c.holes || {}, fingerWidth: jointWidth(mat), minFeature: minJointFeature(machine, mat) });
       checkFingers(res.minFinger, mat, title);
       const ids = res.panels.map((pn) => {
         add3d(2, [pn.outline, ...pn.holes], faceFrame(pn.face, bw, bd, bh), xf, mat.color, { cull: closed, thickness: mt });
@@ -346,7 +348,7 @@ export function compileKit(kit) {
         add3d(2, [sp.outline], { o: [sp.x0, sp.y0, sp.z + mt], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, xf, mat.color, { cull: true, thickness: mt });
         return addPart(group, `${c.name} shelf ${k + 1}`, mat, [sp.outline]);
       });
-      group.steps.push(`${c.name}: dry-fit panels ${fmtIds(ids)} — the finger joints interlock. Glue and hold square until set.`);
+      group.steps.push(`${c.name}: dry-fit panels ${fmtIds(ids)} — the tabs drop into their notches. Glue and hold square until set.`);
       if (shelfIds.length) group.steps.push(`Slide shelves ${fmtIds(shelfIds)} into the slots in the sides${c.faces.includes('back') ? ' and back' : ''} before the second side goes on.`);
       if (c.scores && Object.values(c.scores).some((l) => l.length)) group.steps.push('The score lines on the front only mark drawers/doors — don\'t fold them. Set the Knife Blade layer to "Draw" or skip them if you prefer.');
       return;
