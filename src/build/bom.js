@@ -7,7 +7,7 @@
 //   supplies: [{ id, qty, name, note, cost }]                   glue, acetate, vellum
 //   lights:   T5's shoppingList items (LEDs, power), unchanged
 //   totals: [{ currency, low, high }]   one per currency
-//   total:  the single total when there is one currency, else null
+//   total:  the total in the kit's currency (the only one unless mixed)
 //   currency, note,
 //   difficulty: { level, score, reasons[] },
 //   time: { cutMin, assemblyMin, glueMin, totalMin },   glueMin: waiting that can't overlap other work
@@ -28,14 +28,21 @@ const bomNote = (currency) => (currency === '$' ? BOM_NOTE
   : `Sheet prices come from your material library, in ${currency.trim()} (edit them on the Make step). Glue and light prices are rough estimates in US dollars from typical craft and online shops — check your local shop. ${TIME_NOTE}`);
 
 /** The kit's currency symbol: its own, else guessed from the browser's language. */
-export const bomCurrency = (kit) => kit.currency || defaultCurrency(typeof navigator !== 'undefined' ? navigator.language || '' : '');
+// Same guess as the Make step's kitCurrency (src/ui/t3.js), but only in a
+// browser: Node also has navigator.language, and the bill must not change
+// with the machine's locale.
+const browserLang = () => (typeof window !== 'undefined' && typeof navigator !== 'undefined' ? navigator.language || '' : '');
+export const bomCurrency = (kit) => kit.currency || defaultCurrency(browserLang());
+/** '$' means US dollars unless the browser says another dollar (CA, AU, NZ, MX). */
+const isUSD = (currency) => currency === '$' && !/[-_](CA|AU|NZ|MX)\b/i.test(browserLang());
 
 /** "$1.50" for an exact cost, "$1.00–2.50" for a range. */
 export function costText({ low, high, currency = '$' }) {
   return Math.abs(high - low) < 0.005 ? formatMoney(low, currency) : `${formatMoney(low, currency)}–${(Math.round(high * 100) / 100).toFixed(2)}`;
 }
 /** The bill's total(s): "$11.45–30.80", or "€8.00 + $5.50–15.00" across currencies. */
-export const totalText = (bom) => bom.totals.map(costText).join(' + ');
+export const totalText = (bom) => bom.totals.map(costText).join(' + ')
+  + (bom.sheets.some((s) => s.unpriced) ? ' plus unpriced sheets' : '');
 export const DIFFICULTY = ['Beginner', 'Intermediate', 'Advanced'];
 
 const SUPPLY_PRICES = { pva: [2, 5], stick: [1, 3], clear: [3, 6], acetate: [0.5, 1.5], vellum: [0.5, 1.5] };
@@ -81,11 +88,15 @@ export function billOfMaterials(kit, compiled, steps = buildSteps(kit, compiled)
   if (/vellum|tracing paper/i.test(text)) supplies.push(line('vellum', 1, 'Vellum or tracing paper', 'diffuses the light behind lit windows', SUPPLY_PRICES.vellum));
 
   // ------------------------------------------------------------ lights
-  const lights = shoppingList(compiled.lighting)?.items || [];
+  const lights = (shoppingList(compiled.lighting)?.items || []).map((i) => ({ ...i }));
   // a shell's suggested LED spots, until T5 plans their wiring (#16)
   const spots = compiled.lighting?.enabled ? 0 : compiled.shell?.lights?.length || 0;
   if (spots) lights.push(line('shell-leds', spots, 'Pre-wired 3 V micro LED, warm white', "one for each lit spot the shell suggests; add a battery box with switch", [0.3, 1]));
 
+  // glue and light estimates are US dollars: tagged so they're only added to
+  // sheet prices that are US dollars too
+  const est = isUSD(currency) ? '$' : 'US$';
+  for (const i of [...supplies, ...lights]) i.cost = { ...i.cost, currency: est };
   const all = [...sheetLines, ...supplies, ...lights];
   const byCur = new Map();
   for (const i of all) {
@@ -97,7 +108,7 @@ export function billOfMaterials(kit, compiled, steps = buildSteps(kit, compiled)
   }
   // the kit's own currency first
   const totals = [...byCur.values()].sort((a, b) => (b.currency === currency) - (a.currency === currency));
-  const total = totals.length === 1 ? totals[0] : null;
+  const total = totals[0]; // in the kit's currency; see totals when mixed
 
   // -------------------------------------------------------------- time
   // planned LEDs, or the shell's suggested spots (both are on the bill above)

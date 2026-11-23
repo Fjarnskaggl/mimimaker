@@ -27,7 +27,7 @@ test('lights: the lighting shopping list is part of the bill, unchanged', () => 
   const { compiled, bom } = bomOf(defaultKit());
   const list = shoppingList(compiled.lighting);
   assert.ok(list, 'the default kit is lit');
-  assert.deepEqual(bom.lights, list.items);
+  assert.deepEqual(bom.lights.map(({ cost: { low, high }, ...i }) => ({ ...i, cost: { low, high } })), list.items);
   const leds = bom.lights.filter((i) => /LED/.test(i.name)).reduce((n, i) => n + i.qty, 0);
   assert.equal(leds, compiled.lighting.leds.length);
 });

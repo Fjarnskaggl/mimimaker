@@ -38,11 +38,12 @@ test("sheets are in the kit's currency; glue and lights stay labelled US-dollar 
   kit.currency = '€';
   const { bom } = bomOf(kit);
   assert.ok(bom.sheets.every((s) => s.cost.currency === '€'));
-  assert.ok([...bom.supplies, ...bom.lights].every((i) => (i.cost.currency || '$') === '$'));
-  assert.deepEqual(bom.totals.map((t) => t.currency).sort(), ['$', '€']);
+  assert.ok([...bom.supplies, ...bom.lights].every((i) => i.cost.currency === 'US$'));
+  assert.deepEqual(bom.totals.map((t) => t.currency), ['€', 'US$'], "the kit's currency first");
+  assert.equal(bom.total.currency, '€');
   const total = totalText(bom);
   assert.match(total, /€\d+\.\d\d/);
-  assert.match(total, /\$\d+\.\d\d–\d+\.\d\d/);
+  assert.match(total, /US\$\d+\.\d\d–\d+\.\d\d/);
   assert.match(bom.note, /€/);
   assert.match(bomText(bom), /€/);
   assert.match(guideHTML(kit, compileKit(kit)), /€\d+\.\d\d/);
@@ -53,10 +54,23 @@ test('a material with no price says so instead of costing nothing silently', () 
   kit.materials.find((m) => m.id === 'chip2').price = 0;
   const { bom } = bomOf(kit);
   assert.match(bom.sheets.find((s) => s.id === 'chip2').note, /no price set/);
+  assert.match(totalText(bom), /plus unpriced sheets/);
 });
 
 test('one currency: a single total, as before', () => {
   const { bom } = bomOf(defaultKit());
   assert.equal(bom.totals.length, 1);
   assert.equal(totalText(bom), costText(bom.total));
+});
+
+test('the bill does not change with the machine locale (Node has navigator.language too)', () => {
+  const saved = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator', { value: { language: 'de-DE' }, configurable: true });
+  try {
+    const { bom } = bomOf(defaultKit());
+    assert.equal(bom.currency, '$');
+    assert.equal(bom.totals.length, 1);
+  } finally {
+    if (saved) Object.defineProperty(globalThis, 'navigator', saved); else delete globalThis.navigator;
+  }
 });
