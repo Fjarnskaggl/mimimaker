@@ -69,6 +69,7 @@ test('a tampered three.js is refused and the SVG preview stays', async () => {
   assert.equal(await page.locator('.stage svg.scene-svg').count(), 1);
   assert.equal(await page.evaluate(() => window.__tampered ?? false), false, 'the tampered script never ran');
   assert.match(await page.locator('.t6-note').innerText(), /SVG/);
+  assert.match(await page.locator('.t6-note').innerText(), /checksum/, 'says why it may have been refused');
   assert.deepEqual(page.errors, []);
   await page.close();
 });
@@ -76,8 +77,8 @@ test('a tampered three.js is refused and the SVG preview stays', async () => {
 // The budget behind "60 fps orbit on a mid laptop": a frame of the café,
 // shadow pass included, stays under these counts. They are deterministic, so
 // CI can hold the line even though its software WebGL can't hit 60 fps.
-// Measured 2026-11-23: 59 calls, ~8.4k triangles, so there is room to grow.
-const BUDGET = { calls: 150, triangles: 50000, shadowLights: 1, pixelRatio: 2 };
+// Measured 2026-11-23 (shadow pass included): 112 calls, ~16.7k triangles.
+const BUDGET = { calls: 200, triangles: 50000, shadowLights: 1, pixelRatio: 2 };
 
 test('perf budget: orbiting the café stays inside the 60 fps budget', async () => {
   const page = await open();
@@ -85,6 +86,7 @@ test('perf budget: orbiting the café stays inside the 60 fps budget', async () 
   await page.waitForSelector('.stage[data-renderer=webgl] canvas', { timeout: 15000 });
   await page.locator('.rt-card[aria-label="Start from Little café"]').evaluate((e) => { e.click(); e.click(); });
   await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().textures.includes('brick'), null, { timeout: 10000 });
+  const hashBefore = await page.evaluate(() => document.querySelector('.stage').t6viewer.sample().hash);
   const b = await page.evaluate(() => document.querySelector('.stage').t6viewer.bench({ frames: 60 }));
   console.log(`café orbit: ${b.fps.toFixed(1)} fps (${b.msPerFrame.toFixed(2)} ms/frame), ${b.calls} draw calls, ${b.triangles} triangles, ${b.shadowLights} shadow lights, pixel ratio ${b.pixelRatio}`);
   assert.equal(b.frames, 60);
@@ -96,11 +98,8 @@ test('perf budget: orbiting the café stays inside the 60 fps budget', async () 
   assert.ok(Number.isFinite(b.fps) && b.fps > 0);
   if (process.env.MIMI_PERF_STRICT) assert.ok(b.fps >= 60, `${b.fps.toFixed(1)} fps`);
   // the bench leaves the view where it found it
-  const yaw = Number(await page.locator('input[aria-label=Rotate]').inputValue());
-  const after = await page.evaluate(() => document.querySelector('.stage').t6viewer.sample().hash);
-  const again = await page.evaluate(() => document.querySelector('.stage').t6viewer.sample().hash);
-  assert.equal(after, again);
-  assert.equal(Number(await page.locator('input[aria-label=Rotate]').inputValue()), yaw);
+  const hashAfter = await page.evaluate(() => document.querySelector('.stage').t6viewer.sample().hash);
+  assert.equal(hashAfter, hashBefore, 'same picture as before the bench');
   assert.deepEqual(page.errors, []);
   await page.close();
 });

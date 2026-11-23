@@ -22,8 +22,9 @@ export function webglSupported(doc = globalThis.document) {
   }
 }
 
-/** Resolve with the THREE namespace, loading the script once. */
-export function loadThree({ url = THREE_URL, integrity = THREE_INTEGRITY, timeout = 20000 } = {}) {
+/** Resolve with the THREE namespace, loading the script once. The pinned hash
+ * applies to the default URL only; pass `integrity` with any other URL. */
+export function loadThree({ url = THREE_URL, integrity = url === THREE_URL ? THREE_INTEGRITY : '', timeout = 20000 } = {}) {
   if (globalThis.THREE?.WebGLRenderer) return Promise.resolve(globalThis.THREE);
   if (pending) return pending;
   pending = new Promise((resolve, reject) => {
