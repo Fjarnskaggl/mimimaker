@@ -26,7 +26,7 @@ import { makeZip } from './zip.js';
 import { icon, MIMI, MARK } from './ui/art.js';
 import { checksSummary } from './ui/checks.js';
 // T6: WebGL viewer + SVG fallback
-import { drawStage, rendererToggle, texturePicker, attachPicking } from './ui/t6.js';
+import { drawStage, rendererToggle, texturePicker, attachPicking, resetZoom } from './ui/t6.js';
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 // T3 wiring: per-machine cut files
@@ -674,7 +674,7 @@ function build3d(bar) {
   }
   bar.append(rendererToggle(drawScene)); // T6
   const foot = h('div', { class: 'stage-foot' },
-    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit' : 'Drag to orbit · click a piece to select · R turn · D duplicate · Del remove'),
+    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit' : 'Drag to orbit · scroll to zoom · click a piece to select · R turn · D duplicate · Del remove'),
     h('div', { class: 'orbit' }, h('label', {}, 'Rotate', yaw), h('label', {}, 'Tilt', pitch)));
   let drag = null;
   stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
@@ -1018,6 +1018,7 @@ async function shareLink() {
 function freshRoom(next) { delete next.origin; return next; }
 function replaceKit(next, message) {
   kit = next;
+  resetZoom(); // T6: a new room starts in its fitted view
   $('#kit-name').value = kit.name;
   view.sel = null;
   thumbCache.clear();

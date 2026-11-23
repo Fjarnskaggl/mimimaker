@@ -159,6 +159,23 @@ function disposeViewer() {
   state.viewer = null;
 }
 
+/** Wheel zoom on a stage, for both renderers (once per stage). */
+function attachZoom(stage) {
+  if (stage.t6zoomWired) return;
+  stage.t6zoomWired = true;
+  stage.addEventListener('wheel', (e) => {
+    if (state.last?.stage !== stage) return;
+    e.preventDefault();
+    state.zoom = Math.max(0.6, Math.min(4, state.zoom * Math.exp(-e.deltaY * 0.0015)));
+    redrawLast();
+  }, { passive: false });
+}
+
+/** Back to the fitted view, e.g. when another kit opens. */
+export function resetZoom() {
+  state.zoom = 1;
+}
+
 function redrawLast() {
   const l = state.last;
   if (l && l.stage.isConnected) drawStage(l.stage, l.faces, l.view, l.kit);
@@ -174,14 +191,7 @@ function startViewer() {
   loadThree()
     .then((THREE) => {
       if (!state.want) return;
-      const v = createViewer(THREE);
-      v.canvas.addEventListener('wheel', (e) => {
-        if (!state.last) return;
-        e.preventDefault();
-        state.zoom = Math.max(0.6, Math.min(4, state.zoom * Math.exp(-e.deltaY * 0.0015)));
-        redrawLast();
-      }, { passive: false });
-      state.viewer = v;
+      state.viewer = createViewer(THREE);
     })
     .catch((err) => {
       state.failed = /load/i.test(err?.message || '') ? 'the 3D library couldn’t be downloaded (offline?) or didn’t match its checksum' : 'WebGL couldn’t start';
@@ -203,6 +213,8 @@ export function drawStage(stage, faces, view, kit = null) {
     state.viewer?.hover(null);
   }
   state.last = { stage, faces, view, kit };
+  attachZoom(stage);
+  stage.dataset.zoom = String(state.zoom);
   if (kit) syncPicker(kit);
   if (state.want && state.viewer) {
     for (const child of [...stage.children]) if (child !== state.viewer.canvas) child.remove();
@@ -220,7 +232,7 @@ export function drawStage(stage, faces, view, kit = null) {
   }
   if (!state.want) disposeViewer();
   stage.t6viewer = null;
-  stage.innerHTML = renderScene(faces, { ...view, selected: view.sel?.kind === 'item' ? view.sel.index : null });
+  stage.innerHTML = renderScene(faces, { ...view, zoom: state.zoom, selected: view.sel?.kind === 'item' ? view.sel.index : null });
   stage.dataset.renderer = 'svg';
   paintSvgHover(stage); // the redraw replaced the hovered paths
   if (!state.want) { delete stage.dataset.webgl; return; }
