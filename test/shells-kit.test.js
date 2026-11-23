@@ -135,3 +135,9 @@ test('the default alley cuts its relief from thin basswood: under 5.5 h, and the
   const reliefFaces = r.faces3d.filter((f) => f.layer === 0 && f.thickness === 0.8);
   assert.equal(reliefFaces.length, relief.length, 'and they are 0.8 mm thick in 3D');
 });
+
+test('with short cavity spacers the default alley cuts in under 5 h', () => {
+  const r = compileKit(withShell('alley'));
+  const hours = r.sheets.reduce((sum, s) => sum + estimateCutMinutes(s), 0) / 60;
+  assert.ok(hours < 5, `estimated ${hours.toFixed(2)} h`);
+});
