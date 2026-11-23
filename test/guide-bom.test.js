@@ -69,3 +69,23 @@ test('guide: every step with something to show has its exploded view', () => {
   }
   assert.ok(shown > steps.length / 2);
 });
+
+test('guide: an unlit book nook lists its suggested LEDs in the bill', () => {
+  const kit = { ...defaultKit(), shell: { type: 'alley', gap: { w: 90, h: 230, d: 180 }, clearance: 2, params: {} } };
+  kit.lighting = { ...kit.lighting, enabled: false };
+  const { html, bom } = setup(kit);
+  assert.ok(bom.lights.length, 'the alley suggests lit spots');
+  const sec = section(html, 'Bill of materials');
+  for (const i of bom.lights) assert.ok(sec.includes(esc(i.name)), i.name);
+});
+
+test("guide: \"You'll need\" names the same glue as the bill", () => {
+  const card = defaultKit();
+  card.room.material = 'card110';
+  card.items = card.items.filter((i) => ['nightstand', 'rug', 'frame'].includes(i.type));
+  const { html, bom } = setup(card);
+  const need = section(html, "You'll need");
+  assert.ok(!bom.supplies.some((i) => i.id === 'pva'));
+  assert.doesNotMatch(need, /PVA/);
+  assert.match(need, /glue stick/);
+});
