@@ -74,7 +74,7 @@ test('when, repeat and name templates', () => {
   assert.deepEqual(out[3].plane, { o: [0, 20, 0], U: [1, 0, 0], V: [0, 0, 1], n: [0, -1, 0] });
   const b = def.build({ w: 10, d: 20, h: 30, count: 0, shape: 'b' }, { t: 1 });
   assert.deepEqual(b.map((c) => c.name), ['Only b', 'Leaf']);
-  assert.equal(b[1].polys.length, 2);
+  assert.equal(b[1].polys.length, 4, 'outline, two repeated holes and the circle');
 });
 
 test('flat planes and wall flats', () => {
