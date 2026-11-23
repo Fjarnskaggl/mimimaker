@@ -2,7 +2,7 @@
 // night mode lit by point lights at the LEDs. Rendering is on demand (no
 // animation loop), so an idle preview costs nothing.
 
-import { cameraDirection, cameraPose, sceneBounds, ledLights, layerOffset, faceThickness, extrudeFace } from './scene.js';
+import { cameraDirection, cameraPose, sceneBounds, ledLights, layerOffset, faceThickness, extrudeFace, windowLights } from './scene.js';
 import { textureSVG } from '../textures/index.js';
 import { textureFrame } from '../textures/look.js';
 
@@ -10,6 +10,7 @@ const FOV = 35;
 const SUN_DIR = [-0.15, -1, 1.4]; // key light from the open front, like a display lamp
 const DAY = { hemi: 0.7, sun: 0.65, sky: 0xfff6ea, ground: 0x9a8878, sunColor: 0xfff1dc };
 const NIGHT = { hemi: 0.1, sun: 0.06, sky: 0x8090c0, ground: 0x202028, sunColor: 0x9fb0e0 };
+const MOON = { light: 0xa9c4ff, glow: 0x7f97c8 }; // window light at night
 
 /**
  * BufferGeometry for one compiler face: board panels become solids with real
@@ -62,7 +63,8 @@ export function createViewer(THREE) {
 
   const model = new THREE.Group();
   const leds = new THREE.Group();
-  scene.add(model, leds);
+  const windows = new THREE.Group(); // moonlight through each window, at night
+  scene.add(model, leds, windows);
 
   let faces = null, bounds = sceneBounds([]), view = {}, entries = [], ledData = [];
   let lookKey = '';
@@ -103,6 +105,8 @@ export function createViewer(THREE) {
     textures.clear();
     model.clear();
     leds.clear();
+    for (const o of windows.children) { o.geometry?.dispose(); o.material?.dispose(); o.shadow?.map?.dispose(); }
+    windows.clear();
     entries = [];
   }
 
@@ -136,6 +140,26 @@ export function createViewer(THREE) {
       light.position.set(...L.position);
       leds.add(light);
     }
+    // moonlight: a soft spot from outside and above each window, so the wall
+    // casts the window's shape into the room, plus a glow behind the opening
+    for (const W of windowLights(faces)) {
+      const n = W.normal, size = Math.max(W.width, W.height);
+      const from = W.center.map((c, i) => c - n[i] * size * 2.2 + (i === 2 ? size * 1.2 : 0));
+      const to = W.center.map((c, i) => c + n[i] * size * 2 - (i === 2 ? size * 1.4 : 0));
+      const spot = new THREE.SpotLight(MOON.light, 1.5, size * 14, Math.PI / 5, 0.6, 1);
+      spot.position.set(...from);
+      spot.target.position.set(...to);
+      spot.castShadow = true;
+      spot.shadow.mapSize.set(1024, 1024);
+      spot.shadow.bias = -0.0005;
+      Object.assign(spot.shadow.camera, { near: size * 0.5, far: size * 14 });
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(W.width * 1.3, W.height * 1.3), new THREE.MeshBasicMaterial({ color: MOON.glow }));
+      glow.position.set(...W.center.map((c, i) => c - n[i] * 4)); // just behind the board
+      glow.up.set(0, 0, 1);
+      glow.lookAt(...W.center);
+      glow.userData.wallNormal = n;
+      windows.add(spot, spot.target, glow);
+    }
     // sun shadow camera hugs the model
     const r = bounds.radius;
     const sd = SUN_DIR.map((v) => v / Math.hypot(...SUN_DIR));
@@ -151,6 +175,12 @@ export function createViewer(THREE) {
     hemi.color.set(L.sky); hemi.groundColor.set(L.ground); hemi.intensity = L.hemi;
     sun.color.set(L.sunColor); sun.intensity = L.sun;
     leds.visible = night;
+    windows.visible = night;
+    const camDir = cameraDirection(view);
+    for (const o of windows.children) {
+      const n = o.userData.wallNormal; // hide a window's glow when its wall is ghosted
+      if (n) o.visible = n[0] * camDir[0] + n[1] * camDir[1] + n[2] * camDir[2] >= -1e-6;
+    }
     // walls seen from outside are ghosted, as in the SVG preview, so they never hide the room
     const cam = cameraDirection(view);
     for (const { face, mesh } of entries) {
@@ -227,6 +257,8 @@ export function createViewer(THREE) {
         texturesReady: [...textures.values()].every((t) => t.ready),
         meshes: entries.length, solids: entries.filter((e) => e.solid).length, flat: entries.filter((e) => !e.solid).length, pointLights: leds.visible ? leds.children.length : 0,
         shadows: renderer.shadowMap.enabled && sun.castShadow,
+        windowLights: windows.visible ? windows.children.filter((o) => o.isSpotLight).length : 0,
+        windowShadows: windows.children.filter((o) => o.isSpotLight).every((o) => o.castShadow),
       };
     },
     dispose() {

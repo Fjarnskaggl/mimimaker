@@ -189,6 +189,10 @@ test('WebGL viewer: night mode darkens the room and adds a point light per LED',
   assert.equal(night.pointLights, Math.min(leds, 12));
   assert.ok(night.mean < day.mean * 0.7, `darker: ${day.mean} → ${night.mean}`);
   assert.ok(night.max > 200, 'the bulbs still glow');
+  // moonlight through the window: one shadow-casting light per window, at night only
+  assert.equal(day.windowLights, 0);
+  assert.equal(night.windowLights, 1, 'the reading nook has one window');
+  assert.equal(night.windowShadows, true);
   assert.deepEqual(page.errors, []);
   await page.close();
 });
