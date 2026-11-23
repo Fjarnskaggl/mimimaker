@@ -31,7 +31,8 @@ export function shellRoom(kit) {
   const t = mat.thickness;
   const { W, H, D } = shellSize(spec);
   const cm = (mm) => (mm * kit.scale) / 10;
-  const room = { ...kit.room, material: mat.id, width: cm(W - 2 * t), depth: cm(D - t), height: cm(H - 2 * t), ceiling: true };
+  const Hbox = def.boxHeight ? def.boxHeight({ W, H, t }, { ...def.defaults, ...(spec.params || {}) }) : H; // under any roof
+  const room = { ...kit.room, material: mat.id, width: cm(W - 2 * t), depth: cm(D - t), height: cm(Hbox - 2 * t), ceiling: true };
   const out = { ...kit, room };
   if (!def.furnishable) {
     const setAside = [];

@@ -79,7 +79,8 @@ test('shell panel: a nook keeps furniture and survives undo', async () => {
   const k = await kit(page);
   assert.equal(k.shell.type, 'nook');
   assert.equal(k.items.length, before.items.length, 'furniture kept');
-  assert.equal(await panel(page).locator('[data-shell-param]').count(), 0, 'a plain nook has no extra controls');
+  const ctrls = await panel(page).locator('[data-shell-param]').evaluateAll((els) => els.map((e) => e.dataset.shellParam));
+  assert.deepEqual(ctrls.sort(), ['gable', 'pitch'], 'a nook only offers its roof');
   await page.keyboard.press('Control+z');
   await page.waitForFunction(() => !window.mimimaker.kit.shell);
   assert.deepEqual(page.errors, []);
@@ -157,6 +158,21 @@ test('shell panel: a greenhouse builds with its own controls and no errors', asy
   await page.waitForFunction(() => document.querySelectorAll('#view svg path, #view canvas').length > 10);
   assert.equal(await page.locator('#warnings .warn.error').count(), 0, await page.locator('#warnings').innerText());
   if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'shell-greenhouse.png') });
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('shell panel: a nook can get a gable roof', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await panel(page).locator('select[data-shell=type]').selectOption('nook');
+  await panel(page).locator('input[data-shell-param=gable]').check();
+  assert.equal((await kit(page)).shell.params.gable, true);
+  await panel(page).locator('input[data-shell-param=pitch]').fill('45');
+  assert.equal((await kit(page)).shell.params.pitch, 45);
+  await page.waitForFunction(() => document.querySelectorAll('#view svg path, #view canvas').length > 10);
+  assert.equal(await page.locator('#warnings .warn.error').count(), 0, await page.locator('#warnings').innerText());
+  if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'shell-gable.png') });
   assert.deepEqual(page.errors, []);
   await page.close();
 });
