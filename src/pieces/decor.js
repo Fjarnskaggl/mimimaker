@@ -1,0 +1,69 @@
+import { num, sel } from './params.js';
+
+export const DECOR = [
+  {
+    id: 'rug', label: 'Rug', theme: 'Decor', placement: 'floor', mat: 'fabric',
+    params: [num('w', 'Width', 10, 400), num('d', 'Depth', 10, 400), sel('shape', 'Shape', ['oval', 'rect', 'round'])],
+    defaults: { w: 140, d: 90, shape: 'oval' },
+    size: ['w', "shape == 'round' ? w : d", 0],
+    components: [{
+      kind: 'flat', name: 'Rug', plane: { floor: { z: 0.05 } }, surface: true,
+      polys: [
+        { when: "shape == 'rect'", rect: [0, 0, 'w', 'd'] },
+        { when: "shape == 'round'", ellipse: ['w / 2', 'w / 2', 'w / 2', 'w / 2', 64] },
+        { when: "shape != 'rect' && shape != 'round'", ellipse: ['w / 2', 'd / 2', 'w / 2', 'd / 2', 64] },
+      ],
+    }],
+  },
+  {
+    id: 'plant', label: 'Potted plant', theme: 'Decor', placement: 'floor', mat: 'card',
+    params: [num('w', 'Pot width', 10, 60), num('h', 'Pot height', 10, 60), num('leaf', 'Plant height', 20, 150)],
+    defaults: { w: 30, h: 30, leaf: 70 },
+    size: ['w', 'w', 'h + leaf * 0.9'],
+    let: { lw: 'w * 1.8' },
+    components: [
+      { kind: 'box', name: 'Pot', size: ['w', 'w', 'h'], faces: ['bottom', 'front', 'back', 'left', 'right'], at: [0, 0, 0] },
+      { kind: 'flat', name: 'Leaves', polys: [{ plant: ['lw', 'leaf'] }], plane: { upright: { x: '(w - lw) / 2', y: 'w / 2', z: 'h * 0.5' } } },
+    ],
+    note: 'Cut the leaves from green card; slot the bottom into the pot and fill it with glue and "soil" (coffee grounds).',
+  },
+  {
+    id: 'frame', label: 'Picture frame', theme: 'Decor', placement: 'wall', mat: 'card',
+    params: [num('w', 'Width', 5, 200), num('h', 'Height', 5, 200), num('border', 'Border', 1, 30)],
+    defaults: { w: 40, h: 50, border: 5 },
+    size: ['w', 0, 'h'],
+    let: { b: 'min(border, w / 2 - 0.5, h / 2 - 0.5)' },
+    components: [{ kind: 'flat', name: 'Frame', polys: [{ rect: [0, 0, 'w', 'h'] }, { rect: ['b', 'b', 'w - 2 * b', 'h - 2 * b'] }], wall: true, surface: true }],
+    note: 'Glue a printed picture behind the frame, then glue it to the wall.',
+  },
+  {
+    id: 'mirror', label: 'Round mirror / clock', theme: 'Decor', placement: 'wall', mat: 'card',
+    params: [num('w', 'Diameter', 5, 150), num('border', 'Rim', 1, 20)],
+    defaults: { w: 45, border: 4 },
+    size: ['w', 0, 'w'],
+    let: { r: 'w / 2', b: 'min(border, r - 0.5)' },
+    components: [{ kind: 'flat', name: 'Mirror rim', polys: [{ ellipse: ['r', 'r', 'r', 'r', 64] }, { ellipse: ['r', 'r', 'r - b', 'r - b', 64] }], wall: true, surface: true }],
+    note: 'Back the rim with mirror card or a printed clock face.',
+  },
+  {
+    id: 'tv', label: 'Wall TV', theme: 'Decor', placement: 'wall', mat: 'card',
+    params: [num('w', 'Width', 40, 200), num('h', 'Height', 25, 120)],
+    defaults: { w: 100, h: 60 },
+    size: ['w', 0, 'h'],
+    let: { b: 'max(1, min(w, h) * 0.05)' },
+    components: [{ kind: 'flat', name: 'TV', polys: [{ rect: [0, 0, 'w', 'h'] }], scores: [{ rect: ['b', 'b', 'w - 2 * b', 'h - 2 * b'] }], wall: true, surface: true }],
+    note: 'Black card works best; glue a printed screen inside the score line.',
+  },
+  {
+    id: 'curtains', label: 'Curtains', theme: 'Decor', placement: 'wall', mat: 'card',
+    params: [num('w', 'Window width', 30, 250), num('h', 'Drop', 40, 250)],
+    defaults: { w: 110, h: 150 },
+    size: ['w', 0, 'h'],
+    let: { pw: 'w * 0.3' },
+    components: [
+      { kind: 'flat', name: 'Left curtain', polys: [{ drape: [0, 'pw', 'h'] }], wall: true, surface: true },
+      { kind: 'flat', name: 'Right curtain', polys: [{ drape: ['w - pw', 'pw', 'h'] }], wall: true, surface: true },
+    ],
+    note: 'Centre the curtains on a window; fabric-backed paper or thin felt drapes nicely.',
+  },
+];

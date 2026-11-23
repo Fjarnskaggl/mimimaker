@@ -3,7 +3,8 @@
 //
 // buildShell(spec, { t, fingerWidth }) → {
 //   type, dims: { W, D, H, t, inner: { x0, y0, z0, W, D, H } },
-//   parts: [{ key, name, group, role, polys: [outline, ...holes], scores, plane: { o, U, V, n } }],
+//   parts: [{ key, name, group, role, material?, polys: [outline, ...holes], scores, plane: { o, U, V, n } }],
+//   joints: [{ a: partKey, b: partKey, kind: 'finger' | 'slot' | 'glue-tab' | 'flat' (see build/joints.js JOINT_KINDS) }],
 //   lights: [{ p: [x, y, z], color, … }],  // suggested LED spots
 //   steps: [{ group, text }], warnings: [{ level, msg }], minFinger, …type-specific data
 // }
@@ -34,8 +35,12 @@ export function buildShell(spec, { t, fingerWidth = 0 }) {
   if (res.minFinger < 3) {
     warnings.push({ level: 'warn', msg: `Shell finger joints are only ${res.minFinger.toFixed(1)} mm wide — the Knife Blade is cleaner above 3 mm.` });
   }
+  // parts default to the shell's material; a type may pick another per part
+  const parts = spec.material === undefined ? res.parts
+    : res.parts.map((p) => (p.material === undefined ? { ...p, material: spec.material } : p));
   return {
     ...res,
+    parts,
     type: spec.type,
     dims: { W, D, H, t, inner: { x0: t, y0: 0, z0: t, W: W - 2 * t, D: D - t, H: H - 2 * t } },
     warnings,

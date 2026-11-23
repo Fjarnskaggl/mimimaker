@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { buildShell, SHELLS, shellSize } from '../src/shells/index.js';
 import { findOverlaps, outsideEnvelope, partVolume, partBox } from '../src/shells/fit.js';
 import { rectPoly } from '../src/geometry.js';
+import { checkJoints } from './shells-helpers.js';
 
 const vol = (b) => b.reduce((v, [a, c]) => v * Math.max(0, c - a), 1);
 const inter = (a, b) => a.map(([a0, a1], i) => [Math.max(a0, b[i][0]), Math.min(a1, b[i][1])]);
@@ -91,4 +92,19 @@ test('shell modules go through the single-file bundler', async () => {
   const { js: out } = bundle(new URL('../src/shells/index.js', import.meta.url).pathname);
   assert.match(out, /buildShell/);
   assert.match(out, /shellSize/);
+});
+
+test('nook shell lists its finger joints as a connected graph', () => {
+  const t = 2;
+  const sh = buildShell({ type: 'nook', gap: GAPS[0] }, { t });
+  checkJoints(sh, t);
+  assert.equal(sh.joints.length, 8, '4 floor/roof edges × 2 + back/side × 2');
+  assert.ok(sh.joints.every((j) => j.kind === 'finger'));
+});
+
+test('every part carries a material, defaulting to the shell material', () => {
+  const sh = buildShell({ type: 'nook', gap: GAPS[0], material: 'bass16' }, { t: 1.6 });
+  assert.ok(sh.parts.every((p) => p.material === 'bass16'));
+  const none = buildShell({ type: 'nook', gap: GAPS[0] }, { t: 2 });
+  assert.ok(none.parts.every((p) => !('material' in p) || p.material === undefined));
 });

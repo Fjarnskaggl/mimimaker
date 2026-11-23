@@ -28,8 +28,15 @@ function paramCases(def) {
 
 const toModel = (def, raw) => Object.fromEntries(def.params.map((q) => [q.key, q.unit === 'cm' ? raw[q.key] * SCALE : raw[q.key]]));
 
-/** Canonical JSON: numbers rounded to 1e-6 so harmless float noise can't fail the test. */
-const canon = (v) => JSON.stringify(v, (_, x) => (typeof x === 'number' ? Math.round(x * 1e6) / 1e6 + 0 : x));
+/**
+ * Canonical JSON: numbers rounded to 1e-6 so harmless float noise can't fail
+ * the test, and object keys sorted (key order never changes a cut line).
+ */
+const canon = (v) => JSON.stringify(v, (_, x) => {
+  if (typeof x === 'number') return Math.round(x * 1e6) / 1e6 + 0;
+  if (x && typeof x === 'object' && !Array.isArray(x)) return Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]]));
+  return x;
+});
 const digest = (v) => createHash('sha256').update(canon(v)).digest('hex').slice(0, 16);
 
 export function buildCase(type, raw, t) {
@@ -44,6 +51,8 @@ function snapshot() {
     const base = buildCase(type, def.defaults, THICKNESS.board);
     const entry = {
       label: def.label,
+      // what the app reads besides build(): picker, forms, placement
+      meta: digest({ label: def.label, group: def.group, placement: def.placement, mat: def.mat, params: def.params, defaults: def.defaults, note: def.note }),
       components: base.components.map((c) => `${c.kind}:${c.name}`),
       cases: {},
     };
