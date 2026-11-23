@@ -6,11 +6,20 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-const PORT = 5198;
-const URL = `http://localhost:${PORT}/`;
-let server, browser;
+const net = require('node:net');
+
+// A free port, so this file can run in parallel with the other e2e files.
+const freePort = () => new Promise((resolve, reject) => {
+  const srv = net.createServer().once('error', reject).listen(0, () => {
+    const { port } = srv.address();
+    srv.close(() => resolve(port));
+  });
+});
+let URL, server, browser;
 
 before(async () => {
+  const PORT = await freePort();
+  URL = `http://localhost:${PORT}/`;
   server = spawn(process.execPath, [path.join(__dirname, '../../scripts/serve.js')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
   for (let i = 0; i < 50; i++) {
     try { await fetch(URL); break; } catch { await new Promise((r) => setTimeout(r, 100)); }
