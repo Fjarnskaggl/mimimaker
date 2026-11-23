@@ -172,3 +172,16 @@ test('material library: per-machine settings show on the sheet cards', async () 
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('material library: Delete turns off once a part uses the material', async () => {
+  const page = await open();
+  const lib = await openLibrary(page);
+  await lib.locator('button', { hasText: 'Add material' }).click();
+  const id = await page.evaluate(() => window.mimimaker.kit.materials.at(-1).id);
+  const del = lib.locator(`.mat-row[data-material="${id}"] button[title^="Delete"]`);
+  assert.equal(await del.isDisabled(), false);
+  await page.evaluate((mid) => { const k = window.mimimaker.kit; k.items[0].material = mid; window.mimimaker.refresh(); }, id);
+  assert.equal(await del.isDisabled(), true);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

@@ -6,7 +6,7 @@ import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
 import {
   DEFAULT_MATERIALS, MACHINES, withMaterialDefaults, newMaterial, duplicateMaterial,
-  materialInUse, machineSettings, defaultCurrency, formatMoney,
+  materialInUse, machineSettings, defaultCurrency, formatMoney, toolSettings,
 } from '../src/materials.js';
 import { kitMaterialCost } from '../src/export/cost.js';
 import { estimateCutMinutes } from '../src/make.js';
@@ -67,6 +67,28 @@ test('materialInUse finds references anywhere in the kit', () => {
   assert.equal(materialInUse(kit, custom.id), false);
   kit.items.push({ type: 'x', material: custom.id });
   assert.equal(materialInUse(kit, custom.id), true);
+});
+
+test('materialInUse looks only at material fields, plus what the compiler used', () => {
+  const kit = defaultKit();
+  const custom = newMaterial(kit.materials);
+  kit.materials.push(custom);
+  kit.name = custom.id;
+  kit.roomType = custom.id;
+  assert.equal(materialInUse(kit, custom.id), false, 'a kit name is not a reference');
+  kit.room.trimMaterial = 'felt';
+  assert.equal(materialInUse(kit, 'felt'), true, 'trimMaterial counts');
+  // a material only the compiler picked (code defaults) is in use when compiled is given
+  const compiled = { sheets: [{ material: { id: 'acetate' } }], usedMats: [] };
+  assert.equal(materialInUse(defaultKit(), 'acetate', compiled), true);
+});
+
+test('toolSettings gives a blade’s defaults, so a new blade does not keep old settings', () => {
+  const knife = toolSettings('knife');
+  const fine = toolSettings('fine');
+  assert.ok(knife.passes > fine.passes);
+  assert.notEqual(knife.cricut, fine.cricut);
+  assert.ok(knife.laser.power > fine.laser.power);
 });
 
 test('machineSettings resolves the right settings per machine family', () => {
@@ -144,6 +166,10 @@ test('currency default follows the language, and money formats with two decimals
   assert.equal(defaultCurrency('en-GB'), '£');
   assert.equal(defaultCurrency('de-DE'), '€');
   assert.equal(defaultCurrency(''), '$');
+  assert.equal(defaultCurrency('en-IE'), '€', 'region, not language');
+  assert.equal(defaultCurrency('pt-BR'), 'R$');
+  assert.equal(defaultCurrency('es-MX'), '$');
+  assert.equal(defaultCurrency('fr-CA'), '$');
   assert.equal(formatMoney(3.5, '$'), '$3.50');
   assert.equal(formatMoney(12, '€'), '€12.00');
 });
