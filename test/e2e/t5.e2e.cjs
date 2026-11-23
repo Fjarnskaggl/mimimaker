@@ -6,8 +6,8 @@ const { startServer } = require('./helpers.cjs');
 const path = require('node:path');
 
 // Set SHOT_DIR to save screenshots of the circuit card for review.
-async function shot(page, name) {
-  if (process.env.SHOT_DIR) await page.locator('.t5-circuit').screenshot({ path: path.join(process.env.SHOT_DIR, `t5-${name}.png`) });
+async function shot(page, name, selector = '.t5-circuit') {
+  if (process.env.SHOT_DIR) await page.locator(selector).first().screenshot({ path: path.join(process.env.SHOT_DIR, `t5-${name}.png`) });
 }
 
 let server, browser, URL;
@@ -68,7 +68,7 @@ test('choosing a coin cell updates the kit and flags the overload', async () => 
   await page.close();
 });
 
-test('a light's effect can be picked in its inspector, and strips flag battery power', async () => {
+test('a light\'s effect can be picked in its inspector, and strips flag battery power', async () => {
   const page = await open();
   await page.click('[data-step=light]');
   await page.click('[data-select-led="0"]');
@@ -79,7 +79,7 @@ test('a light's effect can be picked in its inspector, and strips flag battery p
   await page.fill('input[data-t5=lengthMm]', '50');
   led = await page.evaluate(() => JSON.parse(JSON.stringify(window.mimimaker.kit.lighting.leds[0])));
   assert.equal(led.lengthMm, 50);
-  await shot(page, 'effect-strip');
+  await shot(page, 'effect-strip', '#sidebar');
   // back to the circuit: a strip on 2×AA is an error that says to use USB
   await page.click('.insp-head [data-action=back]');
   const card = page.locator('.t5-circuit');

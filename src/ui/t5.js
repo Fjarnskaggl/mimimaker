@@ -1,8 +1,9 @@
-// T5 lighting UI: supply picker and circuit summary card.
-// Pure helpers (SUPPLY_OPTIONS, setSupply, circuitSummaryModel) are tested in
-// Node; the render functions need a DOM.
+// T5 lighting UI: supply and mount pickers, effect fields and the circuit card.
+// Pure helpers (options, set*, circuitSummaryModel, effectFieldSpecs) are
+// tested in Node; the render functions need a DOM.
 
 import { SUPPLIES } from '../lighting/circuit.js';
+import { EFFECTS, effectOf } from '../lighting/effects.js';
 
 export const SUPPLY_OPTIONS = [
   ['aa2', '2×AA battery box'],
@@ -100,4 +101,77 @@ export function renderSupplyField(power, onChange) {
       return o;
     }));
   return el('label', { class: 'field' }, 'Power', sel);
+}
+
+// ------------------------------------------------------------ effects
+
+export const EFFECT_OPTIONS = Object.entries(EFFECTS).map(([id, e]) => [id, e.name]);
+const EFFECT_KEYS = ['bulbs', 'lengthMm', 'ledsPerM'];
+
+/** Set a light's effect, filling that effect's defaults and dropping fields it doesn't use. */
+export function setEffect(led, id) {
+  const effect = EFFECTS[id] ? id : 'steady';
+  const defaults = EFFECTS[effect].defaults || {};
+  for (const k of EFFECT_KEYS) if (!(k in defaults)) delete led[k];
+  for (const [k, v] of Object.entries(defaults)) if (led[k] == null) led[k] = v;
+  if (effect === 'steady') delete led.effect;
+  else led.effect = effect;
+  return led;
+}
+
+const FIELD_SPECS = {
+  fairy: [
+    { key: 'bulbs', label: 'Bulbs', min: 1, max: 100, step: 1 },
+    { key: 'lengthMm', label: 'String length', min: 10, max: 5000, step: 10, unit: 'mm' },
+  ],
+  strip: [
+    { key: 'lengthMm', label: 'Strip length', min: 5, max: 2000, step: 5, unit: 'mm' },
+    { key: 'ledsPerM', label: 'LEDs per metre', min: 10, max: 240, step: 1 },
+  ],
+};
+/** The number fields an effect needs (real product sizes, not scaled). */
+export const effectFieldSpecs = (led) => FIELD_SPECS[effectOf(led)] || [];
+
+/**
+ * Effect select plus its fields, built with the app's own field helpers so they
+ * match the inspector. ui: { selectField, numberField, changed, restructured }
+ */
+export function renderEffectFields(led, ui) {
+  const sel = ui.selectField('Effect', effectOf(led), EFFECT_OPTIONS, (v) => { setEffect(led, v); ui.restructured(); });
+  sel.querySelector('select')?.setAttribute('data-t5', 'effect');
+  const fields = effectFieldSpecs(led).map((f) => {
+    const field = ui.numberField(f.label, led[f.key] ?? EFFECTS[effectOf(led)].defaults[f.key], (v) => { led[f.key] = v; ui.changed(); }, f);
+    field.querySelector('input')?.setAttribute('data-t5', f.key);
+    return field;
+  });
+  const wrap = el('div', { class: 't5-effect' }, sel);
+  if (fields.length) wrap.append(el('div', { class: 'grid2' }, fields));
+  wrap.append(el('p', { class: 'hint' }, EFFECTS[effectOf(led)].blurb));
+  return wrap;
+}
+
+// ------------------------------------------------------------ power mount
+
+export const MOUNT_OPTIONS = [
+  ['outside', 'Glued on the outside'],
+  ['flush', 'Flush behind the wall (cut-outs)'],
+];
+
+/** Set how the power box is mounted; 'outside' is the default and is stored as nothing. */
+export function setMount(power, id) {
+  if (id === 'flush') power.mount = 'flush';
+  else delete power.mount;
+  return power;
+}
+
+/** Mount <select> for the Power section. `onChange` runs after the kit is updated. */
+export function renderMountField(power, onChange) {
+  const current = power.mount === 'flush' ? 'flush' : 'outside';
+  const sel = el('select', { 'data-t5': 'mount', onchange: (e) => { setMount(power, e.target.value); onChange(); } },
+    MOUNT_OPTIONS.map(([v, text]) => {
+      const o = el('option', { value: v }, text);
+      o.selected = v === current;
+      return o;
+    }));
+  return el('label', { class: 'field' }, 'Mounting', sel);
 }
