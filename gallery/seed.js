@@ -3,12 +3,13 @@
 // Only for the "mimimaker" seed set; community kits are added by pull request.
 
 import { writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defaultKit } from '../src/catalog.js';
 import { ROOM_TYPES, applyRoomType } from '../src/templates.js';
 import { makeEntry } from './kits.js';
 
-const dir = join(resolve(new URL('..', import.meta.url).pathname), 'kits');
+const dir = fileURLToPath(new URL('../kits/', import.meta.url));
 for (const rt of ROOM_TYPES) {
   const kit = applyRoomType(defaultKit(), rt.id);
   const entry = makeEntry(kit, {

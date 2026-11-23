@@ -6,8 +6,9 @@
 // the app with the kit in a share link (#kit=…), so "Open in mimimaker" needs
 // no server: the visitor gets their own copy.
 
-import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { compileKit } from '../src/kit.js';
 import { renderScene } from '../src/preview3d.js';
 import { encodeKit } from '../src/share.js';
@@ -100,8 +101,13 @@ ${cards.join('\n')}
 }
 
 // CLI
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const root = resolve(new URL('..', import.meta.url).pathname);
+// Compare real file paths: argv[1] may be relative, symlinked or contain
+// characters that a file:// URL percent-encodes.
+const isMain = (() => {
+  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
+})();
+if (isMain) {
+  const root = fileURLToPath(new URL('..', import.meta.url));
   const out = resolve(process.argv[2] || join(root, 'dist/gallery'));
   const list = readKits(join(root, 'kits'));
   const errs = validateCollection(list);
