@@ -36,7 +36,7 @@ import { kitHandCutFiles } from './export/handcut.js';
 // T2 shells
 import { shellSection, applyRoomLocks } from './ui/t2.js';
 // [T5] lighting UI
-import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton } from './ui/t5.js';
+import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
 
 const STORE_KEY = 'mimimaker.kit.v1';
@@ -473,6 +473,7 @@ function lightingInspector() {
         renderSupplyField(L.power, changed), // [T5] supply picker
         numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
       renderMountField(L.power, changed), // [T5] mount picker
+      renderCoverField(L, { checkField, restructured }), // [T5] cable cover
       renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
       h('div', { class: 'grid3' },
         selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),

@@ -17,6 +17,7 @@ import { ellipsePoly, pointInPolygon, bbox } from './geometry.js';
 import { planCircuit, supplyFor } from './lighting/circuit.js';
 import { effectOf, effectLoad, effectWarnings } from './lighting/effects.js';
 import { planCutouts } from './lighting/cutouts.js';
+import { planCover } from './lighting/cover.js';
 
 export const LED_COLORS = {
   warm: { name: 'Warm white', hex: '#ffc767' },
@@ -103,7 +104,7 @@ export function planLighting(lighting, ctx) {
   const warnings = [];
   const holes = {};
   const leds = [];
-  if (!lighting?.enabled) return { enabled: false, leds, holes, warnings };
+  if (!lighting?.enabled) return { enabled: false, leds, holes, warnings, parts: [], steps: [] };
   const { s, t, D, Wi, Di, Hi, wallInfo } = ctx;
   const r = Math.max(0.5, (lighting.holeDiameter || 3) / 2);
   const addHole = (face, u, v) => (holes[face] ||= []).push(ellipsePoly(u, v, r, r, 20));
@@ -167,5 +168,7 @@ export function planLighting(lighting, ctx) {
   for (const c of cut.cutouts) (holes[c.face] ||= []).push(c.poly);
   warnings.push(...cut.warnings);
   warnings.push(...circuit.warnings);
-  return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit };
+  const cover = planCover({ cover: lighting.cover, leds, power, openings: ctx.openings, W: ctx.W, H: ctx.H, s, t });
+  warnings.push(...cover.warnings);
+  return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit, parts: cover.parts, steps: cover.steps };
 }

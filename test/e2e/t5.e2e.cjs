@@ -126,3 +126,23 @@ test('the Power section has a Shopping list download', async () => {
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('Hide wires behind a cover adds the frame and cover panel to the kit', async () => {
+  const page = await open();
+  await page.click('[data-step=light]');
+  await page.evaluate(() => { for (const d of document.querySelectorAll('details.section')) d.open = true; });
+  await page.check('input[data-t5=cover]');
+  assert.equal(await page.evaluate(() => window.mimimaker.kit.lighting.cover?.enabled), true);
+  await page.click('[data-step=make]');
+  const zipNames = async () => {
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btn-zip')]);
+    return fs.readFileSync(await dl.path()).toString('latin1');
+  };
+  assert.ok((await zipNames()).includes('Cable cover panel'), 'the guide lists the cover panel');
+  await page.click('[data-step=light]');
+  await page.evaluate(() => { for (const d of document.querySelectorAll('details.section')) d.open = true; });
+  await page.uncheck('input[data-t5=cover]');
+  assert.equal(await page.evaluate(() => window.mimimaker.kit.lighting.cover?.enabled ?? false), false);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
