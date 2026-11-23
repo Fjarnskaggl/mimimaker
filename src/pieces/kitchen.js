@@ -5,12 +5,14 @@ const doorsFront = (count) => ({ fronts: { style: "'doors'", count, w: 'w', h: '
 export const KITCHEN = [
   {
     id: 'counter', label: 'Base cabinet', theme: 'Kitchen', placement: 'floor', mat: 'board',
+    tags: ['storage', 'cooking'], difficulty: 1,
     params: [num('w', 'Width', 30, 300), num('d', 'Depth', 40, 80), num('h', 'Height', 70, 110), cnt('count', 'Doors', 1, 6)],
     defaults: { w: 100, d: 60, h: 90, count: 2 },
     components: [{ kind: 'box', name: 'Base cabinet', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0], scores: { front: [doorsFront('round(count)')], top: [] } }],
   },
   {
     id: 'sink', label: 'Sink unit', theme: 'Kitchen', placement: 'floor', mat: 'board',
+    tags: ['water', 'cooking'], difficulty: 2,
     params: [num('w', 'Width', 50, 200), num('d', 'Depth', 40, 80), num('h', 'Height', 70, 110)],
     defaults: { w: 80, d: 60, h: 90 },
     components: [{
@@ -21,6 +23,7 @@ export const KITCHEN = [
   },
   {
     id: 'stove', label: 'Stove', theme: 'Kitchen', placement: 'floor', mat: 'board',
+    tags: ['cooking', 'appliance'], difficulty: 1,
     params: [num('w', 'Width', 45, 120), num('d', 'Depth', 45, 80), num('h', 'Height', 70, 110)],
     defaults: { w: 60, d: 60, h: 90 },
     let: { r: 'min(w, d) * 0.14' },
@@ -38,6 +41,7 @@ export const KITCHEN = [
   },
   {
     id: 'fridge', label: 'Fridge', theme: 'Kitchen', placement: 'floor', mat: 'board',
+    tags: ['cooking', 'appliance'], difficulty: 1,
     params: [num('w', 'Width', 45, 100), num('d', 'Depth', 45, 80), num('h', 'Height', 80, 210)],
     defaults: { w: 70, d: 65, h: 180 },
     components: [{
@@ -51,6 +55,7 @@ export const KITCHEN = [
   },
   {
     id: 'uppercabinet', label: 'Wall cabinet', theme: 'Kitchen', placement: 'wall', mat: 'board',
+    tags: ['storage', 'wall-mounted'], difficulty: 2,
     params: [num('w', 'Width', 30, 200), num('d', 'Depth', 20, 45), num('h', 'Height', 30, 100), cnt('count', 'Doors', 1, 4)],
     defaults: { w: 80, d: 35, h: 70, count: 2 },
     components: [{ kind: 'box', name: 'Wall cabinet', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0], scores: { front: [doorsFront('round(count)')] } }],
@@ -58,6 +63,7 @@ export const KITCHEN = [
   },
   {
     id: 'wallshelf', label: 'Open wall shelf', theme: 'Kitchen', placement: 'wall', mat: 'board',
+    tags: ['storage', 'wall-mounted'], difficulty: 2,
     params: [num('w', 'Width', 30, 200), num('d', 'Depth', 10, 40), num('h', 'Height', 20, 100), cnt('shelves', 'Shelves', 0, 4)],
     defaults: { w: 80, d: 30, h: 60, shelves: 1 },
     components: [{ kind: 'box', name: 'Wall shelf', size: ['w', 'd', 'h'], faces: ['bottom', 'top', 'left', 'right', 'back'], shelves: { even: 'round(shelves)', h: 'h' }, at: [0, 0, 0] }],
