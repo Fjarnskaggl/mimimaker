@@ -83,6 +83,23 @@ test('WebGL viewer: board panels are solid, with real thickness; overlays stay f
   await page.close();
 });
 
+test('WebGL viewer: walls and floor wear the room palette’s textures; the café gets brick', async () => {
+  const page = await open();
+  await switchOn(page);
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().texturesReady, null, { timeout: 10000 });
+  const s = await sample(page);
+  assert.ok(s.textured >= 4, `textured meshes: ${s.textured}`);
+  assert.ok(s.textures.length >= 2, `textures: ${s.textures}`);
+  // switch to the café: its walls are brick
+  await page.locator('.rt-card[aria-label="Start from Little café"]').evaluate((e) => { e.click(); e.click(); });
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().textures.includes('brick'), null, { timeout: 10000 });
+  // the SVG preview is untouched by textures
+  await page.click('#renderer-toggle');
+  assert.equal(await page.locator('.stage svg.scene-svg image, .stage svg.scene-svg pattern').count(), 0);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('WebGL viewer: dragging orbits the camera and the picture changes', async () => {
   const page = await open();
   await switchOn(page);
