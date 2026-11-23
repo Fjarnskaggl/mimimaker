@@ -46,3 +46,45 @@ test('no circuit, no summary', () => {
   assert.equal(circuitSummaryModel(null), null);
   assert.equal(circuitSummaryModel(planCircuit([], 'aa2')), null);
 });
+
+import { EFFECT_OPTIONS, setEffect, effectFieldSpecs, MOUNT_OPTIONS, setMount } from '../src/ui/t5.js';
+import { EFFECTS } from '../src/lighting/effects.js';
+
+test('effect picker offers every effect; choosing one fills its defaults', () => {
+  assert.deepEqual(EFFECT_OPTIONS.map(([id]) => id).sort(), Object.keys(EFFECTS).sort());
+  const led = { mount: 'wall', color: 'warm' };
+  setEffect(led, 'strip');
+  assert.equal(led.effect, 'strip');
+  assert.equal(led.lengthMm, EFFECTS.strip.defaults.lengthMm);
+  assert.equal(led.ledsPerM, EFFECTS.strip.defaults.ledsPerM);
+  led.lengthMm = 150;
+  setEffect(led, 'strip');
+  assert.equal(led.lengthMm, 150, 'keeps what the user typed');
+  setEffect(led, 'fairy');
+  assert.equal(led.bulbs, EFFECTS.fairy.defaults.bulbs);
+  setEffect(led, 'steady');
+  assert.equal(led.effect, undefined, 'steady is the default, stored as nothing');
+  assert.equal(led.bulbs, undefined);
+  assert.equal(led.lengthMm, undefined);
+  setEffect(led, 'nope');
+  assert.equal(led.effect, undefined);
+});
+
+test('each effect lists the fields it needs', () => {
+  assert.deepEqual(effectFieldSpecs({}), []);
+  assert.deepEqual(effectFieldSpecs({ effect: 'candle' }), []);
+  assert.deepEqual(effectFieldSpecs({ effect: 'fairy' }).map((f) => f.key), ['bulbs', 'lengthMm']);
+  assert.deepEqual(effectFieldSpecs({ effect: 'strip' }).map((f) => f.key), ['lengthMm', 'ledsPerM']);
+  for (const f of effectFieldSpecs({ effect: 'strip' })) assert.ok(f.label && f.min > 0);
+});
+
+test('mount picker: outside or flush behind the wall', () => {
+  assert.deepEqual(MOUNT_OPTIONS.map(([id]) => id), ['outside', 'flush']);
+  const p = { kind: 'battery' };
+  setMount(p, 'flush');
+  assert.equal(p.mount, 'flush');
+  setMount(p, 'outside');
+  assert.equal(p.mount, undefined, 'outside is the default, stored as nothing');
+  setMount(p, 'bogus');
+  assert.equal(p.mount, undefined);
+});
