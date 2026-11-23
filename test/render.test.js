@@ -208,3 +208,34 @@ test('every board panel of a real kit extrudes to a closed solid', () => {
   assert.ok(rects.length > 0);
   for (const f of rects) assertClosed(extrudeFace(f, faceThickness(f), fan).positions);
 });
+
+// ------------------------------------------------------- window light at night
+import { windowLights, MAX_WINDOW_LIGHTS } from '../src/render/scene.js';
+
+test('windowLights: one per window, pointing into the room; doors and LED wire holes are not windows', () => {
+  for (const [id, wall] of [['reading-nook', [0, -1, 0]], ['cafe', [0, -1, 0]], ['kitchen', [0, -1, 0]]]) {
+    const kit = applyRoomType(defaultKit(), id);
+    const faces = compileKit(kit).faces3d;
+    const wins = windowLights(faces);
+    assert.equal(wins.length, kit.openings.filter((o) => !/door/.test(o.kind)).length, `${id}: windows only`);
+    const w = wins[0];
+    assert.deepEqual(w.normal.map((v) => Math.round(v)), wall, `${id}: shines into the room`);
+    assert.ok(w.width > 8 && w.height > 8, `${id}: window-sized (${w.width}×${w.height} mm)`);
+    // the centre sits in the wall plane, inside the hole
+    const shell = faces.find((f) => f.layer === 0 && f.polys.length > 1 && Math.round(f.n[1]) === -1);
+    assert.ok(Math.abs(dot(w.center, shell.n) - dot(shell.polys[0][0], shell.n)) < 1e-6, 'in the wall plane');
+    const hole = shell.polys.slice(1).find((h) => {
+      const xs = h.map((p) => p[0]), zs = h.map((p) => p[2]);
+      return w.center[0] > Math.min(...xs) && w.center[0] < Math.max(...xs) && w.center[2] > Math.min(...zs) && w.center[2] < Math.max(...zs);
+    });
+    assert.ok(hole, `${id}: centre is inside a window hole`);
+  }
+});
+
+test('windowLights: none without windows, and capped', () => {
+  const kit = defaultKit();
+  assert.equal(windowLights(compileKit({ ...kit, openings: [] }).faces3d).length, 0);
+  const many = Array.from({ length: MAX_WINDOW_LIGHTS + 3 }, (_, i) => ({ kind: 'window', wall: 'back', pos: 40 + i * 50, sill: 90, width: 30, height: 40, trim: false }));
+  const faces = compileKit({ ...kit, room: { ...kit.room, width: 600 }, openings: many }).faces3d;
+  assert.equal(windowLights(faces).length, MAX_WINDOW_LIGHTS);
+});
