@@ -96,7 +96,8 @@ function pickAt(stage, x, y) {
 
 /**
  * Click a piece in the 3D view to select it. onPick(index) should select it
- * the same way the plan does. Drags still orbit: only a press that barely
+ * the same way the plan does, and redraw the stage to show it; onPick(null)
+ * means a click on empty space. Drags still orbit: only a press that barely
  * moves counts as a click.
  */
 export function attachPicking(stage, onPick) {
@@ -107,10 +108,7 @@ export function attachPicking(stage, onPick) {
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
     down = null;
     if (moved > CLICK_SLOP) return;
-    const index = pickAt(stage, e.clientX, e.clientY);
-    if (index == null) return;
-    onPick(index);
-    redrawLast(); // show the highlight
+    onPick(pickAt(stage, e.clientX, e.clientY)); // null: empty space, which clears the selection
   });
   stage.addEventListener('pointercancel', () => { down = null; });
   // hover: show which piece a click would pick (checked once per frame)
