@@ -122,7 +122,7 @@ test('material library: add, duplicate and delete materials', async () => {
   assert.equal(await rows.last().locator('input[aria-label="Material name"]').inputValue(), 'New material');
   await rows.first().locator('button[title^="Duplicate"]').click();
   assert.equal(await rows.count(), start + 2);
-  assert.match(await rows.last().locator('input[aria-label="Material name"]').inputValue(), /copy$/);
+  assert.match(await rows.nth(1).locator('input[aria-label="Material name"]').inputValue(), /copy$/, 'the copy sits under its original');
   // a material the kit uses can't be deleted; an unused one can
   assert.equal(await rows.first().locator('button[title^="Delete"]').isDisabled(), true);
   await rows.last().locator('button[title^="Delete"]').click();

@@ -9,7 +9,7 @@
 import { sheetCutSVG, sheetFileName, LAYER_COLORS } from '../svg.js';
 import { laserSheetSVG, laserSheetDXF, laserFileName, LASER_COLORS, DEFAULT_KERF } from './laser.js';
 import { estimateCutMinutes, formatMinutes } from '../make.js';
-import { withMaterialDefaults } from '../materials.js';
+import { machineSettings } from '../materials.js';
 
 export function machineFamily(machine) {
   return machine?.family || 'cricut';
@@ -23,7 +23,7 @@ export function sheetFiles(sheet, machine, { drawLabels = false, title = '' } = 
   const t = titleOf(title, sheet);
   const family = machineFamily(machine);
   if (family === 'laser') {
-    const kerf = machine.kerf ?? DEFAULT_KERF;
+    const kerf = machineSettings(sheet.material, machine).kerf ?? DEFAULT_KERF;
     return [
       { name: laserFileName(sheet, 'svg'), data: laserSheetSVG(sheet, { kerf, engraveLabels: true, title: t }), type: SVG, label: 'SVG' },
       { name: laserFileName(sheet, 'dxf'), data: laserSheetDXF(sheet, { kerf, engraveLabels: true }), type: DXF, label: 'DXF' },
@@ -41,20 +41,18 @@ export function kitCutFiles(sheets, machine, opts = {}) {
   return sheets.flatMap((s) => sheetFiles(s, machine, opts).map((f) => ({ ...f, name: `cut-files/${f.name}` })));
 }
 
-const SILHOUETTE_BLADES = { fine: 'AutoBlade', knife: 'Kraft Blade', rotary: 'Rotary Blade' };
-
 /** One-line machine settings for a sheet card. */
 export function machineSettingsLine(sheet, machine) {
-  const m = withMaterialDefaults(sheet.material);
-  const family = machineFamily(machine);
-  if (family === 'laser') {
-    return `kerf ${machine.kerf ?? DEFAULT_KERF} mm compensated · red = cut, blue = score, black = engrave · test power and speed on a scrap first`;
+  const s = machineSettings(sheet.material, machine);
+  const time = `≈ ${formatMinutes(estimateCutMinutes(sheet, machine))}`;
+  const passes = (n) => `${n} pass${n === 1 ? '' : 'es'}`;
+  if (s.family === 'laser') {
+    return `${time} · ${s.power}% power, ${s.speed} mm/s, ${passes(s.passes)} · kerf ${s.kerf} mm compensated · red = cut, blue = score, black = engrave · test on a scrap first`;
   }
-  const time = `≈ ${formatMinutes(estimateCutMinutes(sheet))}`;
-  if (family === 'silhouette') {
-    return `${time} · Silhouette Studio: ${SILHOUETTE_BLADES[m.tool] || 'AutoBlade'}${m.tool === 'knife' ? `, ${m.passes} passes` : ''}`;
+  if (s.family === 'silhouette') {
+    return `${time} · Silhouette Studio: ${s.blade}, speed ${s.speed}${s.passes > 1 ? `, ${passes(s.passes)}` : ''}`;
   }
-  return `${time} · Design Space: ${m.cricut}${m.tool === 'knife' ? ` · ${m.passes} passes` : ''}`;
+  return `${time} · Design Space: ${s.setting}${sheet.material.tool === 'knife' ? ` · ${passes(s.passes)}` : ''}`;
 }
 
 /** Colour legend for the sheets view: [{ label, color, dashed }]. */
@@ -78,7 +76,7 @@ export function machineReadme(machine) {
   if (family === 'laser') {
     return `Cut files are for a laser cutter (${machine.name}). Each sheet comes as an SVG and a DXF in millimetres.\n`
       + `Colours/layers: red (CUT) = cut through, blue (SCORE) = light score for folds, black (ENGRAVE) = part numbers.\n`
-      + `Cut paths are already kerf-compensated for ${machine.kerf ?? DEFAULT_KERF} mm, so do not add an offset in your laser software.\n`
+      + `Cut paths are already kerf-compensated (${machine.kerf ?? DEFAULT_KERF} mm unless a material sets its own; see each sheet's settings), so do not add an offset in your laser software.\n`
       + `Import at 100% scale and run a test cut on a scrap to set power and speed.\n`;
   }
   if (family === 'silhouette') {
