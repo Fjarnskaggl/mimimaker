@@ -1,7 +1,7 @@
 // Shell registry. A shell is the structure of a book nook or room box beyond
 // a single open box: walls plus any built-in layers, sized from a shelf gap.
 //
-// buildShell(spec, { t, fingerWidth }) → {
+// buildShell(spec, { t, fingerWidth, minFeature, cutter }) → {
 //   type, dims: { W, D, H, t, inner: { x0, y0, z0, W, D, H } },
 //   parts: [{ key, name, group, role, material?, polys: [outline, ...holes], scores, plane: { o, U, V, n } }],
 //   joints: [{ a: partKey, b: partKey, kind: 'finger' | 'slot' | 'glue-tab' | 'flat' (see build/joints.js JOINT_KINDS) }],
@@ -20,6 +20,7 @@ import { buildBookshop, BOOKSHOP_PARAMS, BOOKSHOP_DEFAULTS } from './bookshop.js
 import { buildStaircase, STAIRCASE_PARAMS, STAIRCASE_DEFAULTS } from './staircase.js';
 import { buildGreenhouse, GREENHOUSE_PARAMS, GREENHOUSE_DEFAULTS } from './greenhouse.js';
 import { buildTwoStorey, TWOSTOREY_PARAMS, TWOSTOREY_DEFAULTS } from './twostorey.js';
+import { autoFingerWidth, MIN_FEATURE } from '../box.js';
 
 /** Outer W × H × D of a shell that slides into `gap` (see fit.js). */
 export function shellSize(spec) {
@@ -40,14 +41,20 @@ export const SHELLS = {
 
 /** `holes`: face → polygons (wall panel coords) to cut through the shell walls. */
 /** `materials`: the kit's materials, so a shell type can cut some parts from another (thinner) one. */
-export function buildShell(spec, { t, fingerWidth = 0, holes = {}, materials }) {
+/**
+ * `minFeature`: smallest tab or notch the cutter makes cleanly in the shell's
+ * material (mm, see box.js minJointFeature); joints never go narrower.
+ * `cutter` names it in the warning. Defaults: the Knife Blade's 3 mm.
+ */
+export function buildShell(spec, { t, fingerWidth = 0, holes = {}, materials, minFeature = MIN_FEATURE.knife, cutter = 'the Knife Blade' }) {
   const def = SHELLS[spec.type];
   if (!def) throw new Error(`Unknown shell type "${spec.type}".`);
   const { W, H, D } = sizeFromGap(spec);
-  const res = def.build({ W, D, H, t, fingerWidth, holes, materials, material: spec.material }, { ...def.defaults, ...(spec.params || {}) });
+  const fw = Math.max(fingerWidth > 0 ? fingerWidth : autoFingerWidth(t), minFeature);
+  const res = def.build({ W, D, H, t, fingerWidth: fw, holes, materials, material: spec.material }, { ...def.defaults, ...(spec.params || {}) });
   const warnings = [...res.warnings];
-  if (res.minFinger < 3) {
-    warnings.push({ level: 'warn', msg: `Shell finger joints are only ${res.minFinger.toFixed(1)} mm wide — the Knife Blade is cleaner above 3 mm.` });
+  if (res.minFinger < minFeature - 1e-9) {
+    warnings.push({ level: 'warn', msg: `Shell finger joints are only ${res.minFinger.toFixed(1)} mm wide — ${cutter} is cleaner above ${minFeature} mm.` });
   }
   // parts default to the shell's material; a type may pick another per part
   const parts = spec.material === undefined ? res.parts
