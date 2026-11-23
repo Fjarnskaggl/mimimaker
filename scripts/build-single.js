@@ -6,14 +6,18 @@
 // --fragment omits <!doctype>/<html>/<head>/<body> (for hosts that add them).
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, posix, resolve } from 'node:path';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
 const args = process.argv.slice(2);
 const fragment = args.includes('--fragment');
 const out = resolve(args.find((a) => !a.startsWith('--')) || join(root, 'dist/mimimaker.html'));
 
-const IMPORT_RE = /^import\s*\{([^}]*)\}\s*from\s*'\.\/([\w-]+)\.js';\s*$/gm;
+const IMPORT_RE = /^import\s*\{([^}]*)\}\s*from\s*'(\.{1,2}\/[\w./-]+)\.js';[^\n]*$/gm;
+
+// Module ids are paths under src/ without ".js" (e.g. "kit", "render/webgl");
+// imports are resolved relative to the importing module.
+const resolveId = (from, spec) => posix.normalize(posix.join(posix.dirname(from), spec));
 
 // Collect modules in dependency order starting from app.js.
 const order = [];
@@ -22,7 +26,7 @@ function visit(name) {
   if (seen.has(name)) return;
   seen.add(name);
   const src = readFileSync(join(root, 'src', `${name}.js`), 'utf8');
-  for (const m of src.matchAll(IMPORT_RE)) visit(m[2]);
+  for (const m of src.matchAll(IMPORT_RE)) visit(resolveId(name, m[2]));
   order.push({ name, src });
 }
 visit('app');
@@ -32,7 +36,7 @@ function transform({ name, src }) {
   let body = src.replace(IMPORT_RE, (_, names, from) => {
     const binds = names.split(',').map((n) => n.trim()).filter(Boolean)
       .map((n) => n.replace(/\s+as\s+/, ': '));
-    return `const { ${binds.join(', ')} } = __m[${JSON.stringify(from)}];`;
+    return `const { ${binds.join(', ')} } = __m[${JSON.stringify(resolveId(name, from))}];`;
   });
   body = body.replace(/^export\s+(async\s+function|function|const|let|class)\s+([\w$]+)/gm, (_, kw, id) => {
     exports.push(id);

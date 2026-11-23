@@ -13,6 +13,7 @@ import { fitCoupon, couponSVG, calibrate, estimateCutMinutes, formatMinutes } fr
 import { shareHash, kitFromHash, decodeKit } from './share.js';
 import { itemSize } from './catalog.js';
 import { renderScene } from './preview3d.js';
+import { drawStage, rendererToggle } from './ui/t6.js'; // T6: WebGL viewer + SVG fallback
 import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { guideHTML } from './guide.js';
 import { makeZip } from './zip.js';
@@ -463,7 +464,7 @@ function renderPreview(el) {
       onclick: () => { view.night = !view.night; night.setAttribute('aria-pressed', String(view.night)); night.lastChild.textContent = view.night ? 'Lights on' : 'Lights off'; drawScene(); },
     }, h('i'), view.night ? 'Lights on' : 'Lights off');
     el.replaceChildren(stage, h('div', { class: 'stage-tools' },
-      night, h('label', {}, 'Rotate ', yaw), h('label', {}, 'Tilt ', pitch),
+      night, rendererToggle(drawScene), h('label', {}, 'Rotate ', yaw), h('label', {}, 'Tilt ', pitch),
       h('span', {}, 'Drag the model to orbit.')));
     let drag = null;
     stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
@@ -484,7 +485,7 @@ function drawScene() {
   const stage = document.querySelector('.stage');
   if (!stage || !compiled) return;
   stage.classList.toggle('night', view.night);
-  stage.innerHTML = renderScene(compiled.faces3d, view);
+  drawStage(stage, compiled.faces3d, view); // T6
 }
 
 function renderCalibration() {
