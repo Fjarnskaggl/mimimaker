@@ -1,7 +1,7 @@
 // Tests for the single-file bundler (scripts/build-single.js), issue #12.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import vm from 'node:vm';
@@ -106,4 +106,12 @@ test('the built page keeps the web fonts and the icon from index.html', () => {
     assert.doesNotMatch(page, /src="src\/app\.js"/);
   }
   assert.match(buildPage({ html, css: '', js: '', fragment: false }), /<link rel="icon" href="data:image\/svg\+xml,ICON">/);
+});
+
+test('the published pages ask search engines not to index them', () => {
+  const index = readFileSync(resolve('index.html'), 'utf8');
+  assert.match(index, /<meta name="robots" content="noindex">/, 'index.html (served as-is by the dev server)');
+  const page = buildPage({ html: index, css: '', js: '', fragment: false });
+  const head = page.slice(0, page.indexOf('</head>'));
+  assert.match(head, /<meta name="robots" content="noindex">/, 'the single-file build that Pages publishes');
 });

@@ -60,8 +60,8 @@ test('shell panel: pick an alley, size it to a shelf gap, tune it, and turn it o
   await page.waitForSelector('#view svg');
   assert.ok(!(await page.locator('#warnings .warn.error').count()), await page.locator('#warnings').innerText());
 
+  await page.click('[data-step=design]'); // the shell panel lives in the Design inspector
   if (process.env.SHOT_DIR) {
-    await page.click('[data-step=design]');
     await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'shell-alley.png') });
   }
