@@ -99,3 +99,29 @@ test('the power box can be mounted flush behind its wall', async () => {
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+const fs = require('node:fs');
+
+test('the kit zip carries shopping-list.csv when there are lights', async () => {
+  const page = await open();
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btn-zip')]);
+  const zip = fs.readFileSync(await dl.path()).toString('latin1');
+  assert.ok(zip.includes('shopping-list.csv'), 'file in the zip');
+  assert.ok(zip.includes('Pre-wired 3 V micro LED'), 'stored CSV text');
+  await page.evaluate(() => { window.mimimaker.kit.lighting.enabled = false; window.mimimaker.refresh(); });
+  const [dl2] = await Promise.all([page.waitForEvent('download'), page.click('#btn-zip')]);
+  assert.ok(!fs.readFileSync(await dl2.path()).toString('latin1').includes('shopping-list.csv'), 'no lights, no list');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('the Power section has a Shopping list download', async () => {
+  const page = await open();
+  await page.click('[data-step=light]');
+  await page.evaluate(() => { for (const d of document.querySelectorAll('details.section')) d.open = true; });
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('button[data-t5=shopping]')]);
+  assert.equal(dl.suggestedFilename(), 'shopping-list.csv');
+  assert.match(fs.readFileSync(await dl.path(), 'utf8'), /^Qty,Item/);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
