@@ -17,6 +17,7 @@ import { buildNook } from './nook.js';
 import { buildAlley, ALLEY_PARAMS, ALLEY_DEFAULTS } from './alley.js';
 import { buildBookshop, BOOKSHOP_PARAMS, BOOKSHOP_DEFAULTS } from './bookshop.js';
 import { buildStaircase, STAIRCASE_PARAMS, STAIRCASE_DEFAULTS } from './staircase.js';
+import { buildGreenhouse, GREENHOUSE_PARAMS, GREENHOUSE_DEFAULTS } from './greenhouse.js';
 
 /** Outer W × H × D of a shell that slides into `gap` (see fit.js). */
 export function shellSize(spec) {
@@ -29,6 +30,7 @@ export const SHELLS = {
   alley: { label: 'Alley with lit facades', params: ALLEY_PARAMS, defaults: ALLEY_DEFAULTS, build: buildAlley, furnishable: false },
   bookshop: { label: 'Bookshop corner', params: BOOKSHOP_PARAMS, defaults: BOOKSHOP_DEFAULTS, build: buildBookshop, furnishable: false },
   staircase: { label: 'Staircase to a landing', params: STAIRCASE_PARAMS, defaults: STAIRCASE_DEFAULTS, build: buildStaircase, furnishable: false },
+  greenhouse: { label: 'Greenhouse', params: GREENHOUSE_PARAMS, defaults: GREENHOUSE_DEFAULTS, build: buildGreenhouse, furnishable: false },
 };
 
 /** `holes`: face → polygons (wall panel coords) to cut through the shell walls. */
