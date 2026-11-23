@@ -22,7 +22,9 @@ const panel = (L) => L.parts.find((p) => p.role === 'panel');
 
 test('cover off (or missing): no extra parts or steps', () => {
   for (const cover of [undefined, { enabled: false }]) {
-    const L = compileKit(kitWith([backLed], { cover })).lighting;
+    const kit = kitWith([backLed]);
+    kit.lighting.cover = cover;
+    const L = compileKit(kit).lighting;
     assert.deepEqual(L.parts, []);
     assert.deepEqual(L.steps, []);
   }
