@@ -105,6 +105,41 @@ export function bundle(entry) {
   return { js, modules: order.map((m) => m.key) };
 }
 
+/**
+ * The single-file page: index.html's body with styles.css and the bundled
+ * JS inlined. Remote stylesheets (the web fonts), the robots meta and the icon carry over
+ * from index.html's head; `fragment` leaves out the html/head/body shell.
+ */
+export function buildPage({ html, css, js, fragment = false }) {
+  const title = html.match(/<title>[\s\S]*?<\/title>/)?.[0] || '<title>mimimaker</title>';
+  const remote = [...html.matchAll(/<link rel="(?:stylesheet|preconnect)" href="https:[^"]*"[^>]*>/g)].map((m) => m[0]).join('\n');
+  const icon = html.match(/<link rel="icon"[^>]*>/)?.[0] || '';
+  const robots = html.match(/<meta name="robots"[^>]*>/)?.[0] || '';
+  const bodyInner = html.match(/<body>([\s\S]*)<\/body>/)[1].replace(/<script[^>]*src="src\/app\.js"[^>]*><\/script>/, '');
+  const page = `${title}
+${remote}
+<style>
+${css}
+</style>
+${bodyInner.trim()}
+<script>
+${js.replace(/<\/script/gi, '<\\/script')}
+</script>
+`;
+  return fragment ? page : `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+${robots}
+${icon}
+</head>
+<body>
+${page}</body>
+</html>
+`;
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
 const root = resolve(new URL('..', import.meta.url).pathname);
 const args = process.argv.slice(2);
@@ -115,29 +150,7 @@ const order = modules;
 
 const css = readFileSync(join(root, 'styles.css'), 'utf8');
 const html = readFileSync(join(root, 'index.html'), 'utf8');
-const title = html.match(/<title>[\s\S]*?<\/title>/)[0];
-const bodyInner = html.match(/<body>([\s\S]*)<\/body>/)[1].replace(/<script[^>]*src="src\/app\.js"[^>]*><\/script>/, '');
-
-const page = `${title}
-<style>
-${css}
-</style>
-${bodyInner.trim()}
-<script>
-${js.replace(/<\/script/gi, '<\\/script')}
-</script>
-`;
-const doc = fragment ? page : `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 14 16 5l12 9v13H4z' fill='%23c0603a'/%3E%3Crect x='13' y='18' width='6' height='9' fill='%23fff8ef'/%3E%3C/svg%3E">
-</head>
-<body>
-${page}</body>
-</html>
-`;
+const doc = buildPage({ html, css, js, fragment });
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, doc);
 console.log(`wrote ${out} (${(doc.length / 1024).toFixed(0)} KB, ${order.length} modules)`);
