@@ -118,3 +118,25 @@ test('gallery cards show title, author, licence and remix credit, escaped', asyn
 test('buildGallery refuses an invalid collection', async () => {
   await assert.rejects(buildGallery([sample({ title: '' })]), /title/);
 });
+
+// The Pages deploy runs `node gallery/build.js _site/gallery`. If the CLI
+// guard misses (path with a space, or reached through a symlink) it used to
+// exit 0 having written nothing, so the live site silently lost its gallery.
+test('gallery CLI builds when run through a path with a space or a symlink', async () => {
+  const { mkdtempSync, symlinkSync, existsSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { execFileSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const tmp = mkdtempSync(join(tmpdir(), 'mimi gallery '));
+  try {
+    const link = join(tmp, 'linked repo');
+    symlinkSync(root, link, 'dir');
+    const out = join(tmp, 'out');
+    execFileSync(process.execPath, [join(link, 'gallery/build.js'), out], { stdio: 'pipe' });
+    assert.ok(existsSync(join(out, 'index.html')), 'index.html written');
+    assert.ok(existsSync(join(out, 'renders', `${entries[0].entry.meta.id}.svg`)), 'renders written');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
