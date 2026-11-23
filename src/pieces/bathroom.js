@@ -3,6 +3,7 @@ import { num } from './params.js';
 export const BATHROOM = [
   {
     id: 'bathtub', label: 'Bathtub', theme: 'Bathroom', placement: 'floor', mat: 'board',
+    tags: ['water'], difficulty: 1,
     params: [num('w', 'Length', 100, 200), num('d', 'Width', 55, 100), num('h', 'Height', 40, 70)],
     defaults: { w: 170, d: 75, h: 55 },
     components: [{ kind: 'box', name: 'Bathtub', size: ['w', 'd', 'h'], faces: ['bottom', 'front', 'back', 'left', 'right'], at: [0, 0, 0] }],
@@ -10,6 +11,7 @@ export const BATHROOM = [
   },
   {
     id: 'vanity', label: 'Vanity', theme: 'Bathroom', placement: 'floor', mat: 'board',
+    tags: ['water', 'storage'], difficulty: 2,
     params: [num('w', 'Width', 40, 160), num('d', 'Depth', 30, 60), num('h', 'Height', 60, 100)],
     defaults: { w: 80, d: 45, h: 85 },
     components: [{
@@ -20,6 +22,7 @@ export const BATHROOM = [
   },
   {
     id: 'toilet', label: 'Toilet', theme: 'Bathroom', placement: 'floor', mat: 'card',
+    tags: ['water'], difficulty: 2,
     params: [num('w', 'Width', 30, 50), num('d', 'Depth', 50, 80), num('h', 'Height', 60, 90)],
     defaults: { w: 40, d: 68, h: 78 },
     size: ['w', 'd', 'h'],

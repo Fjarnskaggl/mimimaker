@@ -43,8 +43,18 @@ without a coordinator note on #1.
    exporting render functions. Keep edits to `src/app.js` / `index.html` /
    `styles.css` to small, clearly marked wiring hunks; rebase on `main` first.
 5. **Small PRs into `main`.** Title `[Tn] …`, body says `Part of #<issue>`,
-   lists tests added, and includes a screenshot for UI changes. One feature per
-   PR. The owner (or the coordinator on the owner's say-so) merges.
+   lists tests added, and says what the UI should look like for UI changes.
+   One feature per PR. The owner (or the coordinator on the owner's say-so)
+   merges.
+   **No images in the repo:** don't commit screenshots. Give your browser test
+   a `SHOT_DIR` hook (write `page.screenshot()` files there when the variable
+   is set); the coordinator runs it during review and checks the images.
+   **Browser-test servers:** e2e files run in parallel, so never hard-code a
+   port. Start the dev server with `startServer()` from
+   `test/e2e/helpers.cjs` (free port, waits until ready, `close()` after).
+   **WebGL tests without the CDN:** if cdnjs is blocked in your sandbox, run
+   `npm pack three@0.128.0`, untar it, and set
+   `MIMI_THREE_JS=<dir>/package/build/three.min.js`.
 6. **Keep the tracker current.** Tick checklist items when their PR merges, add
    items you discover, and leave a short dated progress comment on your issue
    whenever you open a PR or get blocked.

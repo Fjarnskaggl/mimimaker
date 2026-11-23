@@ -115,7 +115,7 @@ function layoutWindows({ a, b, roofA, roofB, side, roof, bottom, bridge, winW, w
   return { windows, skipped };
 }
 
-export function buildAlley({ W, D, H, t, fingerWidth }, params) {
+export function buildAlley({ W, D, H, t, fingerWidth, holes = {} }, params) {
   const P = { ...ALLEY_DEFAULTS, ...params };
   const nb = clampInt(P.buildings, 1, 6);
   const layers = clampInt(P.layers, 1, 4);
@@ -317,7 +317,7 @@ export function buildAlley({ W, D, H, t, fingerWidth }, params) {
   }
 
   // ---------------------------------------------------------------- shell
-  const shell = nookWalls({ W, D, H, t, fingerWidth, holes: { back: backHoles } });
+  const shell = nookWalls({ W, D, H, t, fingerWidth, holes: { ...holes, back: [...(holes.back || []), ...backHoles] } });
   parts.unshift(...shell.parts);
   joints.unshift(...shell.joints);
 

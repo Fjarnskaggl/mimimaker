@@ -108,3 +108,13 @@ test('every part carries a material, defaulting to the shell material', () => {
   const none = buildShell({ type: 'nook', gap: GAPS[0] }, { t: 2 });
   assert.ok(none.parts.every((p) => !('material' in p) || p.material === undefined));
 });
+
+test('holes passed to a shell are cut through its walls', () => {
+  const hole = rectPoly(30, 60, 20, 30);
+  for (const type of ['nook', 'alley']) {
+    const sh = buildShell({ type, gap: { w: 100, h: 230, d: 180 } }, { t: 2, holes: { back: [hole], left: [rectPoly(40, 40, 10, 10)] } });
+    const back = sh.parts.find((p) => p.key === 'shell-back');
+    assert.ok(back.polys.some((p) => JSON.stringify(p) === JSON.stringify(hole)), `${type}: back wall hole`);
+    assert.equal(sh.parts.find((p) => p.key === 'shell-left').polys.length, 2, `${type}: left wall hole`);
+  }
+});

@@ -9,6 +9,8 @@ import { packParts, SHEET_MARGIN } from './nest.js';
 import { labelAnchor } from './labels.js';
 import { planLighting, LED_COLORS, POWER_KINDS } from './lighting.js';
 import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometry.js';
+// T2 shells
+import { prepareShell, compileShell } from './shells/kit.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
@@ -81,6 +83,7 @@ export function compileKit(kit) {
     const map = onPlane(plane);
     faces3d.push({
       layer, color, opacity: opts.opacity ?? 1, cull: opts.cull ?? false, glow: !!opts.glow, item: currentItem,
+      thickness: opts.thickness, // mm of material behind the face (solid parts only; WebGL viewer)
       polys: polys2d.map((poly) => poly.map((p) => xf.p(map(p)))), n: xf.n(plane.n),
     });
   };
@@ -91,6 +94,12 @@ export function compileKit(kit) {
   };
 
   // ---------------------------------------------------------------- room box
+  // >>> T2 shells: kit.shell swaps the room box for a book-nook shell; its
+  // interior becomes the effective room (see src/shells/kit.js).
+  const shellPrep = prepareShell(kit, warn);
+  if (shellPrep) kit = shellPrep.kit;
+  let shell = null;
+  // <<< T2 shells
   const room = kit.room;
   const rm = getMat(room.material, 'Room');
   const t = rm.thickness;
@@ -124,13 +133,16 @@ export function compileKit(kit) {
   for (const [f, list] of Object.entries(lighting.holes)) (holes[f] ||= []).push(...list);
   for (const w of lighting.warnings) typeof w === 'string' ? warn(w) : warn(w.msg, w.level);
 
-  const roomGroup = newGroup('Room box', rm);
-  if (rm.kind === 'board') {
+  // >>> T2 shells
+  const roomGroup = shellPrep ? null : newGroup('Room box', rm);
+  if (shellPrep) {
+    shell = compileShell(shellPrep, { t, fingerWidth, holes, getMat, newGroup, addPart, add3d, warn, xf: worldXf });
+  } else if (rm.kind === 'board') { // <<< T2 shells
     const res = buildBox({ W, D, H, t, faces: roomFaces, holes, fingerWidth });
     checkFingers(res.minFinger, rm, 'Room box');
     for (const p of res.panels) {
       addPart(roomGroup, ROOM_FACE_NAMES[p.face], rm, [p.outline, ...p.holes]);
-      add3d(0, [p.outline, ...p.holes], faceFrame(p.face, W, D, H, t, 'inner'), worldXf, rm.color);
+      add3d(0, [p.outline, ...p.holes], faceFrame(p.face, W, D, H, t, 'inner'), worldXf, rm.color, { thickness: t });
     }
     roomGroup.steps.push(
       `Dry-fit the walls into the floor (${fmtIds(roomGroup.parts)}). The fingers only go together one way — the floor${room.ceiling ? ' and ceiling' : ''} own the corners.`,
@@ -143,7 +155,7 @@ export function compileKit(kit) {
     }
     for (const f of roomFaces) {
       const [a, b] = f === 'bottom' || f === 'top' ? [W, D] : f === 'back' ? [W, H] : [D, H];
-      add3d(0, [rectPoly(0, 0, a, b), ...(holes[f] || [])], faceFrame(f, W, D, H, 0, 'inner'), worldXf, rm.color);
+      add3d(0, [rectPoly(0, 0, a, b), ...(holes[f] || [])], faceFrame(f, W, D, H, 0, 'inner'), worldXf, rm.color, { thickness: t });
     }
     roomGroup.steps.push(
       `Fold each glue tab on ${fmtIds(roomGroup.parts)} along its score line and glue the walls to the floor and to each other, tabs on the inside.`,
@@ -296,7 +308,7 @@ export function compileKit(kit) {
         const plane = c.wall ? wallPlane : c.plane;
         const fmat = c.material ? getMat(c.material, title) : mat;
         const pid = addPart(group, c.name, fmat, c.polys, c.scores || []);
-        add3d(c.surface ? 1.5 : 2, c.polys, plane, c.wall ? worldXf : cxf, fmat.color, { cull: false });
+        add3d(c.surface ? 1.5 : 2, c.polys, plane, c.wall ? worldXf : cxf, fmat.color, { cull: false, thickness: c.surface ? undefined : fmat.thickness });
         group.steps.push(`Glue the ${c.name.toLowerCase()} (#${pid}) in place.`);
       }
     }
@@ -316,11 +328,11 @@ export function compileKit(kit) {
       const res = buildBox({ W: bw, D: bd, H: bh, t: mt, faces: c.faces, shelves: c.shelves || [], scores: c.scores || {}, holes: c.holes || {}, fingerWidth });
       checkFingers(res.minFinger, mat, title);
       const ids = res.panels.map((pn) => {
-        add3d(2, [pn.outline, ...pn.holes], faceFrame(pn.face, bw, bd, bh), xf, mat.color, { cull: closed });
+        add3d(2, [pn.outline, ...pn.holes], faceFrame(pn.face, bw, bd, bh), xf, mat.color, { cull: closed, thickness: mt });
         return addPart(group, `${c.name} ${pn.face}`, mat, [pn.outline, ...pn.holes], pn.scores);
       });
       const shelfIds = res.shelves.map((sp, k) => {
-        add3d(2, [sp.outline], { o: [sp.x0, sp.y0, sp.z + mt], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, xf, mat.color, { cull: true });
+        add3d(2, [sp.outline], { o: [sp.x0, sp.y0, sp.z + mt], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, xf, mat.color, { cull: true, thickness: mt });
         return addPart(group, `${c.name} shelf ${k + 1}`, mat, [sp.outline]);
       });
       group.steps.push(`${c.name}: dry-fit panels ${fmtIds(ids)} — the finger joints interlock. Glue and hold square until set.`);
@@ -336,7 +348,7 @@ export function compileKit(kit) {
     const ids = net.pieces.map((pc, k) => addPart(group, net.pieces.length > 1 ? `${c.name} ${pc.faces[0]}` : `${c.name} net`, mat, pc.polys, pc.scores));
     for (const f of c.faces) {
       const [a, b] = f === 'bottom' || f === 'top' ? [bw, bd] : f === 'front' || f === 'back' ? [bw, bh] : [bd, bh];
-      add3d(2, [rectPoly(0, 0, a, b), ...((c.holes || {})[f] || [])], faceFrame(f, bw, bd, bh), xf, mat.color, { cull: c.faces.length === 6 });
+      add3d(2, [rectPoly(0, 0, a, b), ...((c.holes || {})[f] || [])], faceFrame(f, bw, bd, bh), xf, mat.color, { cull: c.faces.length === 6, thickness: mt });
     }
     const shelfIds = (c.shelves || []).map((z, k) => {
       const sw = bw - 2 * mt, sd = bd - (c.faces.includes('back') ? mt : 0);
@@ -370,5 +382,6 @@ export function compileKit(kit) {
   return {
     parts, groups, faces3d, sheets, warnings, usedMats, machine,
     dims: { W, D, H, Wi, Di, Hi, t }, lighting, openings, ceiling: !!room.ceiling,
+    shell, // T2 shells: { type, dims, joints (by part id), lights } or null
   };
 }

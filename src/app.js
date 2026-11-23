@@ -1,7 +1,7 @@
 // UI controller: edits the kit object, recompiles, and renders the views.
 
 import { compileKit } from './kit.js';
-import { CATALOG, THEMES, defaultKit, defaultMaterialFor } from './catalog.js';
+import { CATALOG, defaultKit, defaultMaterialFor } from './catalog.js';
 import { ROOM_TYPES, applyRoomType } from './templates.js';
 import { LED_COLORS, POWER_KINDS } from './lighting.js';
 import { ledMapSVG, ledRows } from './ledmap.js';
@@ -13,12 +13,18 @@ import { fitCoupon, couponSVG, calibrate, estimateCutMinutes, formatMinutes } fr
 import { shareHash, kitFromHash, decodeKit } from './share.js';
 import { itemSize } from './catalog.js';
 import { renderScene } from './preview3d.js';
+// T6: WebGL viewer + SVG fallback
+import { drawStage, rendererToggle } from './ui/t6.js';
+// T1: piece library (search, difficulty, part counts)
+import { pieceLibrary } from './ui/t1.js';
 import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { guideHTML } from './guide.js';
 import { makeZip } from './zip.js';
 // T3 wiring: per-machine cut files
 import { sheetDownloadButtons, sheetSettings, sheetLegend } from './ui/t3.js';
 import { kitCutFiles, machineReadme } from './export/machines.js';
+// T2 shells
+import { shellSection, applyRoomLocks } from './ui/t2.js';
 
 const STORE_KEY = 'mimimaker.kit.v1';
 const $ = (sel) => document.querySelector(sel);
@@ -179,7 +185,9 @@ function renderSidebar() {
   const sb = $('#sidebar');
   const scroll = sb.scrollTop;
   const openState = [...sb.querySelectorAll('details.section')].map((d) => d.open);
-  sb.replaceChildren(roomTypesSection(), kitSection(), roomSection(), openingsSection(), itemsSection(), lightingSection(), materialsSection());
+  sb.replaceChildren(roomTypesSection(), kitSection(), roomSection(),
+    shellSection(kit, { h, section, numberField, selectField, checkField, changed, restructured }), // T2 shells
+    openingsSection(), itemsSection(), lightingSection(), materialsSection());
   sb.querySelectorAll('details.section').forEach((d, i) => { if (openState[i] != null) d.open = openState[i]; });
   sb.scrollTop = scroll;
 }
@@ -199,7 +207,7 @@ function kitSection() {
 
 function roomSection() {
   const r = kit.room;
-  return section('Room box', [
+  const el = section('Room box', [
     h('div', { class: 'grid3' },
       numberField('Width', r.width, (v) => { r.width = v; changed(); }, { min: 20, unit: 'cm' }),
       numberField('Depth', r.depth, (v) => { r.depth = v; changed(); }, { min: 20, unit: 'cm' }),
@@ -215,6 +223,8 @@ function roomSection() {
     ),
     selectField('Window & door trim material', r.trimMaterial, matOptions((m) => m.kind !== 'fabric'), (v) => { r.trimMaterial = v; changed(); }),
   ]);
+  applyRoomLocks(kit, el, h); // T2 shells: the shell owns the room size (and overlays for whole-scene shells)
+  return el;
 }
 
 const OPENING_KINDS = [['window', 'Window'], ['arch', 'Arched window'], ['round', 'Round window'], ['door', 'Door'], ['archdoor', 'Arched door']];
@@ -349,17 +359,9 @@ function itemsSection() {
     restructured();
     toast(`Added ${def.label.toLowerCase()} — set its position in the list above.`);
   };
-  const chips = h('div', { class: 'chips', role: 'tablist', 'aria-label': 'Piece themes' }, THEMES.map((th) => h('button', {
-    type: 'button', role: 'tab', class: 'chip', 'aria-selected': String(view.theme === th),
-    onclick: () => { view.theme = th; renderSidebar(); },
-  }, th)));
-  const pieces = Object.entries(CATALOG).filter(([, d]) => d.group === view.theme).map(([type, d]) => h('button', {
-    type: 'button', class: 'piece', title: `Add ${d.label}`, onclick: () => addPiece(type),
-  }, h('span', { class: 'thumb', html: itemThumb(type) }), h('span', {}, d.label)));
-  return section('Furniture & decor', [
-    ...cards,
-    h('div', { class: 'library' }, h('strong', { class: 'library-title' }, 'Add a piece'), chips, h('div', { class: 'piece-grid' }, pieces)),
-  ], { count: kit.items.length });
+  // T1: piece library (search, difficulty, part counts) lives in src/ui/t1.js
+  const library = pieceLibrary({ view, addPiece, thumb: itemThumb });
+  return section('Furniture & decor', [...cards, library], { count: kit.items.length });
 }
 
 function lightingSection() {
@@ -466,7 +468,7 @@ function renderPreview(el) {
       onclick: () => { view.night = !view.night; night.setAttribute('aria-pressed', String(view.night)); night.lastChild.textContent = view.night ? 'Lights on' : 'Lights off'; drawScene(); },
     }, h('i'), view.night ? 'Lights on' : 'Lights off');
     el.replaceChildren(stage, h('div', { class: 'stage-tools' },
-      night, h('label', {}, 'Rotate ', yaw), h('label', {}, 'Tilt ', pitch),
+      night, rendererToggle(drawScene), h('label', {}, 'Rotate ', yaw), h('label', {}, 'Tilt ', pitch),
       h('span', {}, 'Drag the model to orbit.')));
     let drag = null;
     stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
@@ -487,7 +489,7 @@ function drawScene() {
   const stage = document.querySelector('.stage');
   if (!stage || !compiled) return;
   stage.classList.toggle('night', view.night);
-  stage.innerHTML = renderScene(compiled.faces3d, view);
+  drawStage(stage, compiled.faces3d, view); // T6
 }
 
 function renderCalibration() {
