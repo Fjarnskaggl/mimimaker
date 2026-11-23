@@ -268,7 +268,10 @@ function notice(tone, word, text) {
 function select(sel) {
   view.sel = sel;
   renderInspector();
+  // the stage on screen shows the selection too, right away (the 3D view
+  // renders on demand, so nothing else would redraw it until the next orbit)
   if (view.tab === 'plan') drawPlan();
+  else if (view.tab === 'preview') drawScene();
 }
 
 function renderInspector() {
