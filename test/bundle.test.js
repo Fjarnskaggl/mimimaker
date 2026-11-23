@@ -74,3 +74,18 @@ test('the real app still bundles', () => {
   assert.ok(modules.includes('app') && modules.includes('kit') && modules.includes('geometry'));
   assert.doesNotMatch(js, /^\s*(import|export)\s/m);
 });
+
+test('exports every name in a multi-declarator export', () => {
+  const p = project({
+    'app.js': "import { A, B, C, D, f } from './lib.js';\nresult = [A, B, C, D, f(2)];\n",
+    'lib.js': [
+      "export const A = [1, 2], B = { x: [3, 4], y: (a, b) => a + b }, C = 'a, b = 1',",
+      "  D = `t, ${[5, 6].join(',')}`; // trailing, comment = no",
+      "export let f = (n) => n * 2;",
+      "",
+    ].join('\n'),
+  });
+  const ctx = runBundle(bundle(join(p.dir, 'app.js')).js);
+  p.done();
+  assert.deepEqual(ctx.result, [[1, 2], { x: [3, 4] }, 'a, b = 1', 't, 5,6', 4]);
+});

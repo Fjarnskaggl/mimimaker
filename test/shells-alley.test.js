@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildShell } from '../src/shells/index.js';
 import { findOverlaps, outsideEnvelope, partBox } from '../src/shells/fit.js';
+import { checkJoints } from './shells-helpers.js';
 import { pointInPolygon, distToPolys, partArea } from '../src/geometry.js';
 
 const gap = { w: 100, h: 230, d: 180 };
@@ -170,4 +171,18 @@ test('assembly steps cover every part', () => {
   assert.ok(sh.steps.length >= 4);
   const groups = new Set(sh.parts.map((p) => p.group));
   for (const g of groups) assert.ok(sh.steps.some((s) => s.group === g), `steps for ${g}`);
+});
+
+test('alley joints: every spacer, layer and backdrop is glued to what it touches', () => {
+  for (const [params, t] of VARIANTS) {
+    const sh = alley(params, t);
+    checkJoints(sh, t);
+    for (const p of sh.parts.filter((q) => q.role === 'spacer')) {
+      const mine = sh.joints.filter((j) => j.a === p.key || j.b === p.key);
+      assert.ok(mine.length >= 2, `${p.key} holds two things together`);
+    }
+    for (const p of sh.parts.filter((q) => q.role === 'layer' && q.layer > 0)) {
+      assert.ok(sh.joints.some((j) => j.kind === 'flat' && [j.a, j.b].includes(p.key)), `${p.key} glued to the layer below`);
+    }
+  }
 });
