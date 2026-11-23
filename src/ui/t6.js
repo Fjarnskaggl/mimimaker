@@ -113,6 +113,19 @@ export function attachPicking(stage, onPick) {
     redrawLast(); // show the highlight
   });
   stage.addEventListener('pointercancel', () => { down = null; });
+  // hover: show which piece a click would pick (checked once per frame)
+  let pending = null;
+  stage.addEventListener('pointermove', (e) => {
+    if (e.buttons) { setHover(stage, null); return; } // orbiting
+    if (pending) { pending.x = e.clientX; pending.y = e.clientY; return; }
+    pending = { x: e.clientX, y: e.clientY };
+    requestAnimationFrame(() => {
+      const { x, y } = pending;
+      pending = null;
+      setHover(stage, pickAt(stage, x, y));
+    });
+  });
+  stage.addEventListener('pointerleave', () => setHover(stage, null));
   // tests and tours: a point where the piece is the front-most thing
   stage.t6pickPoint = (index) => {
     if (stage.dataset.renderer === 'webgl' && state.viewer) return state.viewer.pointFor(index);
@@ -123,6 +136,20 @@ export function attachPicking(stage, onPick) {
     }
     return null;
   };
+}
+
+/** Mark the piece under the pointer in whichever renderer is showing (null: none). */
+function setHover(stage, index) {
+  index = index ?? null;
+  stage.t6hover = index;
+  if (stage.dataset.renderer === 'webgl' && state.viewer) { state.viewer.hover(index); return; }
+  paintSvgHover(stage);
+}
+function paintSvgHover(stage) {
+  const index = stage.t6hover ?? null;
+  for (const el of stage.querySelectorAll('path.hover')) if (Number(el.dataset.item) !== index) el.classList.remove('hover');
+  if (index != null) for (const el of stage.querySelectorAll(`path[data-item="${index}"]`)) el.classList.add('hover');
+  stage.classList.toggle('t6-over-piece', index != null);
 }
 
 function disposeViewer() {
@@ -188,6 +215,7 @@ export function drawStage(stage, faces, view, kit = null) {
   stage.t6viewer = null;
   stage.innerHTML = renderScene(faces, { ...view, selected: view.sel?.kind === 'item' ? view.sel.index : null });
   stage.dataset.renderer = 'svg';
+  paintSvgHover(stage); // the redraw replaced the hovered paths
   if (!state.want) { delete stage.dataset.webgl; return; }
   if (!state.failed) startViewer();
   if (state.failed) {

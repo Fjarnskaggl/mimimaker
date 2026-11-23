@@ -673,7 +673,7 @@ function build3d(bar) {
   }
   bar.append(rendererToggle(drawScene)); // T6
   const foot = h('div', { class: 'stage-foot' },
-    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit' : 'Drag to orbit · edit pieces on the plan or in the list'),
+    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit' : 'Drag to orbit · click a piece to select it · Del remove'),
     h('div', { class: 'orbit' }, h('label', {}, 'Rotate', yaw), h('label', {}, 'Tilt', pitch)));
   let drag = null;
   stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
@@ -828,7 +828,7 @@ function onKey(ev) {
   const key = ev.key.toLowerCase();
   if (mod && key === 'z') { ev.preventDefault(); ev.shiftKey ? redo() : undo(); return; }
   if (mod && key === 'y') { ev.preventDefault(); redo(); return; }
-  if (view.tab !== 'plan' || mod || ev.altKey) return;
+  if ((view.tab !== 'plan' && view.tab !== 'preview') || mod || ev.altKey) return; // the plan and the 3D view share the shortcuts
   const step = ev.shiftKey ? 10 : 1;
   const actions = {
     r: () => planAction('rotate'), d: () => planAction('duplicate'),

@@ -237,6 +237,8 @@ button:disabled, .mm-btn:disabled { opacity: .45; cursor: not-allowed; backgroun
 }
 .stage .scene-svg { width: 100%; height: 100%; max-height: 100%; padding: 56px 24px 48px; touch-action: none; cursor: grab; }
 .stage .scene-svg:active { cursor: grabbing; }
+.stage.t6-over-piece .scene-svg { cursor: pointer; } /* a click would select the piece under the pointer */
+.stage .scene-svg path.hover:not(.sel) { stroke: var(--mat); stroke-width: 0.5; stroke-opacity: 0.8; }
 .stage canvas { touch-action: none; }
 .stage.night { background: var(--night-bg); }
 .stage-bar { position: absolute; z-index: 2; top: var(--space-3); left: var(--space-3); right: var(--space-3); display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; pointer-events: none; }
