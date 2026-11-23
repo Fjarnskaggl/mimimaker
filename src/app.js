@@ -71,7 +71,28 @@ function normalizeKit(k) {
   return out;
 }
 
-function download(name, data, type) {
+// Inside a claude.ai artifact, plain <a download> links are blocked, so use the
+// viewer's save capability when it's available.
+const inArtifact = typeof window !== 'undefined' && !!window.claude?.use;
+const savesReady = inArtifact ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+
+function toast(msg, level = 'info') {
+  const el = h('div', { class: `warn ${level} toast`, role: 'status' }, msg);
+  $('#warnings').prepend(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+async function download(name, data, type) {
+  const saver = await savesReady;
+  if (saver) {
+    try {
+      await saver.save({ filename: name, data: new Blob([data], { type }) });
+    } catch (err) {
+      if (err?.code !== 'declined') toast(`Couldn't save ${name}: ${err?.message || err?.code || 'unavailable here'}.`, 'error');
+    }
+    return;
+  }
+  if (inArtifact) { toast('Downloads aren\'t available in this view.', 'error'); return; }
   const url = URL.createObjectURL(new Blob([data], { type }));
   const a = h('a', { href: url, download: name });
   document.body.append(a);
@@ -311,7 +332,7 @@ function renderGuide(el) {
   frame.srcdoc = html;
   el.replaceChildren(
     h('div', { class: 'guide-tools' },
-      h('button', { type: 'button', onclick: () => frame.contentWindow?.print() }, 'Print guide'),
+      inArtifact ? null : h('button', { type: 'button', onclick: () => frame.contentWindow?.print() }, 'Print guide'),
       h('button', { type: 'button', onclick: () => download(`${slug(kit.name)}-guide.html`, html, 'text/html') }, 'Download .html')),
     frame);
 }
@@ -335,8 +356,18 @@ function init() {
   const nameInput = $('#kit-name');
   nameInput.value = kit.name;
   nameInput.addEventListener('input', () => { kit.name = nameInput.value; changed(); });
-  $('#btn-new').addEventListener('click', () => {
-    if (!confirm('Start over with the sample kit? Unsaved changes will be lost.')) return;
+  // two-step confirm (window.confirm is unavailable in sandboxed views)
+  let armed = null;
+  $('#btn-new').addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    if (!armed) {
+      btn.textContent = 'Click again to reset';
+      btn.classList.add('danger-armed');
+      armed = setTimeout(() => { armed = null; btn.textContent = 'New'; btn.classList.remove('danger-armed'); }, 3000);
+      return;
+    }
+    clearTimeout(armed); armed = null;
+    btn.textContent = 'New'; btn.classList.remove('danger-armed');
     kit = defaultKit();
     nameInput.value = kit.name;
     restructured();
@@ -351,7 +382,7 @@ function init() {
       nameInput.value = kit.name;
       restructured();
     } catch (err) {
-      alert(`That file couldn't be opened: ${err.message}`);
+      toast(`That file couldn't be opened: ${err.message}`, 'error');
     }
     e.target.value = '';
   });

@@ -28,6 +28,15 @@ npm test
 
 runs the geometry and kit tests with Node's built-in test runner (Node 18+).
 
+To get a single self-contained HTML file (all CSS/JS inlined, opens from
+`file://` or any host), run:
+
+```bash
+npm run build
+```
+
+It writes `dist/mimimaker.html`.
+
 ## What it makes
 
 | Material kind | Examples | How boxes are built |

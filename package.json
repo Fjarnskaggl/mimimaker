@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "start": "node scripts/serve.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "build": "node scripts/build-single.js"
   },
   "license": "MIT"
 }

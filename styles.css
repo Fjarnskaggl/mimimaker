@@ -155,3 +155,5 @@ details.section > summary .count { margin-left: auto; color: var(--muted); font-
   .summary { margin-left: 0; width: 100%; }
   .stage .scene-svg { max-height: 60vh; }
 }
+
+.danger-armed { border-color: var(--err-ink); color: var(--err-ink); }
