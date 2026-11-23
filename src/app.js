@@ -35,6 +35,7 @@ import { kitCutFiles, machineReadme } from './export/machines.js';
 import { kitHandCutFiles } from './export/handcut.js';
 // T2 shells
 import { shellSection, applyRoomLocks, appendRoofControls } from './ui/t2.js';
+import { remixCredit, openedSharedText } from './ui/t7.js'; // T7 remix credits
 // [T5] lighting UI
 import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
@@ -303,6 +304,7 @@ function roomInspector() {
     h('span', { class: 'k2' }, `${o.wall} wall`)));
   return [
     inspHead('Room', 'The room', `${cm(r.width)} × ${cm(r.depth)} × ${cm(r.height)} cm · 1:${kit.scale}`),
+    remixCredit(kit, { h }), // T7 remix credit
     roomSection(),
     shellSection(kit, { h, section, numberField, selectField, checkField, changed, restructured }), // T2 shells
     texturePicker({ section, selectField, getKit: () => kit, setKit: (next) => { kit = next; update(); } }), // T6 textures
@@ -964,6 +966,7 @@ async function shareLink() {
 // ------------------------------------------------------------------ start
 function replaceKit(next, message) {
   kit = next;
+  delete kit.origin; // T7: a new room is not a remix
   $('#kit-name').value = kit.name;
   view.sel = null;
   thumbCache.clear();
@@ -1015,7 +1018,7 @@ async function init() {
   if (shared) {
     try {
       kit = normalizeKit(await decodeKit(shared));
-      setTimeout(() => toast(`Opened a shared design: ${kit.name}. Your own designs are untouched until you edit this one.`), 0);
+      setTimeout(() => toast(openedSharedText(kit)), 0); // T7
     } catch {
       setTimeout(() => toast('That share link is damaged, so your last design was opened instead.', 'error'), 0);
     }
