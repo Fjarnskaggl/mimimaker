@@ -35,7 +35,7 @@ function cuttingFor(family, machine, { tools, scored, drawLabels }) {
       heading: 'Cutting in Silhouette Studio',
       steps: [
         'Each sheet comes as an <code>.svg</code> and a <code>.dxf</code> in millimetres. In the free Basic edition, open the <code>.dxf</code>; Designer edition and up can open the <code>.svg</code>, which keeps the colours. Open it at its original size.',
-        `Set the line actions: <span class="chip" style="background:${LAYER_COLORS.cut}">black</span> = Cut${scored ? `, <span class="chip" style="background:${LAYER_COLORS.score}">magenta</span> = Score or Sketch` : ''}.`,
+        `Set the line actions: <span class="chip" style="background:${LAYER_COLORS.cut}">black</span> = Cut${scored ? `, <span class="chip" style="background:${LAYER_COLORS.score}">magenta</span> = Score or Sketch` : ''}${drawLabels ? `, <span class="chip" style="background:${LAYER_COLORS.draw}">blue</span> = Sketch with the pen (part numbers)` : ''}.`,
         'Choose the matching material, blade and passes from each sheet\'s settings line below. For board, tape the edges to the mat and check the cut is through before unloading.',
       ],
     };
@@ -120,8 +120,8 @@ export function guideHTML(kit, compiled) {
   .sheet { margin: 0; break-inside: avoid; }
   .sheet-svg { width: 100%; height: auto; display: block; }
   .sheet-bg { fill: #fff; stroke: #cfc4b8; stroke-width: .6; }
-  .part .cut { stroke: #3a2e25; stroke-width: .35; }
-  .part .score { stroke: ${LAYER_COLORS.score}; stroke-width: .35; stroke-dasharray: 1.5 1; fill: none; }
+  .part .cut { stroke: ${laser ? LASER_COLORS.cut : '#3a2e25'}; stroke-width: .35; }
+  .part .score { stroke: ${laser ? LASER_COLORS.score : LAYER_COLORS.score}; stroke-width: .35; stroke-dasharray: 1.5 1; fill: none; }
   .part text { font-family: system-ui, sans-serif; font-weight: 600; fill: #2b2420; }
   td:nth-child(n+2) { white-space: nowrap; }
   figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
@@ -143,7 +143,7 @@ export function guideHTML(kit, compiled) {
   </div>
 
   <h2>You'll need</h2>
-  <p>${cutting.need}${lit ? `, ${compiled.lighting.leds.length} pre-wired 3 V micro LEDs and a ${esc(powerName(compiled.lighting).toLowerCase())}` : ''}.${laser ? '' : ' Strong-grip mat for board, standard grip for card, fabric grip for felt.'} PVA / tacky glue, a glue stick, masking tape, a craft knife and a metal ruler for clean-up.</p>
+  <p>${cutting.need}${lit ? `, ${compiled.lighting.leds.length} pre-wired 3 V micro LEDs and a ${esc(powerName(compiled.lighting).toLowerCase())}` : ''}.${{ laser: '', silhouette: ' StrongHold mat for board, StandardHold for card, LightHold for thin paper.' }[family] ?? ' Strong-grip mat for board, standard grip for card, fabric grip for felt.'} PVA / tacky glue, a glue stick, masking tape, a craft knife and a metal ruler for clean-up.</p>
 
   <h2>${cutting.heading}</h2>
   <ol class="ds">
