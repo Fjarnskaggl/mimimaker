@@ -13,8 +13,8 @@
 import { nookWalls } from './nook.js';
 import { buildStairs } from './stairs.js';
 import { pickSteps } from './staircase.js';
-import { buildSpiralStairs } from './spiral.js';
-import { panelOutline, profilePlain, profileTabs, rectPoly } from '../geometry.js';
+import { buildSpiralStairs, spiralMinRadius } from './spiral.js';
+import { ellipsePoly, panelOutline, profilePlain, profileTabs, rectPoly } from '../geometry.js';
 
 export const TWOSTOREY_DEFAULTS = {
   floorHeight: 0.5, stairs: 'straight', stairWidth: 0, spiralRadius: 0, steps: 0, risers: true, rail: true,
@@ -24,10 +24,10 @@ export const TWOSTOREY_DEFAULTS = {
 export const TWOSTOREY_PARAMS = [
   { key: 'floorHeight', label: 'Upper floor height (share of the inside)', type: 'num', min: 0.3, max: 0.7, step: 0.05 },
   { key: 'stairs', label: 'Stairs', type: 'choice', options: [['none', 'None'], ['straight', 'Straight'], ['spiral', 'Spiral']] },
-  { key: 'stairWidth', label: 'Stair width (0 = auto)', type: 'num', min: 0, max: 80, step: 1, unit: 'mm' },
+  { key: 'stairWidth', label: 'Straight stair width (0 = auto)', type: 'num', min: 0, max: 80, step: 1, unit: 'mm' },
   { key: 'spiralRadius', label: 'Spiral radius (0 = auto)', type: 'num', min: 0, max: 50, step: 1, unit: 'mm' },
   { key: 'steps', label: 'Steps (0 = auto)', type: 'int', min: 0, max: 40 },
-  { key: 'risers', label: 'Closed risers', type: 'bool' },
+  { key: 'risers', label: 'Closed risers (straight stair)', type: 'bool' },
   { key: 'rail', label: 'Stairwell rail', type: 'bool' },
   { key: 'groundWall', label: 'Wall on the ground floor', type: 'bool' },
   { key: 'upperWall', label: 'Wall upstairs', type: 'bool' },
@@ -72,7 +72,12 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
   let sw = 0, run = 0, stair = null;
   if (P.stairs === 'spiral') {
     // a square stairwell in the front-left corner, the post 1 mm in from each side
-    const R = P.spiralRadius > 0 ? clamp(P.spiralRadius, 15, Math.min(Wi, Di) * 0.4) : clamp(Math.min(Wi, Di) * 0.22, 15, Math.min(Wi, Di) * 0.4);
+    // big enough to cut, small enough to leave 30 mm of floor beside it and a 25 mm landing behind it
+    const rMin = spiralMinRadius(t), rMax = Math.min((Wi - 30 - 2) / 2, (Di - 25 - 2) / 2);
+    if (rMax < rMin) {
+      throw new Error(`A spiral stair needs at least ${(2 * rMin + 32).toFixed(0)} mm of inside width and ${(2 * rMin + 27).toFixed(0)} mm of depth — use a wider, deeper shelf gap or the straight stair.`);
+    }
+    const R = clamp(P.spiralRadius > 0 ? P.spiralRadius : Math.min(Wi, Di) * 0.22, rMin, rMax);
     sw = 2 * R + 2;
     run = sw;
     const n = P.steps > 0 ? Math.round(clamp(P.steps, 3, 40)) : Math.max(3, Math.round(zF / clamp(R * 0.6, 8, 20)));
@@ -81,9 +86,12 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
     const sp = buildSpiralStairs({ steps: n, rise, radius: R, t, center: [t + 1 + R, 1 + R], z0: t, turn, endAngle: 90, key: 'stair', baseKey: 'shell-bottom' });
     parts.push(...sp.parts);
     joints.push(...sp.joints);
-    stair = { kind: 'spiral', steps: n, rise, turn, radius: R, center: sp.center, run, width: sw, post: sp.post };
+    // the post stands in a hole through the floor, on the shelf, and stops below the roof
+    wallHoles.bottom.push(ellipsePoly(sp.center[0], sp.center[1], sp.post.diameter / 2 + 0.1, sp.post.diameter / 2 + 0.1, 20));
+    const post = { ...sp.post, length: Math.min(sp.post.length + t, H - 2 * t) };
+    stair = { kind: 'spiral', steps: n, rise, turn, radius: R, center: sp.center, run, width: sw, post };
     stairSteps.push(
-      { group: 'Stairs', text: `Cut a ${sp.post.diameter} mm dowel (or a bamboo skewer) ${Math.ceil(sp.post.length)} mm long for the post and glue it upright into the floor where the first baluster's tread points.` },
+      { group: 'Stairs', text: `Cut a ${post.diameter} mm dowel (or a bamboo skewer) ${Math.floor(post.length)} mm long for the post. Push it down through the small hole in the floor near the front-left corner until it touches the shelf, and glue it upright.` },
       { group: 'Stairs', text: `Thread the ${n - 1} treads onto the post in order, each with its baluster glued under its outer end, standing on the tread below — every tread turns ${turn.toFixed(0)}° on from the last. The top tread points at the landing strip.` },
     );
   } else if (withStair) {

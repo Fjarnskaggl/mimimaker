@@ -22,6 +22,9 @@ const POST_CLEAR = 0.1;
 /** Board left round the post hole (mm). */
 const HUB = 2.5;
 
+/** Smallest tread radius that leaves room for the hub, a baluster and a foot (mm). */
+export const spiralMinRadius = (t) => POST_D / 2 + POST_CLEAR + HUB + BAL_W + t + 6;
+
 const rad = (d) => (d * Math.PI) / 180;
 const arc = (cx, cy, r, a0, a1, segs) => Array.from({ length: segs + 1 }, (_, i) => {
   const a = rad(a0 + ((a1 - a0) * i) / segs);
@@ -45,7 +48,7 @@ const arc = (cx, cy, r, a0, a1, segs) => Array.from({ length: segs + 1 }, (_, i)
 export function buildSpiralStairs({ steps: n, rise: h, radius: R, t, center, z0 = 0, turn = 30, endAngle = 90, key = 'spiral', group = 'Stairs', baseKey = 'floor' }) {
   const hub = POST_D / 2 + POST_CLEAR + HUB;
   const rb = R - BAL_IN; // baluster outer face
-  if (!(n >= 2 && h - t >= 3 && R >= hub + BAL_W + t + 6 && turn > 0 && turn * (n - 1) <= 360)) {
+  if (!(n >= 2 && h - t >= 3 && R >= spiralMinRadius(t) - 1e-9 && turn > 0 && turn * (n - 1) <= 360)) {
     throw new Error(`This spiral can't be cut: ${n} steps of ${h.toFixed(1)} mm rise, ${R.toFixed(1)} mm radius, in ${t} mm board — use fewer, taller steps or a wider stair.`);
   }
   const [cx, cy] = center;
