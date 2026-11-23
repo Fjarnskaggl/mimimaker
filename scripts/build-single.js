@@ -12,6 +12,57 @@ import { fileURLToPath } from 'node:url';
 // import { a, b as c } from './x.js'   |   import * as ns from '../dir/y.js'
 const IMPORT_RE = /^import\s*(\{[^}]*\}|\*\s+as\s+[\w$]+)\s*from\s*'(\.{1,2}\/[\w./-]+)\.js';\s*$/gm;
 
+// --- tiny scanner for `export const A = …, B = …;` (names after the first)
+function skipString(src, i, q) {
+  for (i += 1; i < src.length; i++) {
+    if (src[i] === '\\') i++;
+    else if (src[i] === q) return i + 1;
+  }
+  return i;
+}
+function skipTemplate(src, i) {
+  for (i += 1; i < src.length; i++) {
+    if (src[i] === '\\') i++;
+    else if (src[i] === '`') return i + 1;
+    else if (src[i] === '$' && src[i + 1] === '{') i = skipExpr(src, i + 2) - 1;
+  }
+  return i;
+}
+function skipExpr(src, i) { // returns the index after the matching '}'
+  let depth = 1;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === '"' || c === "'") { i = skipString(src, i, c); continue; }
+    if (c === '`') { i = skipTemplate(src, i); continue; }
+    if (c === '{') depth++;
+    else if (c === '}' && --depth === 0) return i + 1;
+    i++;
+  }
+  return i;
+}
+/** Names declared after the first in a `const`/`let` statement starting at i. */
+export function extraDeclarators(src, i) {
+  const names = [];
+  let depth = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === '/' && src[i + 1] === '/') { const nl = src.indexOf('\n', i); i = nl < 0 ? src.length : nl; continue; }
+    if (c === '/' && src[i + 1] === '*') { const end = src.indexOf('*/', i + 2); i = end < 0 ? src.length : end + 2; continue; }
+    if (c === '"' || c === "'") { i = skipString(src, i, c); continue; }
+    if (c === '`') { i = skipTemplate(src, i); continue; }
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    else if (depth === 0 && c === ';') break;
+    else if (depth === 0 && c === '\n' && /^\s*(export|import|const|let|var|function|class|async)\b/.test(src.slice(i + 1, i + 40))) break;
+    else if (depth === 0 && c === ',') {
+      const m = /^\s*([\w$]+)\s*=(?!=)/.exec(src.slice(i + 1, i + 200));
+      if (m) names.push(m[1]);
+    }
+    i++;
+  }
+  return names;
+}
+
 /**
  * Bundle an ES-module graph (relative imports only) into one script.
  * Module keys are paths relative to the entry's folder without ".js"
@@ -40,8 +91,9 @@ export function bundle(entry) {
       const binds = clause.slice(1, -1).split(',').map((n) => n.trim()).filter(Boolean).map((n) => n.replace(/\s+as\s+/, ': '));
       return `const { ${binds.join(', ')} } = __m[${dep}];`;
     });
-    body = body.replace(/^export\s+(async\s+function|function|const|let|class)\s+([\w$]+)/gm, (_, kw, id) => {
+    body = body.replace(/^export\s+(async\s+function|function|const|let|class)\s+([\w$]+)/gm, (match, kw, id, offset, whole) => {
       exports.push(id);
+      if (kw === 'const' || kw === 'let') exports.push(...extraDeclarators(whole, offset + match.length));
       return `${kw} ${id}`;
     });
     if (/^\s*(import|export)\s/m.test(body)) {
