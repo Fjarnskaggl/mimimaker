@@ -8,6 +8,7 @@ import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
 import { buildShell } from '../src/shells/index.js';
 import { shellRoom } from '../src/shells/kit.js';
+import { estimateCutMinutes } from '../src/make.js';
 
 const gap = { w: 90, h: 230, d: 180 };
 const withShell = (type, extra = {}) => ({ ...defaultKit(), shell: { type, gap, clearance: 2, params: {}, ...extra } });
@@ -104,4 +105,16 @@ test('shell parts are solid in 3D: each face carries its material thickness, LED
     if (type === 'alley') assert.ok(glows.length > 0);
     for (const f of glows) assert.equal(f.thickness, undefined, 'LED spots are flat');
   }
+});
+
+test('the default alley is light enough to cut: under 6.5 h on 2 mm chipboard, still lit', () => {
+  const r = compileKit(withShell('alley'));
+  const hours = r.sheets.reduce((sum, s) => sum + estimateCutMinutes(s), 0) / 60;
+  assert.ok(hours < 6.5, `estimated ${hours.toFixed(2)} h`);
+  const sh = buildShell({ ...withShell('alley').shell, material: 'chip2' }, { t: 2 });
+  for (const side of ['left', 'right']) {
+    const lit = sh.alley.buildings.filter((b) => b.side === side).flatMap((b) => b.windows.filter((w) => w.lit));
+    assert.ok(lit.length >= 12, `${side}: ${lit.length} lit windows`);
+  }
+  assert.equal(sh.alley.layers, 2, 'still layered');
 });
