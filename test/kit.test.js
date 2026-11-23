@@ -6,10 +6,14 @@ import { packParts, placementTransform } from '../src/nest.js';
 import { sheetCutSVG } from '../src/svg.js';
 import { guideHTML } from '../src/guide.js';
 import { makeZip, crc32 } from '../src/zip.js';
+import { ROOM_TYPES, applyRoomType } from '../src/templates.js';
+import { ledMapSVG } from '../src/ledmap.js';
+import { routeWire, netPoint } from '../src/lighting.js';
+import { pointInPolygon } from '../src/geometry.js';
 
 test('default kit compiles without warnings', () => {
   const r = compileKit(defaultKit());
-  assert.deepEqual(r.warnings, []);
+  assert.deepEqual(r.warnings.filter((w) => w.level !== 'info'), []);
   assert.ok(r.parts.length > 20);
   const ids = r.parts.map((p) => p.id);
   assert.deepEqual(ids, ids.map((_, i) => i + 1), 'parts numbered 1..n');
@@ -99,4 +103,98 @@ test('zip writer produces a valid archive structure', () => {
   assert.equal(dv.getUint32(0, true), 0x04034b50);
   assert.equal(dv.getUint32(zip.length - 22, true), 0x06054b50);
   assert.equal(dv.getUint16(zip.length - 12, true), 2);
+});
+
+test('every room type compiles cleanly and fits its pieces', () => {
+  for (const rt of ROOM_TYPES) {
+    const kit = applyRoomType(defaultKit(), rt.id);
+    const r = compileKit(kit);
+    assert.deepEqual(r.warnings.filter((w) => w.level !== 'info').map((w) => w.msg), [], rt.id);
+    assert.ok(r.lighting.enabled && r.lighting.leds.length > 0, `${rt.id} has lights`);
+    // floor items must not overlap each other (rugs excluded)
+    const s = 10 / kit.scale;
+    const boxes = kit.items.map((it, i) => ({ it, i })).filter(({ it }) => CATALOG[it.type].placement === 'floor' && it.type !== 'rug' && it.type !== 'ladder')
+      .map(({ it }) => {
+        const p = Object.fromEntries(CATALOG[it.type].params.map((q) => [q.key, (it.params[q.key] ?? CATALOG[it.type].defaults[q.key]) * (q.unit ? s : 1)]));
+        const [w, d] = (CATALOG[it.type].size || ((q) => [q.w, q.d]))(p);
+        const [fw, fd] = (it.rot || 0) % 180 ? [d, w] : [w, d];
+        return { type: it.type, x0: it.x * s, y0: it.y * s, x1: it.x * s + fw, y1: it.y * s + fd };
+      });
+    for (let a = 0; a < boxes.length; a++) for (let b = a + 1; b < boxes.length; b++) {
+      const A = boxes[a], B = boxes[b];
+      const overlap = A.x0 < B.x1 - 0.01 && B.x0 < A.x1 - 0.01 && A.y0 < B.y1 - 0.01 && B.y0 < A.y1 - 0.01;
+      assert.ok(!overlap, `${rt.id}: ${A.type} overlaps ${B.type}`);
+    }
+  }
+});
+
+test('applyRoomType keeps machine and scale but recolours papers', () => {
+  const base = defaultKit();
+  base.machine = 'joyxtra';
+  const k = applyRoomType(base, 'kitchen');
+  assert.equal(k.machine, 'joyxtra');
+  assert.equal(k.name, 'Cottage Kitchen');
+  assert.equal(k.materials.find((m) => m.id === 'paper').color, ROOM_TYPES.find((r) => r.id === 'kitchen').colors.paper);
+  assert.notEqual(base.materials.find((m) => m.id === 'paper').color, k.materials.find((m) => m.id === 'paper').color);
+});
+
+test('LEDs cut wire holes through the wall and its wallpaper', () => {
+  const kit = defaultKit();
+  kit.lighting.leds = [{ mount: 'wall', wall: 'left', pos: 60, elev: 150, color: 'warm' }];
+  const r = compileKit(kit);
+  const left = r.parts.find((p) => p.name === 'Left wall');
+  const paper = r.parts.find((p) => p.name === 'Left wallpaper');
+  const before = compileKit({ ...kit, lighting: { ...kit.lighting, enabled: false } });
+  assert.equal(left.polys.length, before.parts.find((p) => p.name === 'Left wall').polys.length + 1);
+  assert.equal(paper.polys.length, before.parts.find((p) => p.name === 'Left wallpaper').polys.length + 1);
+  const [led] = r.lighting.leds;
+  assert.ok(led.leadCm >= 5 && Number.isFinite(led.length));
+  const end = led.route.at(-1);
+  assert.deepEqual(end.map((v) => +v.toFixed(6)), r.lighting.power.p.map((v) => +v.toFixed(6)), 'route ends at the power box');
+});
+
+test('ceiling lights need a ceiling', () => {
+  const kit = defaultKit();
+  kit.room.ceiling = false;
+  kit.lighting.leds = [{ mount: 'ceiling', x: 100, y: 100 }];
+  assert.ok(compileKit(kit).warnings.some((w) => /no ceiling/.test(w.msg)));
+  kit.room.ceiling = true;
+  const r = compileKit(kit);
+  assert.equal(r.parts.find((p) => p.name === 'Ceiling').polys.length, 2);
+});
+
+test('wire routes are axis-aligned, stay on the net and avoid openings when they can', () => {
+  const dims = { W: 100, D: 60, H: 80 };
+  const a = { face: 'left', p: netPoint('left', 30, 40, dims) };
+  const b = { face: 'right', p: netPoint('right', 30, 20, dims) };
+  const window = { x0: 40, y0: 30, x1: 60, y1: 50 };
+  const { points, crossesOpening } = routeWire(a, b, dims, [window]);
+  assert.equal(crossesOpening, false);
+  for (let i = 1; i < points.length; i++) {
+    assert.ok(points[i][0] === points[i - 1][0] || points[i][1] === points[i - 1][1], 'axis aligned');
+  }
+  const net = [[-60, 0], [160, 0], [160, 80], [-60, 80]];
+  for (const p of points) assert.ok(pointInPolygon(p, net) || p[1] === 0 || p[1] === 80);
+});
+
+test('LED map and guide render without NaN for every room type', () => {
+  for (const rt of ROOM_TYPES) {
+    const kit = applyRoomType(defaultKit(), rt.id);
+    const r = compileKit(kit);
+    const svg = ledMapSVG(r, { standalone: true });
+    assert.match(svg, /<polyline/);
+    assert.doesNotMatch(svg, /NaN|undefined/);
+    assert.doesNotMatch(guideHTML(kit, r), /NaN|undefined/);
+  }
+});
+
+test('wall-mounted boxes sit against the wall', () => {
+  const kit = defaultKit();
+  kit.lighting.enabled = false;
+  kit.items = [{ type: 'uppercabinet', params: { ...CATALOG.uppercabinet.defaults }, material: 'chip15', wall: 'back', pos: 150, elev: 180 }];
+  const r = compileKit(kit);
+  const ys = r.faces3d.filter((f) => f.item === 0).flatMap((f) => f.polys[0].map((p) => p[1]));
+  const backInner = r.dims.D - r.dims.t;
+  assert.ok(Math.abs(Math.max(...ys) - backInner) < 1e-6, 'back face touches the wall');
+  assert.ok(Math.min(...ys) < backInner - 10, 'sticks out into the room');
 });

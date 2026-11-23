@@ -53,11 +53,35 @@ single-file build at `…/mimimaker/mimimaker.html`.
 | **Card** | cardstock, patterned paper | Fold-up nets with score lines and glue tabs. If a net won't fit the mat it's split into separate tabbed panels. Works on any Cricut. |
 | **Fabric** | felt | Flat pieces only (rugs). Rotary Blade. |
 
-Catalogue: room box (optional ceiling), rectangular / arched / round windows,
-doors and arched doors (with optional trim frames and window muntins),
-wallpaper and floor overlays that match the openings, bookshelf, cabinet /
-dresser, nightstand, wardrobe, table, desk, bench, bed, chair, rug, picture
-frame and round mirror.
+**Room types** — start from a furnished room and edit from there: reading
+nook, cozy bedroom, cottage kitchen, bathroom, little café, living room,
+library & study, attic studio. Each comes with its own furniture, openings,
+lights and paper colours.
+
+**Piece library** (pick by theme, with 3D thumbnails):
+
+| Theme | Pieces |
+| --- | --- |
+| Basics | bookshelf, cabinet/dresser, table, chair, bench/coffee table, desk |
+| Living room | sofa, armchair, fireplace (arched opening + mantel), media unit, floor lamp |
+| Bedroom | bed with headboard, nightstand, chest of drawers, wardrobe |
+| Kitchen | base cabinet, sink unit, stove (scored burners/oven), fridge, wall cabinet, open wall shelf |
+| Bathroom | bathtub, vanity with basin cut-out, toilet |
+| Café | shop counter, bar stool, café table, display shelving, menu board |
+| Library | library ladder, book stack |
+| Decor | rug, potted plant, picture frame, round mirror/clock, wall TV, curtains |
+
+Plus the room box itself (optional ceiling), rectangular / arched / round
+windows, doors and arched doors with trim frames, and wallpaper and floor
+overlays cut to match the openings.
+
+**LED lighting** — place micro LEDs on the walls, ceiling or floor (e.g.
+inside a floor lamp or fireplace). mimimaker cuts a wire hole through the
+panel and its wallpaper at each light, plans a route for every wire along
+the outside of the box to a battery box or USB lead (avoiding windows and
+doors where it can), and tells you the minimum lead length for each LED.
+The **LED map** tab and the guide show the room unfolded and seen from
+behind, the side you wire on; the map is also in the zip as `led-map.svg`.
 
 All sizes are entered in real-world centimetres and scaled (1:6 to 1:87).
 
@@ -92,7 +116,10 @@ trapezoid glue tab on the face that folds last.
 index.html, styles.css   UI shell
 src/app.js               UI controller (state, forms, downloads)
 src/kit.js               compiles a kit → parts, 3D faces, steps, sheets, warnings
-src/catalog.js           furniture/decor templates and the sample kit
+src/catalog.js           themed furniture/decor pieces
+src/templates.js         room types (starter layouts)
+src/lighting.js          LED wire holes and wire routing
+src/ledmap.js            LED wiring map SVG
 src/box.js               finger-jointed boxes and shelves
 src/fold.js              fold-up nets and glue tabs
 src/geometry.js          polygons, edge profiles, arches, segment chaining

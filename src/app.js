@@ -1,7 +1,10 @@
 // UI controller: edits the kit object, recompiles, and renders the views.
 
 import { compileKit } from './kit.js';
-import { CATALOG, defaultKit } from './catalog.js';
+import { CATALOG, THEMES, defaultKit, defaultMaterialFor } from './catalog.js';
+import { ROOM_TYPES, applyRoomType } from './templates.js';
+import { LED_COLORS, POWER_KINDS } from './lighting.js';
+import { ledMapSVG, ledRows } from './ledmap.js';
 import { DEFAULT_MATERIALS, MACHINES, SCALES } from './materials.js';
 import { renderScene } from './preview3d.js';
 import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
@@ -13,7 +16,8 @@ const $ = (sel) => document.querySelector(sel);
 
 let kit = loadKit() || defaultKit();
 let compiled = null;
-const view = { tab: 'preview', yaw: -32, pitch: 26 };
+const view = { tab: 'preview', yaw: -32, pitch: 26, theme: 'Basics' };
+const openCards = new WeakSet(); // item / LED cards the viewer expanded
 
 // ------------------------------------------------------------------ helpers
 function h(tag, attrs = {}, ...children) {
@@ -68,6 +72,12 @@ function normalizeKit(k) {
   if (!Array.isArray(out.materials) || !out.materials.length) out.materials = structuredClone(DEFAULT_MATERIALS);
   out.openings = Array.isArray(k.openings) ? k.openings : [];
   out.items = Array.isArray(k.items) ? k.items : [];
+  const L = k.lighting || {};
+  out.lighting = {
+    enabled: !!L.enabled, holeDiameter: L.holeDiameter || 3,
+    power: { wall: 'back', pos: 20, elev: 20, kind: 'battery', ...(L.power || {}) },
+    leds: Array.isArray(L.leds) ? L.leds : [],
+  };
   return out;
 }
 
@@ -126,7 +136,7 @@ function renderSidebar() {
   const sb = $('#sidebar');
   const scroll = sb.scrollTop;
   const openState = [...sb.querySelectorAll('details.section')].map((d) => d.open);
-  sb.replaceChildren(kitSection(), roomSection(), openingsSection(), itemsSection(), materialsSection());
+  sb.replaceChildren(roomTypesSection(), kitSection(), roomSection(), openingsSection(), itemsSection(), lightingSection(), materialsSection());
   sb.querySelectorAll('details.section').forEach((d, i) => { if (openState[i] != null) d.open = openState[i]; });
   sb.scrollTop = scroll;
 }
@@ -193,10 +203,64 @@ function openingsSection() {
   ], { count: kit.openings.length });
 }
 
-function defaultMaterialFor(def) {
-  if (def.label === 'Rug') return kit.materials.find((m) => m.kind === 'fabric')?.id || kit.materials[0].id;
-  if (def.group === 'Decor') return kit.materials.find((m) => m.kind === 'card')?.id || kit.materials[0].id;
-  return kit.materials.find((m) => m.id === 'chip15')?.id || kit.materials.find((m) => m.kind === 'board')?.id || kit.materials[0].id;
+// --------------------------------------------------------- thumbnails
+const thumbCache = new Map();
+function itemThumb(type) {
+  const def = CATALOG[type];
+  const material = defaultMaterialFor(def, kit.materials);
+  const key = `${type}|${kit.materials.find((m) => m.id === material)?.color}`;
+  if (thumbCache.has(key)) return thumbCache.get(key);
+  let svg = '';
+  try {
+    const big = { ...kit.room, width: 1500, depth: 1500, height: 1500, ceiling: false, wallpaper: { enabled: false, material: 'paper' }, floor: { enabled: false, material: 'card65' } };
+    const c = compileKit({ ...kit, room: big, openings: [], lighting: { enabled: false }, items: [{ type, params: { ...def.defaults }, material, x: 0, y: 0, rot: 0, wall: 'back', pos: 750, elev: 400 }] });
+    svg = renderScene(c.faces3d.filter((f) => f.item === 0), { yaw: -28, pitch: 22 });
+  } catch { /* leave blank */ }
+  thumbCache.set(key, svg);
+  return svg;
+}
+function roomThumb(id) {
+  const key = `room|${id}`;
+  if (thumbCache.has(key)) return thumbCache.get(key);
+  let svg = '';
+  try { svg = renderScene(compileKit(applyRoomType(kit, id)).faces3d, { yaw: -30, pitch: 24 }); } catch { /* blank */ }
+  thumbCache.set(key, svg);
+  return svg;
+}
+
+/** Run `action` on the second click within 3 s (confirm() is unavailable in sandboxed views). */
+function confirmTwice(el, action) {
+  if (el.classList.contains('armed')) { el.classList.remove('armed'); action(); return; }
+  document.querySelectorAll('.armed').forEach((b) => b.classList.remove('armed'));
+  el.classList.add('armed');
+  setTimeout(() => el.classList.remove('armed'), 3000);
+}
+
+function roomTypesSection() {
+  const cards = ROOM_TYPES.map((rt) => h('button', {
+    class: 'rt-card', type: 'button', 'aria-label': `Start from ${rt.name}`,
+    onclick: (e) => confirmTwice(e.currentTarget, () => {
+      kit = applyRoomType(kit, rt.id);
+      $('#kit-name').value = kit.name;
+      thumbCache.clear();
+      restructured();
+      toast(`Loaded the ${rt.name.toLowerCase()} — everything is editable below.`);
+    }),
+  },
+  h('span', { class: 'thumb', html: roomThumb(rt.id) }),
+  h('strong', {}, rt.name),
+  h('span', { class: 'rt-blurb' }, rt.blurb),
+  h('span', { class: 'rt-confirm' }, 'Click again to replace your design')));
+  return section('Room types', [
+    h('p', { class: 'hint' }, 'Start from a furnished room. It replaces the room, furniture and lights; your scale, machine and materials stay.'),
+    h('div', { class: 'rt-grid' }, cards),
+  ], { open: false });
+}
+
+function cardDetails(obj, summary, body) {
+  const d = h('details', { class: 'card', open: openCards.has(obj) }, h('summary', { class: 'card-head' }, summary), h('div', { class: 'card-body' }, body));
+  d.addEventListener('toggle', () => (d.open ? openCards.add(obj) : openCards.delete(obj)));
+  return d;
 }
 
 function itemsSection() {
@@ -216,29 +280,95 @@ function itemsSection() {
       : [numberField('From left wall', item.x ?? 0, (v) => { item.x = v; changed(); }, { min: 0, unit: 'cm' }),
         numberField('From back wall', item.y ?? 0, (v) => { item.y = v; changed(); }, { min: 0, unit: 'cm' }),
         selectField('Rotation', item.rot || 0, [[0, '0°'], [90, '90°'], [180, '180°'], [270, '270°']], (v) => { item.rot = Number(v); changed(); })];
-    const matFilter = def.label === 'Rug' ? () => true : def.group === 'Decor' ? (m) => m.kind !== 'fabric' : (m) => m.kind !== 'fabric';
-    return h('div', { class: 'card' },
-      h('div', { class: 'card-head' },
-        h('strong', {}, def.label),
-        h('button', { class: 'small ghost', type: 'button', onclick: () => { kit.items.splice(i + 1, 0, structuredClone(item)); restructured(); } }, 'Duplicate'),
-        h('button', { class: 'small ghost danger', type: 'button', onclick: () => { kit.items.splice(i, 1); restructured(); } }, 'Remove')),
+    const matFilter = def.mat === 'fabric' ? () => true : (m) => m.kind !== 'fabric';
+    const mat = kit.materials.find((m) => m.id === item.material);
+    return cardDetails(item, [
+      h('span', { class: 'sw', style: `background:${mat?.color || '#ccc'}` }),
+      h('strong', {}, def.label),
+      h('span', { class: 'badge' }, def.group),
+    ], [
       h('div', { class: 'grid2' }, params),
-      selectField('Material', item.material, matOptions(matFilter), (v) => { item.material = v; changed(); }),
-      h('div', { class: 'grid3' }, placement));
+      selectField('Material', item.material, matOptions(matFilter), (v) => { item.material = v; restructured(); }),
+      h('div', { class: 'grid3' }, placement),
+      h('div', { class: 'card-actions' },
+        h('button', { class: 'small', type: 'button', onclick: () => { const copy = structuredClone(item); kit.items.splice(i + 1, 0, copy); openCards.add(copy); restructured(); } }, 'Duplicate'),
+        h('button', { class: 'small danger', type: 'button', onclick: () => { kit.items.splice(i, 1); restructured(); } }, 'Remove')),
+    ]);
   });
 
-  const picker = h('select', { 'aria-label': 'Item to add' },
-    ['Furniture', 'Decor'].map((grp) => h('optgroup', { label: grp },
-      Object.entries(CATALOG).filter(([, d]) => d.group === grp).map(([k, d]) => h('option', { value: k }, d.label)))));
-  const add = () => {
-    const def = CATALOG[picker.value];
-    const item = { type: picker.value, params: { ...def.defaults }, material: defaultMaterialFor(def) };
-    if (def.placement === 'wall') Object.assign(item, { wall: 'back', pos: kit.room.width / 2, elev: 150 });
+  const addPiece = (type) => {
+    const def = CATALOG[type];
+    const item = { type, params: { ...def.defaults }, material: defaultMaterialFor(def, kit.materials) };
+    if (def.placement === 'wall') Object.assign(item, { wall: 'back', pos: Math.round(kit.room.width / 2), elev: 150 });
     else Object.assign(item, { x: 10, y: 10, rot: 0 });
     kit.items.push(item);
+    openCards.add(item);
     restructured();
+    toast(`Added ${def.label.toLowerCase()} — set its position in the list above.`);
   };
-  return section('Furniture & decor', [...cards, h('div', { class: 'add-row' }, picker, h('button', { type: 'button', class: 'primary', onclick: add }, 'Add'))], { count: kit.items.length });
+  const chips = h('div', { class: 'chips', role: 'tablist', 'aria-label': 'Piece themes' }, THEMES.map((th) => h('button', {
+    type: 'button', role: 'tab', class: 'chip', 'aria-selected': String(view.theme === th),
+    onclick: () => { view.theme = th; renderSidebar(); },
+  }, th)));
+  const pieces = Object.entries(CATALOG).filter(([, d]) => d.group === view.theme).map(([type, d]) => h('button', {
+    type: 'button', class: 'piece', title: `Add ${d.label}`, onclick: () => addPiece(type),
+  }, h('span', { class: 'thumb', html: itemThumb(type) }), h('span', {}, d.label)));
+  return section('Furniture & decor', [
+    ...cards,
+    h('div', { class: 'library' }, h('strong', { class: 'library-title' }, 'Add a piece'), chips, h('div', { class: 'piece-grid' }, pieces)),
+  ], { count: kit.items.length });
+}
+
+function lightingSection() {
+  const L = kit.lighting;
+  const body = [checkField('Add LED lights', L.enabled, (v) => { L.enabled = v; restructured(); })];
+  if (L.enabled) {
+    const ledCards = L.leds.map((led, i) => {
+      const place = led.mount === 'wall'
+        ? [selectField('Wall', led.wall || 'back', WALL_OPTIONS, (v) => { led.wall = v; changed(); }),
+          numberField('Along wall', led.pos ?? 0, (v) => { led.pos = v; changed(); }, { min: 0, unit: 'cm' }),
+          numberField('Height', led.elev ?? 0, (v) => { led.elev = v; changed(); }, { min: 0, unit: 'cm' })]
+        : [numberField('From left wall', led.x ?? 0, (v) => { led.x = v; changed(); }, { min: 0, unit: 'cm' }),
+          numberField('From back wall', led.y ?? 0, (v) => { led.y = v; changed(); }, { min: 0, unit: 'cm' })];
+      return cardDetails(led, [
+        h('span', { class: 'led-dot', style: `background:${LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex}` }),
+        h('strong', {}, `L${i + 1}${led.name ? ` · ${led.name}` : ''}`),
+        h('span', { class: 'badge' }, led.mount),
+      ], [
+        h('label', { class: 'field' }, 'Name', h('input', { value: led.name || '', oninput: (e) => { led.name = e.target.value; changed(); } })),
+        h('div', { class: 'grid2' },
+          selectField('Mounted on', led.mount, [['wall', 'Wall'], ['ceiling', 'Ceiling'], ['floor', 'Floor / in a lamp']], (v) => { led.mount = v; restructured(); }),
+          selectField('Colour', led.color || 'warm', Object.entries(LED_COLORS).map(([k, c]) => [k, c.name]), (v) => { led.color = v; restructured(); })),
+        h('div', { class: led.mount === 'wall' ? 'grid3' : 'grid2' }, place),
+        h('div', { class: 'card-actions' }, h('button', { class: 'small danger', type: 'button', onclick: () => { L.leds.splice(i, 1); restructured(); } }, 'Remove')),
+      ]);
+    });
+    const addLed = (mount) => {
+      const led = { name: '', mount, color: 'warm' };
+      if (mount === 'wall') Object.assign(led, { wall: 'back', pos: Math.round(kit.room.width / 2), elev: 180 });
+      else Object.assign(led, { x: Math.round(kit.room.width / 2), y: Math.round(kit.room.depth / 2) });
+      if (mount === 'ceiling' && !kit.room.ceiling) { kit.room.ceiling = true; toast('Turned on the ceiling for the ceiling light.'); }
+      L.leds.push(led);
+      openCards.add(led);
+      restructured();
+    };
+    body.push(
+      h('div', { class: 'grid2' },
+        numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' }),
+        selectField('Power', L.power.kind, Object.keys(POWER_KINDS).map((k) => [k, k === 'usb' ? 'USB cable' : 'Battery box']), (v) => { L.power.kind = v; changed(); })),
+      h('div', { class: 'grid3' },
+        selectField('Power box on', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
+        numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
+        numberField('Height', L.power.elev, (v) => { L.power.elev = v; changed(); }, { min: 0, unit: 'cm' })),
+      ...ledCards,
+      h('div', { class: 'add-row' },
+        h('button', { type: 'button', onclick: () => addLed('wall') }, '+ Wall light'),
+        h('button', { type: 'button', onclick: () => addLed('ceiling') }, '+ Ceiling light'),
+        h('button', { type: 'button', onclick: () => addLed('floor') }, '+ Floor light')),
+      h('p', { class: 'hint' }, 'Wall and floor positions match furniture: along-wall from the left (back wall) or front (side walls). The LED map tab shows each wire route.'),
+    );
+  }
+  return section('Lighting', body, { count: L.enabled ? L.leds.length : null, open: false });
 }
 
 function materialsSection() {
@@ -276,6 +406,7 @@ function renderView() {
   const el = $('#view');
   if (view.tab === 'preview') renderPreview(el);
   else if (view.tab === 'sheets') renderSheets(el);
+  else if (view.tab === 'ledmap') renderLedMap(el);
   else renderGuide(el);
 }
 
@@ -326,6 +457,33 @@ function renderSheets(el) {
   el.replaceChildren(legend, h('div', { class: 'sheets-grid' }, cards));
 }
 
+function renderLedMap(el) {
+  if (!compiled.lighting?.enabled || !compiled.lighting.leds.length) {
+    el.replaceChildren(h('div', { class: 'empty' },
+      h('strong', {}, 'No lights yet'),
+      h('p', {}, 'Add LEDs and mimimaker cuts their wire holes, plans each wire\'s route on the outside of the room and tells you how long the leads need to be.'),
+      h('button', { type: 'button', class: 'primary', onclick: () => {
+        kit.lighting.enabled = true;
+        kit.lighting.leds.push({ name: 'Wall light', mount: 'wall', wall: 'back', pos: Math.round(kit.room.width / 2), elev: 180, color: 'warm' });
+        restructured();
+      } }, 'Add a wall light')));
+    return;
+  }
+  const rows = ledRows(compiled);
+  const table = h('div', { class: 'table-wrap' }, h('table', { class: 'led-table' },
+    h('thead', {}, h('tr', {}, ['LED', 'Name', 'Mounted on', 'Colour', 'Wire run', 'Lead needed'].map((t) => h('th', {}, t)))),
+    h('tbody', {}, rows.map((r) => h('tr', {},
+      h('td', {}, h('span', { class: 'wire', style: `background:${r.wireColor}` }), r.label),
+      h('td', {}, r.name || '—'), h('td', {}, r.where), h('td', {}, r.color),
+      h('td', { class: 'num' }, `${r.runCm.toFixed(1)} cm`), h('td', { class: 'num' }, h('b', {}, `≥ ${r.leadCm} cm`)))))));
+  el.replaceChildren(
+    h('div', { class: 'map-head' },
+      h('p', { class: 'hint' }, `Seen from behind the room, the side you wire on. ${compiled.lighting.holeDiameter.toFixed(1)} mm holes are pre-cut at each LED; run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`),
+      h('button', { class: 'small', type: 'button', onclick: () => download(`${slug(kit.name)}-led-map.svg`, ledMapSVG(compiled, { standalone: true }), 'image/svg+xml') }, 'SVG')),
+    h('div', { class: 'map-wrap', html: ledMapSVG(compiled) }),
+    table);
+}
+
 function renderGuide(el) {
   const html = guideHTML(kit, compiled);
   const frame = h('iframe', { class: 'guide-frame', title: 'Assembly guide' });
@@ -344,6 +502,7 @@ function exportZip() {
     data: sheetCutSVG(s, { drawLabels: kit.drawLabels, title: `${kit.name} – ${s.material.name} ${s.index}` }),
   }));
   files.push({ name: 'assembly-guide.html', data: guideHTML(kit, compiled) });
+  if (compiled.lighting?.enabled && compiled.lighting.leds.length) files.push({ name: 'led-map.svg', data: ledMapSVG(compiled, { standalone: true }) });
   files.push({ name: 'kit.json', data: JSON.stringify(kit, null, 2) });
   files.push({
     name: 'README.txt',

@@ -7,6 +7,7 @@ import { CATALOG, itemSize } from './catalog.js';
 import { MACHINES, TOOL_NAMES, effectiveSheet } from './materials.js';
 import { packParts, SHEET_MARGIN } from './nest.js';
 import { labelAnchor } from './labels.js';
+import { planLighting, LED_COLORS, POWER_KINDS } from './lighting.js';
 import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometry.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
@@ -46,6 +47,7 @@ export function compileKit(kit) {
   const tabWidth = kit.tabWidth || 5;
   const fingerWidth = kit.fingerWidth || 0;
   const parts = [], groups = [], faces3d = [];
+  let currentItem = null; // index of the item whose 3D faces are being added
   let nextId = 1;
 
   const getMat = (id, ctx) => {
@@ -78,7 +80,7 @@ export function compileKit(kit) {
   const add3d = (layer, polys2d, plane, xf, color, opts = {}) => {
     const map = onPlane(plane);
     faces3d.push({
-      layer, color, opacity: opts.opacity ?? 1, cull: opts.cull ?? false,
+      layer, color, opacity: opts.opacity ?? 1, cull: opts.cull ?? false, glow: !!opts.glow, item: currentItem,
       polys: polys2d.map((poly) => poly.map((p) => xf.p(map(p)))), n: xf.n(plane.n),
     });
   };
@@ -116,6 +118,11 @@ export function compileKit(kit) {
     holes[o.wall].push(poly);
     openings.push({ ...o, x, y, w, h, poly, door });
   });
+
+  // LED wire holes go through the structure (and the overlays below)
+  const lighting = planLighting(kit.lighting, { s, t, W, D, H, Wi, Di, Hi, ceiling: room.ceiling, wallInfo, openings });
+  for (const [f, list] of Object.entries(lighting.holes)) (holes[f] ||= []).push(...list);
+  for (const w of lighting.warnings) typeof w === 'string' ? warn(w) : warn(w.msg, w.level);
 
   const roomGroup = newGroup('Room box', rm);
   if (rm.kind === 'board') {
@@ -197,7 +204,8 @@ export function compileKit(kit) {
         outline.push(pts[0], ...pts.slice(2).reverse(), pts[1]);
       }
       outline.push([rw, 0], [rw, rh], [0, rh]);
-      const windowHoles = mine.filter((o) => !o.door).map((o) => o.poly.map(([x, y]) => [x - u0, y - v0]));
+      const windowHoles = [...mine.filter((o) => !o.door).map((o) => o.poly), ...(lighting.holes[wall] || [])]
+        .map((poly) => poly.map(([x, y]) => [x - u0, y - v0]));
       const polys = [outline, ...windowHoles];
       addPart(g, `${cap(wall)} wallpaper`, wm, polys);
       const fr = faceFrame(wall, W, D, H, t + 0.15, 'inner');
@@ -210,14 +218,37 @@ export function compileKit(kit) {
     const g = newGroup('Flooring', fm);
     const m = OVERLAY_MARGIN;
     const poly = rectPoly(0, 0, Wi - 2 * m, Di - m);
-    addPart(g, 'Floor covering', fm, [poly]);
-    add3d(1, [poly], { o: [t + m, 0, t + 0.1], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, worldXf, fm.color);
+    const ledHoles = (lighting.holes.bottom || []).map((h) => h.map(([x, y]) => [x - t - m, y]));
+    addPart(g, 'Floor covering', fm, [poly, ...ledHoles]);
+    add3d(1, [poly, ...ledHoles], { o: [t + m, 0, t + 0.1], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, worldXf, fm.color);
     g.steps.push(`Glue floor covering #${g.parts[0]} onto the floor. Tip: score faint lines across it every few mm for floorboards.`);
+  }
+
+  // ----------------------------------------------------------------- lights
+  if (lighting.enabled && lighting.leds.length) {
+    for (const led of lighting.leds) {
+      const fr = faceFrame(led.face, W, D, H, t + 0.6, 'inner');
+      const hex = LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex;
+      add3d(1.7, [ellipsePoly(led.u, led.v, 7, 7, 24)], fr, worldXf, hex, { opacity: 0.28, glow: true });
+      add3d(1.8, [ellipsePoly(led.u, led.v, 2, 2, 16)], fr, worldXf, hex, { glow: true });
+    }
+    const powerName = POWER_KINDS[lighting.power.kind] || POWER_KINDS.battery;
+    newGroup('Lighting', null, {
+      steps: [
+        `You need ${lighting.leds.length} pre-wired 3 V micro LEDs (fairy-light or "grain of wheat" style, with built-in resistors) and a ${powerName.toLowerCase()}. The LED map lists the minimum lead length for each.`,
+        `The ${lighting.holeDiameter.toFixed(1)} mm wire holes are already cut. Poke each LED's wires through its hole from the inside before gluing in furniture; a dab of hot glue or tacky glue holds the bulb.`,
+        `Glue the power box to the outside of the ${lighting.power.face} wall where the map shows it, then run each wire along its route on the outside and hold it down with thin tape or tiny staples.`,
+        'Wire all LEDs in parallel: twist every LED\'s + lead to the power box + lead (red) and every − to − (black), then insulate with heat-shrink or tape. Test before closing up.',
+        'Optional: glue a cardstock panel over the back of the room to hide the wiring.',
+      ],
+      parts: [],
+    });
   }
 
   // ---------------------------------------------------- furniture and decor
   const typeCounts = {};
-  (kit.items || []).forEach((item) => {
+  (kit.items || []).forEach((item, itemIndex) => {
+    currentItem = itemIndex;
     const def = CATALOG[item.type];
     if (!def) { warn(`Unknown item type "${item.type}".`); return; }
     const mat = getMat(item.material, def.label);
@@ -242,7 +273,10 @@ export function compileKit(kit) {
       if (u0 < wi.u0 || u0 + iw > wi.u0 + wi.len || v0 < t || v0 + ih > t + Hi) warn(`${title} hangs off the ${wall} wall.`);
       const fr = faceFrame(wall, W, D, H, t + 0.3, 'inner');
       wallPlane = { ...fr, o: v3.add(fr.o, v3.add(v3.mul(fr.U, u0), v3.mul(fr.V, v0))) };
-      xf = worldXf;
+      // boxes hang with their back (local y = depth) against the wall, front facing into the room
+      const base = v3.add(faceFrame(wall, W, D, H, t, 'inner').o, v3.add(v3.mul(fr.U, u0), v3.mul(fr.V, v0)));
+      const lin = ([x, y, z]) => v3.add(v3.mul(fr.U, x), v3.add(v3.mul(fr.n, -y), v3.mul(fr.V, z)));
+      xf = { p: ([x, y, z]) => v3.add(base, v3.add(lin([x, y - id, z]), [0, 0, 0])), n: lin };
     } else {
       const rot = (((Number(item.rot) || 0) % 360) + 360) % 360;
       const r = rotZ(rot, iw, id);
@@ -260,8 +294,9 @@ export function compileKit(kit) {
       if (c.kind === 'box') compileBox(c, mat, group, cxf, title);
       else {
         const plane = c.wall ? wallPlane : c.plane;
-        const pid = addPart(group, c.name, mat, c.polys);
-        add3d(c.surface ? 1.5 : 2, c.polys, plane, cxf, mat.color, { cull: false });
+        const fmat = c.material ? getMat(c.material, title) : mat;
+        const pid = addPart(group, c.name, fmat, c.polys, c.scores || []);
+        add3d(c.surface ? 1.5 : 2, c.polys, plane, c.wall ? worldXf : cxf, fmat.color, { cull: false });
         group.steps.push(`Glue the ${c.name.toLowerCase()} (#${pid}) in place.`);
       }
     }
@@ -278,7 +313,7 @@ export function compileKit(kit) {
     if (mat.kind === 'board') {
       // open boxes show their insides, so only cull back faces of closed ones
       const closed = c.faces.length === 6;
-      const res = buildBox({ W: bw, D: bd, H: bh, t: mt, faces: c.faces, shelves: c.shelves || [], scores: c.scores || {}, fingerWidth });
+      const res = buildBox({ W: bw, D: bd, H: bh, t: mt, faces: c.faces, shelves: c.shelves || [], scores: c.scores || {}, holes: c.holes || {}, fingerWidth });
       checkFingers(res.minFinger, mat, title);
       const ids = res.panels.map((pn) => {
         add3d(2, [pn.outline, ...pn.holes], faceFrame(pn.face, bw, bd, bh), xf, mat.color, { cull: closed });
@@ -294,14 +329,14 @@ export function compileKit(kit) {
       return;
     }
     // card: fold-up net
-    let net = foldNet({ W: bw, D: bd, H: bh, faces: c.faces, tabWidth, scores: c.scores || {} });
+    let net = foldNet({ W: bw, D: bd, H: bh, faces: c.faces, tabWidth, scores: c.scores || {}, holes: c.holes || {} });
     if (net.pieces.some((pc) => { const b = bbox(pc.polys); return !fitsSheet(mat, b.w, b.h); })) {
-      net = foldNet({ W: bw, D: bd, H: bh, faces: c.faces, tabWidth, scores: c.scores || {}, separate: true });
+      net = foldNet({ W: bw, D: bd, H: bh, faces: c.faces, tabWidth, scores: c.scores || {}, holes: c.holes || {}, separate: true });
     }
     const ids = net.pieces.map((pc, k) => addPart(group, net.pieces.length > 1 ? `${c.name} ${pc.faces[0]}` : `${c.name} net`, mat, pc.polys, pc.scores));
     for (const f of c.faces) {
       const [a, b] = f === 'bottom' || f === 'top' ? [bw, bd] : f === 'front' || f === 'back' ? [bw, bh] : [bd, bh];
-      add3d(2, [rectPoly(0, 0, a, b)], faceFrame(f, bw, bd, bh), xf, mat.color, { cull: c.faces.length === 6 });
+      add3d(2, [rectPoly(0, 0, a, b), ...((c.holes || {})[f] || [])], faceFrame(f, bw, bd, bh), xf, mat.color, { cull: c.faces.length === 6 });
     }
     const shelfIds = (c.shelves || []).map((z, k) => {
       const sw = bw - 2 * mt, sd = bd - (c.faces.includes('back') ? mt : 0);
@@ -334,6 +369,6 @@ export function compileKit(kit) {
 
   return {
     parts, groups, faces3d, sheets, warnings, usedMats, machine,
-    dims: { W, D, H, Wi, Di, Hi, t },
+    dims: { W, D, H, Wi, Di, Hi, t }, lighting, openings, ceiling: !!room.ceiling,
   };
 }

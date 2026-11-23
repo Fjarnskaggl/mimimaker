@@ -28,7 +28,7 @@ export function renderScene(faces, { yaw = -32, pitch = 26 } = {}) {
     const facing = dot(face.n, cam);
     let opacity = face.opacity;
     let ghost = false;
-    if (face.layer < 2 && facing < -1e-6) { ghost = true; opacity = face.layer === 0 ? 0.12 : 0.06; }
+    if (face.layer < 2 && !face.glow && facing < -1e-6) { ghost = true; opacity = face.layer === 0 ? 0.12 : 0.06; }
     if (face.cull && facing <= 1e-6) continue;
     const c = face.polys[0].reduce((s, p) => [s[0] + p[0], s[1] + p[1], s[2] + p[2]], [0, 0, 0]).map((v) => v / face.polys[0].length);
     const k = 0.72 + 0.38 * Math.abs(dot(face.n, light));
@@ -37,6 +37,8 @@ export function renderScene(faces, { yaw = -32, pitch = 26 } = {}) {
   drawn.sort((a, b) => (a.face.layer - b.face.layer) || (a.face.layer === 2 ? b.depth - a.depth : 0));
   // ghosted walls (between camera and the room) go last so they never hide anything
   drawn.sort((a, b) => Number(a.ghost) - Number(b.ghost));
+  // lights glow through everything, so they're always visible
+  drawn.sort((a, b) => Number(!!a.face.glow) - Number(!!b.face.glow));
 
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const d of drawn) for (const poly of d.poly2) for (const [x, y] of poly) {
@@ -47,6 +49,7 @@ export function renderScene(faces, { yaw = -32, pitch = 26 } = {}) {
   const vb = [x0 - pad, y0 - pad, x1 - x0 + 2 * pad, y1 - y0 + 2 * pad].map((v) => v.toFixed(2)).join(' ');
   const paths = drawn.map((d) => {
     const dStr = d.poly2.map((poly) => 'M' + poly.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join('L') + 'Z').join('');
+    if (d.face.glow) return `<path d="${dStr}" fill="${d.face.color}" fill-opacity="${d.opacity}"/>`;
     return `<path d="${dStr}" fill="${d.fill}" fill-opacity="${d.opacity}" fill-rule="evenodd" stroke="rgba(40,30,20,${d.ghost ? 0.25 : 0.55})" stroke-width="0.25" stroke-linejoin="round"/>`;
   });
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" class="scene-svg" role="img" aria-label="3D preview of the assembled kit">${paths.join('')}</svg>`;

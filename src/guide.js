@@ -3,6 +3,7 @@
 import { sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { TOOL_NAMES } from './materials.js';
 import { renderScene } from './preview3d.js';
+import { ledMapSVG, ledRows, powerName } from './ledmap.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -20,6 +21,15 @@ export function guideHTML(kit, compiled) {
       <p class="meta">${esc(g.material || '')} · parts ${g.parts.map((p) => `#${p}`).join(', ')}</p>
       <ol>${g.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
     </section>`).join('');
+
+  const lit = compiled.lighting?.enabled && compiled.lighting.leds.length;
+  const lightSteps = groups.find((g) => g.title === 'Lighting')?.steps || [];
+  const lighting = lit ? `
+  <h2>Lighting</h2>
+  <p>${compiled.lighting.leds.length} LED${compiled.lighting.leds.length === 1 ? '' : 's'} powered by a ${esc(powerName(compiled.lighting).toLowerCase())}. The map shows the room from behind, unfolded flat: wire holes are already cut, and each coloured line is that LED's wire route to the power box.</p>
+  <div class="ledmap">${ledMapSVG(compiled, { standalone: true })}</div>
+  <table><tr><th>LED</th><th>Name</th><th>Mounted on</th><th>Colour</th><th>Lead needed</th></tr>${ledRows(compiled).map((r) => `<tr><td><span class="sw" style="background:${r.wireColor}"></span>${r.label}</td><td>${esc(r.name || '—')}</td><td>${r.where}</td><td>${esc(r.color)}</td><td>≥ ${r.leadCm} cm</td></tr>`).join('')}</table>
+  <ol class="ds">${lightSteps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : '';
 
   const sheetBlocks = sheets.map((s) => `
     <figure class="sheet">
@@ -61,6 +71,8 @@ export function guideHTML(kit, compiled) {
   figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
   code { font-size: 12px; background: #f3ece4; padding: 1px 4px; border-radius: 3px; }
   .ds li { margin: 4px 0; }
+  .ledmap { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 12px 0; break-inside: avoid; }
+  .ledmap svg { width: 100%; height: auto; display: block; }
   .chip { display:inline-block; padding: 0 6px; border-radius: 4px; color:#fff; font-size: 12px; font-weight: 600; }
   @media (max-width: 640px) { .hero { grid-template-columns: 1fr; } }
   @media print { body { padding: 0; } h2 { break-after: avoid; } }
@@ -75,7 +87,7 @@ export function guideHTML(kit, compiled) {
   </div>
 
   <h2>You'll need</h2>
-  <p>${esc(machine.name)} with: ${tools.map(esc).join(', ')}${scored ? ', Scoring Stylus or Scoring Wheel' : ''}${kit.drawLabels ? ', a fine-tip pen' : ''}. Strong-grip mat for board, standard grip for card, fabric grip for felt. PVA / tacky glue, a glue stick, masking tape, a craft knife and a metal ruler for clean-up.</p>
+  <p>${esc(machine.name)} with: ${tools.map(esc).join(', ')}${scored ? ', Scoring Stylus or Scoring Wheel' : ''}${kit.drawLabels ? ', a fine-tip pen' : ''}${lit ? `, ${compiled.lighting.leds.length} pre-wired 3 V micro LEDs and a ${esc(powerName(compiled.lighting).toLowerCase())}` : ''}. Strong-grip mat for board, standard grip for card, fabric grip for felt. PVA / tacky glue, a glue stick, masking tape, a craft knife and a metal ruler for clean-up.</p>
 
   <h2>Cutting in Cricut Design Space</h2>
   <ol class="ds">
@@ -87,6 +99,8 @@ export function guideHTML(kit, compiled) {
 
   <h2>Assembly</h2>
   ${steps}
+
+  ${lighting}
 
   <h2>Cut sheets</h2>
   <div class="sheets">${sheetBlocks}</div>
