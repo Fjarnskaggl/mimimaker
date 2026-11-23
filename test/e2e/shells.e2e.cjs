@@ -56,12 +56,12 @@ test('shell panel: pick an alley, size it to a shelf gap, tune it, and turn it o
 
   // the preview and the parts list show the facades
   await page.waitForFunction(() => document.querySelectorAll('#view svg path').length > 20);
-  await page.click('[data-tab=sheets]');
+  await page.click('[data-step=make]');
   await page.waitForSelector('#view svg');
   assert.ok(!(await page.locator('#warnings .warn.error').count()), await page.locator('#warnings').innerText());
 
   if (process.env.SHOT_DIR) {
-    await page.click('[data-tab=preview]');
+    await page.click('[data-step=design]');
     await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'shell-alley.png') });
   }

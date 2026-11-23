@@ -29,16 +29,15 @@ async function open() {
 }
 
 async function chooseMachine(page, name) {
-  const details = page.locator('details.section', { has: page.locator('summary', { hasText: 'Kit & machine' }) });
-  if (!(await details.evaluate((d) => d.open))) await details.locator('summary').click();
-  const select = details.locator('label', { hasText: 'Cutting machine' }).locator('select');
+  await page.click('[data-step=make]');
+  const select = page.locator('label', { hasText: 'Cutting machine' }).locator('select');
   await select.selectOption({ label: name });
 }
 
 test('machine profiles: a laser gets SVG + DXF per sheet with kerf and laser hints', async () => {
   const page = await open();
   await chooseMachine(page, 'Laser cutter (generic)');
-  await page.click('[data-tab=sheets]');
+  await page.click('[data-step=make]');
   const card = page.locator('.sheet-card').first();
   assert.deepEqual(await card.locator('header button').allTextContents(), ['SVG', 'DXF']);
   assert.match(await card.locator('.cut-time').textContent(), /kerf 0\.1 mm/);
@@ -54,7 +53,7 @@ test('machine profiles: a laser gets SVG + DXF per sheet with kerf and laser hin
 test('machine profiles: Cricut keeps its single Design Space SVG', async () => {
   const page = await open();
   await chooseMachine(page, 'Cricut Maker / Maker 3');
-  await page.click('[data-tab=sheets]');
+  await page.click('[data-step=make]');
   const card = page.locator('.sheet-card').first();
   assert.deepEqual(await card.locator('header button').allTextContents(), ['SVG']);
   assert.match(await card.locator('.cut-time').textContent(), /Design Space/);
