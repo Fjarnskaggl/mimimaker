@@ -248,3 +248,17 @@ test('light step: an alley\'s own LEDs are on the wiring map, with runs inside t
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('light step: with an alley, lights off still shows the shell panel, not the room LEDs', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await panel(page).locator('select[data-shell=type]').selectOption('alley');
+  await page.click('[data-step=light]');
+  await page.evaluate(() => { for (const d of document.querySelectorAll('#sidebar details.section')) d.open = true; });
+  await page.locator('#sidebar label', { hasText: 'Lights on' }).locator('input').uncheck();
+  assert.equal((await kit(page)).lighting.enabled, false);
+  assert.equal(await page.locator('#sidebar [data-shell-lights]').count(), 1, 'still explains the shell places its LEDs');
+  assert.equal(await page.locator('#sidebar .add-row').count(), 0, 'no buttons that add room LEDs');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

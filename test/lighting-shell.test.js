@@ -8,6 +8,7 @@ import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
 import { ledMapSVG, ledRows } from '../src/ledmap.js';
 import { pointInPolygon } from '../src/geometry.js';
+import { guideHTML } from '../src/guide.js';
 
 const gap = { w: 100, h: 230, d: 180 };
 const alley = (params = {}, t = 2) => buildShell({ type: 'alley', gap, clearance: 2, params }, { t });
@@ -96,4 +97,43 @@ test('LED map and table show alley LEDs inside the shell, with the inside run da
   assert.ok(rows.some((row) => row.where === 'Backdrop cavity'));
   // a plain room's map has no inside runs
   assert.ok(!ledMapSVG(compileKit(defaultKit())).includes('class="inside"'));
+});
+
+test('review: alley LEDs glow once each in 3D, at their own spot (not at the wire hole)', () => {
+  const r = compileKit(withShell('alley'));
+  const glows = r.faces3d.filter((f) => f.glow);
+  // a halo and a bulb per shell light, nothing more
+  assert.equal(glows.length, 2 * r.shell.lights.length);
+});
+
+test('review: the alley\'s power box is clamped onto the back wall, so its fields still move it', () => {
+  const kit = withShell('alley');
+  kit.lighting.power = { ...kit.lighting.power, wall: 'left', pos: 1, elev: 2 };
+  const a = compileKit(kit);
+  assert.equal(a.lighting.power.face, 'back');
+  kit.lighting.power = { ...kit.lighting.power, wall: 'back', pos: 2, elev: 3 };
+  const b = compileKit(kit);
+  assert.ok(b.lighting.power.p[0] > a.lighting.power.p[0] || b.lighting.power.p[1] > a.lighting.power.p[1], 'editing the position moves the box');
+  // far off the wall: back inside it
+  kit.lighting.power = { ...kit.lighting.power, pos: 9999, elev: 9999 };
+  const c = compileKit(kit);
+  assert.ok(c.lighting.power.p[0] <= c.dims.W && c.lighting.power.p[1] <= c.dims.H);
+  assert.ok(!c.warnings.some((w) => /power box is off/.test(w.msg)));
+});
+
+test('review: alley build steps describe the shared cavity holes, not one hole per LED', () => {
+  const kit = withShell('alley');
+  kit.lighting.holeDiameter = 5;
+  const r = compileKit(kit);
+  const steps = r.groups.find((g) => g.title === 'Lighting').steps.join('\n');
+  assert.doesNotMatch(steps, /5\.0 mm wire holes/);
+  assert.doesNotMatch(steps, /Poke each LED's wires through its hole/);
+  assert.match(steps, /cavity/i);
+});
+
+test('review: the printed guide explains the dashed inside runs for an alley', () => {
+  const kit = withShell('alley');
+  const html = guideHTML(kit, compileKit(kit));
+  assert.match(html, /dashed/i);
+  assert.doesNotMatch(guideHTML(defaultKit(), compileKit(defaultKit())), /dashed/i);
 });
