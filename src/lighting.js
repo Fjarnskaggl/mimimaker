@@ -16,6 +16,7 @@
 import { ellipsePoly, pointInPolygon, bbox } from './geometry.js';
 import { planCircuit, supplyFor } from './lighting/circuit.js';
 import { effectOf, effectLoad, effectWarnings } from './lighting/effects.js';
+import { planCutouts } from './lighting/cutouts.js';
 
 export const LED_COLORS = {
   warm: { name: 'Warm white', hex: '#ffc767' },
@@ -160,6 +161,11 @@ export function planLighting(lighting, ctx) {
   }
   const circuit = planCircuit(leds.map((l) => l.load), supplyFor(pw));
   power.supply = circuit.supply.id;
+  const cut = planCutouts({ ...power, mount: pw.mount }, ctx);
+  power.mount = pw.mount === 'flush' ? 'flush' : 'outside';
+  power.cutouts = cut.cutouts;
+  for (const c of cut.cutouts) (holes[c.face] ||= []).push(c.poly);
+  warnings.push(...cut.warnings);
   warnings.push(...circuit.warnings);
   return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit };
 }
