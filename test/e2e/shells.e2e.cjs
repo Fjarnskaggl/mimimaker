@@ -225,3 +225,26 @@ test('shell panel: the room keeps the shell size when the scale changes', async 
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('light step: an alley\'s own LEDs are on the wiring map, with runs inside the shell', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await panel(page).locator('select[data-shell=type]').selectOption('alley');
+  await page.click('[data-step=light]');
+  await page.click('[data-view=wiring]');
+  const wiring = page.locator('.wiring');
+  await wiring.locator('.led-table').waitFor({ timeout: 4000 });
+  const where = await wiring.locator('.led-table tbody tr td:nth-child(3)').allInnerTexts();
+  assert.ok(where.length > 0, 'shell LEDs listed');
+  assert.ok(where.every((w) => /cavity/i.test(w)), where.join(', '));
+  assert.equal(await wiring.locator('svg polyline.inside').count(), where.length, 'each LED has its inside run');
+  assert.match(await wiring.locator('.map-head .hint').innerText(), /inside the shell/i);
+  // the sidebar lists the shell's LEDs, not the room's set-aside ones
+  const sideRows = page.locator('#sidebar .insp-list .insp-row');
+  assert.equal(await sideRows.count(), where.length);
+  assert.equal(await page.locator('#sidebar [data-shell-lights]').count(), 1);
+  assert.equal(await page.locator('#warnings .warn.error').count(), 0, await page.locator('#warnings').innerText());
+  if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'shell-alley-wiring.png') });
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
