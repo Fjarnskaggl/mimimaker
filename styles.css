@@ -326,7 +326,10 @@ details.section > summary:has(.count)::after { margin-left: var(--space-2); }
 .field input[type=number], .field input[inputmode=decimal] { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .field input:focus, .field select:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
 .field .unit-wrap { position: relative; display: block; }
-.field .unit-wrap input { padding-right: 34px; }
+.field .unit-wrap input { padding-right: 30px; }
+.grid3 .field input { padding-left: var(--space-2); }
+.grid3 .field .unit-wrap input { padding-right: 26px; }
+.grid3 .field .unit { right: 7px; }
 .field .unit { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font: 500 12px/1 var(--font-mono); color: var(--ink-muted); pointer-events: none; }
 .field input:disabled, .field select:disabled, .check input:disabled { opacity: .55; cursor: not-allowed; background: var(--surface-sunken); border-style: dashed; }
 .field:has(input:disabled) .unit { opacity: .55; }

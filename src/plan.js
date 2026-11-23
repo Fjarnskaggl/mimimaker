@@ -64,6 +64,22 @@ export function rotateItem(kit, index) {
   return item;
 }
 
+/**
+ * A free place for a new floor item: the first spot, scanning from the back
+ * left on a `step` cm grid, where it sits inside the room and overlaps no
+ * other solid piece. Returns {x, y}, or null when nothing fits.
+ */
+export function findFreeSpot(kit, item, { step = 5 } = {}) {
+  const { fw, fd } = size(item);
+  const others = kit.items.filter((it) => it !== item).map((it) => ({ f: footprint(it), h: CATALOG[it.type] ? size(it).h : 0 }))
+    .filter((o) => o.f && o.h > 0).map((o) => o.f);
+  const free = (x, y) => others.every((B) => !(x < B.x1 - EPS && B.x0 < x + fw - EPS && y < B.y1 - EPS && B.y0 < y + fd - EPS));
+  for (let y = 0; y + fd <= kit.room.depth + EPS; y += step) {
+    for (let x = 0; x + fw <= kit.room.width + EPS; x += step) if (free(x, y)) return { x, y };
+  }
+  return null;
+}
+
 export const wallLength = (wall, room) => (wall === 'back' ? room.width : room.depth);
 
 /** Slide something mounted on a wall (item, opening, light) to `pos`. */

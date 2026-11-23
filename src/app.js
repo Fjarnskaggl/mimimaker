@@ -12,7 +12,7 @@ import { LED_COLORS } from './lighting.js';
 import { ledMapSVG, ledRows } from './ledmap.js';
 import { DEFAULT_MATERIALS, MACHINES, SCALES, TOOL_NAMES, withMaterialDefaults } from './materials.js';
 import { History } from './history.js';
-import { collisions, moveItem, rotateItem, slideOnWall, snap, itemParams } from './plan.js';
+import { collisions, moveItem, rotateItem, slideOnWall, snap, itemParams, findFreeSpot } from './plan.js';
 import { planSVG, posOnWall } from './planview.js';
 import { fitCoupon, couponSVG, calibrate, estimateCutMinutes, formatMinutes } from './make.js';
 import { shareHash, kitFromHash, decodeKit } from './share.js';
@@ -518,7 +518,7 @@ function addPiece(type) {
   const def = CATALOG[type];
   const item = { type, params: { ...def.defaults }, material: defaultMaterialFor(def, kit.materials) };
   if (def.placement === 'wall') Object.assign(item, { wall: 'back', pos: Math.round(kit.room.width / 2), elev: 150 });
-  else Object.assign(item, { x: 10, y: 10, rot: 0 });
+  else Object.assign(item, { rot: 0 }, findFreeSpot(kit, { ...item, x: 0, y: 0 }) || { x: 10, y: 10 });
   kit.items.push(item);
   view.sel = { kind: 'item', index: kit.items.length - 1 };
   restructured();
