@@ -145,3 +145,44 @@ test('zip files: SVG per print sheet, the PDF and a README, under print-then-cut
   const plain = setup((k) => setTextureChoice(setTextureChoice(k, 'paper', 'none'), 'card65', 'none'));
   assert.deepEqual(kitPrintCutFiles(plain.compiled, plain.kit), []);
 });
+
+// ------------------------------------------------------ review follow-ups
+test('parsePath rejects relative commands and missing numbers', () => {
+  assert.throws(() => parsePath('M0 0l1 1'), /unsupported path command/i);
+  assert.throws(() => parsePath('M0 0L1'), /bad path data/i);
+});
+
+test('a part a hair over the print area is still split, never dropped', () => {
+  const W = PRINT_AREA.w - 2 * PRINT_BLEED;
+  const kit = defaultKit();
+  const part = { id: 1, name: 'Wide', group: 'Wallpaper', material: 'paper', w: W + 5e-10, h: 50, polys: [rectPoly(0, 0, W + 5e-10, 50)], scores: [] };
+  const compiled = { parts: [part], usedMats: kit.materials.filter((m) => m.id === 'paper') };
+  const { sheets, oversize } = printSheets(compiled, kit);
+  assert.deepEqual(oversize, []);
+  assert.ok(sheets.flatMap((s) => s.placements).length >= 1, 'placed');
+});
+
+test('panel ids stay letters past 26 panels', () => {
+  const part = { id: 5, name: 'Huge floor', group: 'Flooring', material: 'card65', w: 1000, h: 1000, polys: [rectPoly(0, 0, 1000, 1000)], scores: [] };
+  const panels = splitPart(part, 160, 220);
+  assert.ok(panels.length > 26);
+  for (const p of panels) assert.match(String(p.id), /^5[a-z]{1,2}$/);
+  assert.equal(new Set(panels.map((p) => p.id)).size, panels.length);
+});
+
+test('a texture id the app no longer knows is skipped, not fatal', () => {
+  const { kit, compiled } = setup((k) => ({ ...k, look: { textures: { paper: { id: 'retired-texture' } } } }));
+  const got = printableParts(compiled, kit);
+  assert.ok(got.every((x) => x.part.material !== 'paper'));
+  assert.doesNotThrow(() => kitPrintCutFiles(compiled, kit));
+});
+
+test('the how-to page list wraps onto more pages instead of running off the page', () => {
+  const { kit } = setup();
+  const mat = kit.materials[0];
+  const many = Array.from({ length: 60 }, (_, i) => ({ w: PRINT_AREA.w, h: PRINT_AREA.h, material: mat, index: i + 1, count: 60, placements: [] }));
+  const s = latin1(printCutPDF(many, { title: 'Big' }));
+  const boxes = [...s.matchAll(/\/MediaBox/g)].length;
+  assert.ok(boxes > 61, `how-to continues on extra pages (${boxes} pages)`);
+  for (const [, y] of s.matchAll(/[\d.]+ (-?[\d.]+) Td/g)) assert.ok(Number(y) > 0, 'text stays on the page');
+});
