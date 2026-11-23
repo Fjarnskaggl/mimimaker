@@ -3,7 +3,7 @@
 import { compileKit } from './kit.js';
 import { CATALOG, defaultKit, defaultMaterialFor } from './catalog.js';
 import { ROOM_TYPES, applyRoomType } from './templates.js';
-import { LED_COLORS, POWER_KINDS } from './lighting.js';
+import { LED_COLORS } from './lighting.js';
 import { ledMapSVG, ledRows } from './ledmap.js';
 import { DEFAULT_MATERIALS, MACHINES, SCALES, withMaterialDefaults } from './materials.js';
 import { History } from './history.js';
@@ -22,6 +22,8 @@ import { guideHTML } from './guide.js';
 import { makeZip } from './zip.js';
 // T2 shells
 import { shellSection, applyRoomLocks } from './ui/t2.js';
+// [T5] lighting UI
+import { renderSupplyField, renderCircuitSummary } from './ui/t5.js';
 
 const STORE_KEY = 'mimimaker.kit.v1';
 const $ = (sel) => document.querySelector(sel);
@@ -397,7 +399,7 @@ function lightingSection() {
     body.push(
       h('div', { class: 'grid2' },
         numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' }),
-        selectField('Power', L.power.kind, Object.keys(POWER_KINDS).map((k) => [k, k === 'usb' ? 'USB cable' : 'Battery box']), (v) => { L.power.kind = v; changed(); })),
+        renderSupplyField(L.power, changed)), // [T5] supply picker
       h('div', { class: 'grid3' },
         selectField('Power box on', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
         numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
@@ -711,6 +713,7 @@ function renderLedMap(el) {
     h('div', { class: 'map-head' },
       h('p', { class: 'hint' }, `Seen from behind the room, the side you wire on. ${compiled.lighting.holeDiameter.toFixed(1)} mm holes are pre-cut at each LED; run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`),
       h('button', { class: 'small', type: 'button', onclick: () => download(`${slug(kit.name)}-led-map.svg`, ledMapSVG(compiled, { standalone: true }), 'image/svg+xml') }, 'SVG')),
+    renderCircuitSummary(compiled.lighting.circuit), // [T5] circuit summary
     h('div', { class: 'map-wrap', html: ledMapSVG(compiled) }),
     table);
 }

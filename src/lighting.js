@@ -147,12 +147,13 @@ export function planLighting(lighting, ctx) {
     leds.push({
       label, name: led.name || '', mount: led.mount, face, u, v, p, color: led.color || 'warm',
       route: route.points, length, leadCm: Math.ceil((length / 10 + 3) / 5) * 5,
+      ...(led.duty != null ? { duty: led.duty } : {}),
     });
   });
   if (leds.some((l) => l.face === 'bottom')) {
     warnings.push({ level: 'info', msg: 'Floor lights feed their wires underneath the room — glue 3–4 mm feet (or felt pads) under the floor so the wires aren\'t pinched.' });
   }
-  const circuit = planCircuit((lighting.leds || []).map((l) => ({ color: l.color || 'warm', duty: l.duty })), supplyFor(pw));
+  const circuit = planCircuit(leds.map((l) => ({ color: l.color, duty: l.duty })), supplyFor(pw));
   power.supply = circuit.supply.id;
   warnings.push(...circuit.warnings);
   return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit };
