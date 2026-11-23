@@ -50,6 +50,8 @@ const EDGE = 1.5, BRIDGE = 2;
 const MIN_HOLE = 3;
 /** Wire notch at the foot of each cavity spacer (mm). */
 const NOTCH_W = 3, NOTCH_H = 6;
+/** Behind the front, a spacer is just a foot block and a head block (mm). */
+const FOOT_H = NOTCH_H + 8, HEAD_H = 12;
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -244,22 +246,33 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {}, materials, mat
       return yy > Lv ? last.roofBack : roofAt(b, Math.min(yy, b.y1));
     };
     const notch = c - NOTCH_W >= 2;
+    const a = (c - NOTCH_W) / 2;
+    const foot = (h) => (notch
+      ? [[0, 0], [a, 0], [a, NOTCH_H], [a + NOTCH_W, NOTCH_H], [a + NOTCH_W, 0], [c, 0], [c, h], [0, h]]
+      : rectPoly(0, 0, c, h));
+    const x = side === 'left' ? t : W - t - c;
+    const plane = (ys) => ({ o: [x, ys, t], U: [1, 0, 0], V: [0, 0, 1], n: [0, -1, 0] });
     spacerYs.forEach((ys, k) => {
       const hs = Math.min(baseTop(ys), baseTop(ys + t)) - 1;
-      const a = (c - NOTCH_W) / 2;
-      const poly = notch
-        ? [[0, 0], [a, 0], [a, NOTCH_H], [a + NOTCH_W, NOTCH_H], [a + NOTCH_W, 0], [c, 0], [c, hs], [0, hs]]
-        : rectPoly(0, 0, c, hs);
-      const x = side === 'left' ? t : W - t - c;
-      parts.push({
-        key: `${side}-spacer${k}`, name: `${sideName} spacer ${k + 1}`, group, role: 'spacer', side,
-        polys: [poly], scores: [], plane: { o: [x, ys, t], U: [1, 0, 0], V: [0, 0, 1], n: [0, -1, 0] },
-      });
-      const key = `${side}-spacer${k}`;
-      glue(key, `shell-${side}`);
-      glue(key, `${side}-base`);
-      glue(key, 'shell-bottom');
-      if (k === spacerYs.length - 1) glue(key, 'shell-back');
+      const last = k === spacerYs.length - 1;
+      // the front spacer closes the light cavity, so it runs full height; the
+      // others only hold the facade off the wall: a block at the foot (wire
+      // notch) and one under the roofline, unless the facade is too short to split
+      const blocks = k === 0 || hs < FOOT_H + HEAD_H + 10
+        ? [{ kind: 'full', poly: foot(hs) }]
+        : [{ kind: 'foot', poly: foot(FOOT_H) }, { kind: 'head', poly: rectPoly(0, hs - HEAD_H, c, HEAD_H) }];
+      for (const bl of blocks) {
+        const key = bl.kind === 'head' ? `${side}-spacer${k}-head` : `${side}-spacer${k}`;
+        const label = bl.kind === 'full' ? '' : bl.kind === 'foot' ? ' foot' : ' head';
+        parts.push({
+          key, name: `${sideName} spacer ${k + 1}${label}`, group, role: 'spacer', side, spacer: bl.kind,
+          polys: [bl.poly], scores: [], plane: plane(ys),
+        });
+        glue(key, `shell-${side}`);
+        glue(key, `${side}-base`);
+        if (bl.kind !== 'head') glue(key, 'shell-bottom');
+        if (last) glue(key, 'shell-back');
+      }
     });
     backHoles.push(wireHole(side === 'left' ? t + c / 2 : W - t - c / 2));
 
@@ -347,7 +360,7 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {}, materials, mat
   for (const side of ['left', 'right']) {
     const group = groupOf[side];
     steps.push(
-      { group, text: `Glue the ${side} spacers upright against the ${side} wall, notch down, first one flush with the front edge and the last one against the back wall (${ids((p) => p.side === side && p.role === 'spacer').length} spacers). The notches make a wire channel along the floor.` },
+      { group, text: `Glue the ${side} spacers upright against the ${side} wall (${ids((p) => p.side === side && p.role === 'spacer').length} pieces): the tall one flush with the front edge, then at each mark a foot block on the floor, notch down, with its head block just under the roofline above it; the last pair goes against the back wall. The notches make a wire channel along the floor.` },
       { group, text: `Lay one micro LED in the ${side} cavity behind each building with lit windows (the 3D view shows where), feed the wires along the channel and out of the back wall. Glue vellum or tracing paper behind the base facade's window holes to diffuse the light.` },
       { group, text: layers > 1
         ? `Glue the ${side} base facade onto the spacers, then stack the relief layers on it building by building, matching each window frame to its window.`
