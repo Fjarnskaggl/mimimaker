@@ -126,3 +126,34 @@ test('part counts stay on one line, in the design system\'s muted ink', async ()
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('difficulty labels use the theme-aware status colours and keep their word', async () => {
+  for (const scheme of ['light', 'dark']) {
+    const page = await open();
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.click('.chip:has-text("Living room")'); // has Easy, Medium and Tricky pieces
+    const rows = await page.evaluate(() => {
+      const tokenColour = (name) => {
+        const probe = document.createElement('span');
+        probe.style.color = `var(${name})`;
+        document.body.append(probe);
+        const c = getComputedStyle(probe).color;
+        probe.remove();
+        return c;
+      };
+      const want = { 1: tokenColour('--success'), 2: tokenColour('--warning'), 3: tokenColour('--danger') };
+      return [...document.querySelectorAll('.piece .t1-diff')].map((el) => ({
+        level: el.closest('.piece').dataset.difficulty, word: el.textContent, colour: getComputedStyle(el).color, want: want[el.closest('.piece').dataset.difficulty],
+      }));
+    });
+    assert.deepEqual([...new Set(rows.map((r) => r.level))].sort(), ['1', '2', '3']);
+    for (const r of rows) {
+      assert.equal(r.word, { 1: 'Easy', 2: 'Medium', 3: 'Tricky' }[r.level]);
+      assert.equal(r.colour, r.want, `${scheme}: ${r.word} uses its status colour`);
+    }
+    const distinct = new Set(rows.map((r) => r.colour));
+    assert.equal(distinct.size, 3, `${scheme}: the three levels look different`);
+    assert.deepEqual(page.errors, []);
+    await page.close();
+  }
+});

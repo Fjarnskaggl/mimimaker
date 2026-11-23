@@ -140,3 +140,39 @@ export function extrudeFace(face, thickness, triangulate, { lift = 0 } = {}) {
   }
   return { positions, normals };
 }
+
+// Night-time window light: moonlight shining in through each window.
+export const MAX_WINDOW_LIGHTS = 4;
+
+/**
+ * Windows found in the room shell: holes in vertical shell panels that are
+ * window-sized and start clear of the floor (doors reach the floor; LED wire
+ * holes are tiny). Each gives the hole's centre in the wall plane, the wall's
+ * normal (pointing into the room) and its size in mm.
+ */
+export function windowLights(faces, { max = MAX_WINDOW_LIGHTS, minSize = 8 } = {}) {
+  const out = [];
+  for (const f of faces) {
+    if (f.layer !== 0 || f.polys.length < 2 || Math.abs(f.n[2]) > 0.5) continue;
+    const n = normalize(f.n);
+    const X = normalize([-n[1], n[0], 0]); // horizontal, in the wall
+    const along = (p) => p[0] * X[0] + p[1] * X[1];
+    const zs = f.polys[0].map((p) => p[2]);
+    const bottom = Math.min(...zs), wallH = Math.max(...zs) - bottom;
+    for (const hole of f.polys.slice(1)) {
+      const us = hole.map(along), hz = hole.map((p) => p[2]);
+      const u0 = Math.min(...us), u1 = Math.max(...us), z0 = Math.min(...hz), z1 = Math.max(...hz);
+      const width = u1 - u0, height = z1 - z0;
+      if (width < minSize || height < minSize) continue; // LED wire hole
+      if (z0 - bottom < wallH * 0.1) continue; // reaches the floor: a door
+      const d = dot(hole[0], n); // the wall plane
+      const uc = (u0 + u1) / 2, zc = (z0 + z1) / 2;
+      // a point at (uc along X, zc up) on the wall plane
+      const base = [X[0] * uc, X[1] * uc, zc];
+      const off = d - dot(base, n);
+      out.push({ center: base.map((v, i) => v + n[i] * off), normal: n, width, height });
+      if (out.length >= max) return out;
+    }
+  }
+  return out;
+}

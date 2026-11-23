@@ -43,4 +43,32 @@ export const CAFE = [
     components: [{ kind: 'flat', name: 'Menu board', polys: [{ rect: [0, 0, 'w', 'h'] }], scores: [{ rect: ['b', 'b', 'w - 2 * b', 'h - 2 * b'] }], wall: true, surface: true }],
     note: 'Cut it from black card and write the menu with a white gel pen.',
   },
+  {
+    id: 'shopshelving', label: 'Shop shelving', theme: 'Café', placement: 'floor', mat: 'board',
+    tags: ['shop', 'storage'], difficulty: 2,
+    params: [num('w', 'Width', 60, 200), num('d', 'Depth', 30, 60), num('h', 'Height', 120, 220), cnt('shelves', 'Shelves', 1, 6), num('sign', 'Sign height', 10, 40)],
+    defaults: { w: 100, d: 40, h: 180, shelves: 4, sign: 20 },
+    size: ['w', 'd', 'h + sign'],
+    let: { b: 'min(sign / 5, 2)' },
+    components: [
+      { kind: 'box', name: 'Shop shelving', size: ['w', 'd', 'h'], faces: ['bottom', 'top', 'left', 'right', 'back'], shelves: { even: 'round(shelves)', h: 'h' }, at: [0, 0, 0] },
+      { kind: 'flat', name: 'Header sign', plane: { upright: { y: 'd - t', z: 'h' } }, polys: [{ rect: [0, 0, 'w', 'sign'] }], scores: [{ rect: ['b', 'b', 'w - 2 * b', 'sign - 2 * b'] }] },
+    ],
+    note: 'Glue the header sign upright along the back edge of the top and letter the shop name inside the scored border. Fill the shelves with accessory tins and jars.',
+  },
+  {
+    id: 'barcounter', label: 'Bar counter', theme: 'Café', placement: 'floor', mat: 'board',
+    tags: ['shop', 'counter', 'dining'], difficulty: 2,
+    params: [num('w', 'Width', 80, 300), num('d', 'Depth', 40, 80), num('h', 'Height', 95, 120), num('ov', 'Bar overhang', 5, 30)],
+    defaults: { w: 160, d: 60, h: 105, ov: 15 },
+    let: { top: 'max(2 * t, 3, h * 0.04)', n: 'max(2, round(w / d))' },
+    components: [
+      {
+        kind: 'box', name: 'Bar counter', size: ['w', 'd - ov', 'h - top'], faces: 'all', at: [0, 'ov', 0],
+        scores: { front: [{ repeat: 'n - 1', as: 'k', each: { line: [['(k + 1) * w / n', 't + 1'], ['(k + 1) * w / n', 'h - top - t - 1']] } }] },
+      },
+      { kind: 'box', name: 'Bar top', size: ['w', 'd', 'top'], faces: 'all', at: [0, 0, 'h - top'] },
+    ],
+    note: 'Glue the bar top flush at the back so it overhangs the customer side; bar stools tuck under the overhang.',
+  },
 ];

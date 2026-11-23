@@ -43,4 +43,34 @@ export const LIBRARY = [
     ],
     note: 'Set it under a window; the cushion is cut from felt — glue it on top and add a couple of tiny rolled-felt pillows.',
   },
+  {
+    id: 'stepcupboard', label: 'Step cupboard', theme: 'Library', placement: 'floor', mat: 'board',
+    tags: ['storage', 'stairs'], difficulty: 2,
+    params: [num('w', 'Width', 60, 200), num('d', 'Depth', 25, 50), num('h', 'Tallest step', 60, 200), cnt('steps', 'Steps', 3, 6)],
+    defaults: { w: 120, d: 35, h: 120, steps: 4 },
+    let: { n: 'round(steps)', sw: 'w / n', b: 'min(max(t + 1, sw * 0.12), sw / 4)' },
+    components: [{
+      repeat: 'n', as: 'k', let: { sh: 'h * (k + 1) / n' },
+      each: {
+        kind: 'box', name: 'Step {k + 1}', size: ['sw', 'd', 'sh'], faces: 'all', at: ['k * sw', 0, 0],
+        scores: { front: [{ rect: ['b', 'b', 'sw - 2 * b', 'sh - 2 * b'] }] },
+      },
+    }],
+    note: 'Glue the steps side by side, lowest first, so they rise like a staircase; each scored outline is a cupboard door. Tuck it under a staircase or against a wall.',
+  },
+  {
+    id: 'filingcabinet', label: 'Filing cabinet', theme: 'Library', placement: 'floor', mat: 'board',
+    tags: ['storage', 'office'], difficulty: 1,
+    params: [num('w', 'Width', 35, 60), num('d', 'Depth', 40, 70), num('h', 'Height', 50, 140), cnt('count', 'Drawers', 2, 5)],
+    defaults: { w: 45, d: 60, h: 130, count: 4 },
+    let: { n: 'round(count)', hw: 'w * 0.3', hh: 'max(1, h * 0.012)' },
+    components: [{
+      kind: 'box', name: 'Filing cabinet', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0],
+      scores: { front: [
+        { fronts: { style: "'drawers'", count: 'n', w: 'w', h: 'h' } },
+        { repeat: 'n', as: 'k', each: { rect: ['(w - hw) / 2', 't + (k + 0.7) * (h - 2 * t) / n', 'hw', 'hh'] } },
+      ] },
+    }],
+    note: 'Score lines mark each drawer and its pull; ink the pulls silver and add a tiny paper label above each.',
+  },
 ];
