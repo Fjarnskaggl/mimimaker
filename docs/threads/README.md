@@ -49,6 +49,9 @@ without a coordinator note on #1.
    **No images in the repo:** don't commit screenshots. Give your browser test
    a `SHOT_DIR` hook (write `page.screenshot()` files there when the variable
    is set); the coordinator runs it during review and checks the images.
+   **Browser-test servers:** e2e files run in parallel, so never hard-code a
+   port. Start the dev server with `startServer()` from
+   `test/e2e/helpers.cjs` (free port, waits until ready, `close()` after).
    **WebGL tests without the CDN:** if cdnjs is blocked in your sandbox, run
    `npm pack three@0.128.0`, untar it, and set
    `MIMI_THREE_JS=<dir>/package/build/three.min.js`.
