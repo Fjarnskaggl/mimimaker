@@ -26,11 +26,11 @@ test('the print area is Design Space’s 6.75 × 9.25 in with a 1 mm bleed', () 
   assert.equal(PRINT_BLEED, 1);
 });
 
-test('textured parts are the ones whose material has a look', () => {
+test('textured parts are the wallpaper and floor covering whose material has a look', () => {
   const { kit, compiled } = setup();
   const look = resolveLook(kit);
   const got = printableParts(compiled, kit);
-  const want = compiled.parts.filter((p) => look[p.material]);
+  const want = compiled.parts.filter((p) => (p.group === 'Wallpaper' || p.group === 'Flooring') && look[p.material]);
   assert.ok(want.length >= 2, 'default kit has wallpaper and floor');
   assert.deepEqual(got.map((x) => x.part.id), want.map((p) => p.id));
   for (const x of got) assert.equal(x.look.id, look[x.part.material].id);
@@ -38,6 +38,15 @@ test('textured parts are the ones whose material has a look', () => {
   const plain = setup((k) => setTextureChoice(setTextureChoice(k, 'paper', 'none'), 'card65', 'none'));
   assert.deepEqual(printableParts(plain.compiled, plain.kit), []);
   assert.deepEqual(printSheets(plain.compiled, plain.kit).sheets, []);
+});
+
+test('furniture cut from the floor or wallpaper material is not printed with the floor or wallpaper pattern', () => {
+  const { kit, compiled } = setup((k) => ({ ...k, items: [...k.items, { type: 'plant', material: k.room.floor.material, params: {}, x: 1, y: 1 }, { type: 'frame', material: k.room.wallpaper.material, params: {}, wall: 'back', pos: 20, elev: 20 }] }));
+  const furniture = compiled.parts.filter((p) => p.group !== 'Wallpaper' && p.group !== 'Flooring' && resolveLook(kit)[p.material]);
+  assert.ok(furniture.length >= 2, 'the plant and frame share the floor and wallpaper materials');
+  const printed = new Set(printableParts(compiled, kit).map((x) => x.part.id));
+  for (const p of furniture) assert.ok(!printed.has(p.id), `${p.name} (#${p.id}) is not printed`);
+  assert.ok(printed.size >= 4, 'walls and floor still are');
 });
 
 test('path helpers: absolute M L H V Q C Z, H/V become L', () => {

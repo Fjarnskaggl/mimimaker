@@ -15,6 +15,7 @@ import { resolveLook, faceTexture, materialFinish } from '../src/textures/look.j
 import { printableParts } from '../src/export/printcut.js';
 
 const ids = new Set(TEXTURES.map((t) => t.id));
+const RAW = new Set(TEXTURES.filter((t) => t.kind === 'material').map((t) => t.id));
 const gap = { w: 120, h: 230, d: 180 };
 
 function lit(kit, leds, power = {}) {
@@ -94,16 +95,21 @@ test('every cut part’s 3D faces name the material it is cut from (fan blades a
   }
 });
 
-test('printed parts look in 3D like their print-then-cut sheet', () => {
+test('printed parts (wallpaper, floor) look in 3D like their print-then-cut sheet; everything else shows raw material', () => {
   let checked = 0;
   for (const [name, kit] of scenes()) {
     const compiled = compileKit(kit);
     const look = resolveLook(kit);
     const printed = new Map(printableParts(compiled, kit).map(({ part, look: l }) => [part.material, l]));
     for (const f of compiled.faces3d) {
-      if (f.glow || !printed.has(f.material)) continue;
-      assert.deepEqual(faceTexture(f, kit, look), printed.get(f.material), `${name}: ${f.material} face`);
-      checked++;
+      if (f.glow) continue;
+      const spec = faceTexture(f, kit, look);
+      if (f.print && printed.has(f.material)) {
+        assert.deepEqual(spec, printed.get(f.material), `${name}: printed ${f.material} face`);
+        checked++;
+      } else {
+        assert.ok(RAW.has(spec.id), `${name}: unprinted layer ${f.layer} ${f.material} face shows raw material, not ${spec.id}`);
+      }
     }
   }
   assert.ok(checked > 50, `printed faces checked: ${checked}`);
@@ -151,6 +157,38 @@ test('raw finishes are new material textures (kept out of the wall and floor pic
     assert.ok(s.shapes.length > 5, `${id} has some detail`);
     for (const sh of s.shapes.slice(1)) {
       for (const c of [sh.fill, sh.stroke].filter(Boolean)) assert.match(c, /^#[0-9a-f]{6}$/i, `${id} colour ${c}`);
+    }
+  }
+});
+
+test('furniture cut from the floor or wallpaper material shows its raw material, not the floor or wallpaper print', () => {
+  const kit = defaultKit();
+  kit.items = [{ type: 'plant', material: kit.room.floor.material, params: {}, x: 1, y: 1 }];
+  const faces = compileKit(kit).faces3d.filter((f) => f.item === 0);
+  assert.ok(faces.length);
+  const card = kit.materials.find((m) => m.id === kit.room.floor.material);
+  for (const f of faces) assert.deepEqual(faceTexture(f, kit), materialFinish(card));
+});
+
+test('raw finishes repeat without seams: anything crossing a tile edge reappears on the opposite edge', () => {
+  const W = 40;
+  for (const id of ['chipboard', 'card-fibre', 'felt', 'wood-grain', 'clear-sheet']) {
+    const { shapes } = textureShapes(id, { width: W, height: W, seed: 5, params: { colors: ['#b8956a', '#a0805a', '#d0b080'] } });
+    const rects = shapes.slice(1).filter((s) => s.type === 'rect');
+    const key = (s, dx, dy) => [s.x + dx, s.y + dy, s.w, s.h].map((v) => v.toFixed(4)).join();
+    const have = new Set(rects.map((s) => key(s, 0, 0)));
+    for (const s of rects) {
+      if (s.x + s.w > W + 1e-9) assert.ok(have.has(key(s, -W, 0)), `${id}: rect over the right edge wraps to the left`);
+      if (s.y + s.h > W + 1e-9) assert.ok(have.has(key(s, 0, -W)), `${id}: rect over the bottom edge wraps to the top`);
+      if (s.x < -1e-9) assert.ok(have.has(key(s, W, 0)), `${id}: rect over the left edge wraps to the right`);
+      if (s.y < -1e-9) assert.ok(have.has(key(s, 0, W)), `${id}: rect over the top edge wraps to the bottom`);
+    }
+    const uses = shapes.filter((s) => s.type === 'use');
+    const ukey = (s, dx, dy) => [s.x + dx, s.y + dy, s.angle, s.size].map((v) => (+v).toFixed(4)).join();
+    const uhave = new Set(uses.map((s) => ukey(s, 0, 0)));
+    for (const s of uses) {
+      if (s.x + s.size > W) assert.ok(uhave.has(ukey(s, -W, 0)), `${id}: motif wraps left`);
+      if (s.y + s.size > W) assert.ok(uhave.has(ukey(s, 0, -W)), `${id}: motif wraps up`);
     }
   }
 });
