@@ -37,9 +37,17 @@ const tabsOf = (profile) => profile.filter((s) => s.d < 0);
 /**
  * Steps for a stair that climbs `zTop` over `run` (mm) to a landing: `want`
  * if given, else the count whose pitch is closest to a comfortable one.
+ * `pitch` limits rise/going (default: any); `hint` ends the error message.
  */
-export function pickSteps(zTop, run, t, want = 0) {
-  const fits = (n) => n >= 2 && zTop / n >= t + 2 && run / (n - 1) >= 3 * t;
+export function pickSteps(zTop, run, t, want = 0, {
+  pitch: [pLo, pHi] = [0, Infinity],
+  hint = 'make the landing lower or shallower, or change the step count',
+} = {}) {
+  const fits = (n) => {
+    if (!(n >= 2 && zTop / n >= t + 2 && run / (n - 1) >= 3 * t)) return false;
+    const p = zTop / n / (run / (n - 1));
+    return p >= pLo && p <= pHi;
+  };
   let n = clampInt(want, 0, 40);
   if (!n) {
     let best = Infinity;
@@ -50,7 +58,7 @@ export function pickSteps(zTop, run, t, want = 0) {
     }
   }
   if (!n || !fits(n)) {
-    throw new Error(`${n || 'No'} steps fit a ${zTop.toFixed(0)} mm climb over ${run.toFixed(0)} mm — make the landing lower or shallower, or change the step count.`);
+    throw new Error(`${n || 'No'} steps fit a ${zTop.toFixed(0)} mm climb over ${run.toFixed(0)} mm — ${hint}.`);
   }
   return n;
 }

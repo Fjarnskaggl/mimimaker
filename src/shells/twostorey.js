@@ -5,9 +5,9 @@
 //
 // With a stair the upper floor is two boards: the main floor beside the
 // stairwell, and a landing strip behind the stair top. A rail guards the
-// stairwell edge. Internal walls are tabbed into the floor below them; the
-// upper one also into the roof, the ground one is glued under the upper floor
-// (its slots are the upper wall's).
+// stairwell edge. Internal walls are tabbed into the floor below them: the
+// ground wall into the shell floor (the upper floor then rests on it, so it
+// goes in first), the upstairs wall into the upper floor and the roof.
 
 import { nookWalls } from './nook.js';
 import { buildStairs } from './stairs.js';
@@ -37,6 +37,9 @@ const STOREY_MIN = 40;
 const CLEAR = 0.1;
 /** Board left under a doorway (mm). */
 const SILL = 3;
+/** A comfortable stair pitch (rise / going), and the walkable range around it. */
+const PITCH = 0.72, PITCH_RANGE = [0.4, 1.2];
+const STAIR_HINT = 'move the upper floor down, use a deeper shelf gap (gap depth), or change the step count';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v)));
 const tabCount = (L) => (L > 50 ? 2 : 1);
@@ -45,7 +48,8 @@ const tabsOf = (profile) => profile.filter((s) => s.d < 0);
 export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) {
   const P = { ...TWOSTOREY_DEFAULTS, ...params };
   const Wi = W - 2 * t, Di = D - t, Hi = H - 2 * t;
-  const parts = [], joints = [], lights = [], warnings = [], steps = [];
+  const parts = [], joints = [], lights = [], warnings = [];
+  const stairSteps = [], railSteps = [];
   const link = (a, b, kind) => joints.push({ a, b, kind });
   const wallHoles = { ...holes };
   for (const f of ['left', 'right', 'back', 'bottom', 'top']) wallHoles[f] = [...(holes[f] || [])];
@@ -65,9 +69,9 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
   let sw = 0, run = 0, stair = null;
   if (withStair) {
     sw = P.stairWidth > 0 ? clamp(P.stairWidth, 15, Wi * 0.5) : clamp(Wi * 0.28, 18, Wi * 0.45);
-    const dL = clamp(Di * 0.3, 25, Di * 0.5);
-    run = Di - dL;
-    const n = pickSteps(zF, run, t, P.steps);
+    // the run that gives a comfortable pitch, leaving a landing strip of 25 mm or more
+    run = clamp(zF / PITCH, Math.min(Di * 0.4, Di - 25), Di - 25);
+    const n = pickSteps(zF, run, t, P.steps, { pitch: PITCH_RANGE, hint: STAIR_HINT });
     const rise = zF / n, going = run / (n - 1);
     const st = buildStairs({ steps: n, rise, going, width: sw, t, risers: !!P.risers, topLanding: true, origin: [t, 0, t] });
     parts.push(...st.parts);
@@ -79,7 +83,7 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
     link('stair-stringer-right', 'floor-landing', 'flat');
     if (P.risers) link(`stair-riser-${n - 1}`, 'floor-landing', 'flat');
     stair = { steps: n, rise, going, run, width: sw };
-    steps.push(
+    stairSteps.push(
       { group: 'Stairs', text: `Build the stair on the bench: slot the ${n - 1} treads into one stringer, add the other stringer${P.risers ? ', then glue the risers in behind each step' : ''}. Keep it square.` },
       { group: 'Stairs', text: 'Glue the stair against the left wall, its foot at the open front and its top step against the landing strip.' },
     );
@@ -130,7 +134,7 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
         plane: { o: [xa, 0, floorTop], U: [0, 1, 0], V: [0, 0, 1], n: [-1, 0, 0] },
       });
       link('rail', 'floor', 'flat');
-      steps.push({ group: 'Upper floor', text: 'Glue the rail along the stairwell edge of the upper floor, leaving the top of the stair open.' });
+      railSteps.push({ group: 'Upper floor', text: 'Glue the rail along the stairwell edge of the upper floor, leaving the top of the stair open.' });
     }
   }
 
@@ -174,26 +178,27 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
     link('wall-upper', 'shell-top', 'slot');
   }
   floorPlane.polys.push(...floorHoles);
-  if (parts.some((p) => p.role === 'partition')) {
-    steps.push({ group: 'Internal walls', text: 'Push the ground-floor wall\'s tabs into the slots in the floor, against the back wall; the upper floor rests on its top edge. The upstairs wall slots into the upper floor and the roof the same way. Paint or paper both sides of each wall first.' });
-  }
 
   // ------------------------------------------------------------------ lights
-  const roomsAcross = (wall) => (xp != null && wall ? [[t, xp - t], [xp, W - t]] : [[t, W - t]]);
-  for (const [x0, x1] of roomsAcross(P.groundWall)) lights.push({ p: [(x0 + x1) / 2, Di / 2, zF - 2], color: 'warm' });
-  for (const [x0, x1] of roomsAcross(P.upperWall)) lights.push({ p: [(x0 + x1) / 2, Di / 2, H - t - 3], color: 'warm' });
+  // upstairs, the left room starts beyond the stairwell
+  const roomsAcross = (wall, x0) => (xp != null && wall ? [[x0, xp - t], [xp, W - t]] : [[x0, W - t]]);
+  for (const [x0, x1] of roomsAcross(P.groundWall, t)) lights.push({ p: [(x0 + x1) / 2, Di / 2, zF - 2], color: 'warm' });
+  for (const [x0, x1] of roomsAcross(P.upperWall, xa)) lights.push({ p: [(x0 + x1) / 2, Di / 2, H - t - 3], color: 'warm' });
 
   // ------------------------------------------------------------------- shell
   const shell = nookWalls({ W, D, H, t, fingerWidth, holes: wallHoles });
   parts.unshift(...shell.parts);
   joints.unshift(...shell.joints);
-  steps.unshift(
+  const hasWall = (key) => parts.some((p) => p.key === key);
+  const steps = [
     { group: 'Shell', text: 'Dry-fit the floor and back wall with one side wall — leave the other side and the roof off and check every slot is clear.' },
-  );
-  steps.splice(1, 0,
+    ...(hasWall('wall-ground') ? [{ group: 'Internal walls', text: 'Paint or paper both sides of the ground-floor wall, then push its tabs into the slots in the floor, against the back wall. The upper floor rests on its top edge.' }] : []),
     { group: 'Upper floor', text: `Push the upper floor's tabs into the slots in the back wall and the first side wall${withStair ? ', then the landing strip behind the stairwell' : ''}, then close up with the other side wall and glue the shell.` },
-  );
-  steps.push({ group: 'Shell', text: 'Light both storeys (one LED in each room shown in the 3D view), then glue the roof on.' });
+    ...railSteps,
+    ...stairSteps,
+    ...(hasWall('wall-upper') ? [{ group: 'Internal walls', text: 'Paint or paper both sides of the upstairs wall, then push its tabs into the slots in the upper floor, against the back wall; the roof\'s slots take its top tabs.' }] : []),
+    { group: 'Shell', text: 'Light both storeys (one LED in each room shown in the 3D view), then glue the roof on.' },
+  ];
 
   return {
     parts, joints, lights, steps, warnings, minFinger: shell.minFinger,
