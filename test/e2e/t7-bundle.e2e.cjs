@@ -1,4 +1,4 @@
-// Browser test for the T7 creator bundle: Make → Creator bundle asks for a
+// Browser test for the T7 creator bundle: File → Creator bundle asks for a
 // handle and licence, then downloads a zip with art, cut files and a licence.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
@@ -42,7 +42,7 @@ async function openBundle(viewport = { width: 1400, height: 900 }) {
   page.on('pageerror', (e) => page.errors.push(e.message));
   await page.goto(URL);
   await page.waitForFunction(() => window.mimimaker?.kit, null, { timeout: 8000 });
-  await page.click('[data-step=make]');
+  await page.click('#btn-file');
   await page.click('#btn-bundle');
   await page.locator('#bundle').waitFor({ state: 'visible', timeout: 5000 });
   return { ctx, page };
@@ -56,6 +56,7 @@ test('creator bundle: needs a handle, then downloads a zip with art, cut files p
   await dlg.locator('input[name=author]').fill('tiny_rooms');
   await dlg.locator('select[name=licence]').selectOption('CC-BY-4.0');
   assert.ok(!(await dlg.locator('#bundle-download').isDisabled()));
+  await page.waitForTimeout(300); // let the button's transition settle for the screenshot
   await shot(page, 'dialog');
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }), dlg.locator('#bundle-download').click()]);
   assert.match(dl.suggestedFilename(), /-creator-bundle\.zip$/);

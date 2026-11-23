@@ -912,7 +912,6 @@ function renderMake(el) {
         h('span', { class: 'grow' }),
         handCutButton(() => ({ kit, compiled }), download, ic('download')), // T3
         printCutButton(() => ({ kit, compiled }), download, ic('download')), // T3
-        h('button', { id: 'btn-bundle', type: 'button', class: 'mm-btn', onclick: () => openBundleDialog($('#bundle'), kit, { h, download, ic, bundle: creatorBundle, zip: makeZip }) }, ic('download'), 'Creator bundle'), // T7
         h('button', { id: 'btn-zip', type: 'button', class: 'mm-btn mm-btn--primary', onclick: exportZip }, ic('download'), 'Download kit')),
       h('div', { class: 'make-setup' },
         selectField('Cutting machine', kit.machine, Object.entries(MACHINES).map(([k, m]) => [k, m.name]), (v) => { kit.machine = v; changed(); }),
@@ -1090,6 +1089,7 @@ async function init() {
   nameInput.addEventListener('input', () => { kit.name = nameInput.value; changed(); });
   $('#btn-new').addEventListener('click', openStart);
   $('#btn-submit').addEventListener('click', () => { closePops(); openSubmitDialog($('#submit'), kit, { h, download, ic }); }); // T7
+  $('#btn-bundle').addEventListener('click', () => { closePops(); openBundleDialog($('#bundle'), kit, { h, download, ic, bundle: creatorBundle, zip: makeZip }); }); // T7
   $('#btn-save').addEventListener('click', () => { closePops(); download(`${slug(kit.name)}.json`, JSON.stringify(kit, null, 2), 'application/json'); });
   $('#file-open').addEventListener('change', async (e) => {
     const file = e.target.files[0];
