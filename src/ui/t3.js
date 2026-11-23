@@ -131,7 +131,7 @@ export const kitCurrency = (kit) => kit.currency || defaultCurrency(lang());
 /** Kit material cost in the kit's currency (see src/export/cost.js). */
 export const kitCost = (kit, compiled) => kitMaterialCost(compiled.sheets, { currency: kitCurrency(kit) });
 
-const KINDS = { board: 'Board (finger joints)', card: 'Card (fold-up nets)', fabric: 'Fabric (flat pieces)' };
+const KINDS = { board: 'Board · finger joints', card: 'Card · fold-up nets', fabric: 'Fabric · flat pieces' };
 
 function numInput(label, value, set, { step = 1, min = 0, max, placeholder } = {}) {
   return el('input', {
@@ -191,7 +191,7 @@ export function materialLibrary({ kit, machine, onChange, onRestructure }) {
         field('Kind', selectInput('Kind', m.kind, Object.entries(KINDS), (v) => { m.kind = v; restructure(); })),
         field('Blade', selectInput('Blade', m.tool, Object.entries(TOOL_NAMES), (v) => { m.tool = v; restructure(); }))),
       group('Cricut',
-        field('Design Space setting', textInput('Design Space setting', d.cricut, (v) => { m.cricut = v || d.cricut; onChange(); })),
+        field('Design Space', textInput('Design Space setting', d.cricut, (v) => { m.cricut = v || d.cricut; onChange(); })),
         field('Passes', numInput('Cricut passes', d.passes, (v) => { m.passes = Math.max(1, Math.round(v)); onChange(); }, { min: 1, max: 50 })),
         field('Speed mm/s', numInput('Cricut speed (mm/s)', d.speed, (v) => { if (v > 0) { m.speed = v; onChange(); } }, { min: 1 }))),
       group('Silhouette',
