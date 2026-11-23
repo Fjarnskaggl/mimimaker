@@ -38,7 +38,7 @@ match the cut files. `searchPieces(query, { theme, tag, difficulty })` and
 
 Anywhere a number goes you may write a string expression (`src/pieces/expr.js`):
 `+ - * / %`, comparisons, `&& || !`, `a ? b : c`, `'strings'`, and
-`min max round floor ceil abs sqrt clamp`, `PI`. Names in scope:
+`min max round floor ceil abs sqrt clamp sin cos` (radians), `PI`. Names in scope:
 
 - every parameter (`unit: "cm"` values arrive already scaled to model mm),
 - `t` — the material thickness in mm,
