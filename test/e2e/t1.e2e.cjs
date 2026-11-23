@@ -21,6 +21,7 @@ async function open(viewport = { width: 1400, height: 900 }) {
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(URL);
   await page.waitForFunction(() => window.mimimaker?.kit, null, { timeout: 8000 });
+  await page.click('#rail-pieces'); // the library lives in the piece drawer
   page.errors = errors;
   return page;
 }
