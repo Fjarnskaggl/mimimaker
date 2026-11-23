@@ -12,6 +12,7 @@ const DAY = { hemi: 0.7, sun: 0.65, sky: 0xfff6ea, ground: 0x9a8878, sunColor: 0
 const NIGHT = { hemi: 0.1, sun: 0.06, sky: 0x8090c0, ground: 0x202028, sunColor: 0x9fb0e0 };
 const MOON = { light: 0xa9c4ff, glow: 0x7f97c8 }; // window light at night
 const SELECT_TINT = 0x0f3a44; // emissive tint on the selected piece
+const HOVER_TINT = 0x07222a; // fainter tint on the piece under the pointer
 
 /**
  * BufferGeometry for one compiler face: board panels become solids with real
@@ -43,7 +44,7 @@ function faceGeometry(THREE, face, texSize = 0) {
 export function createViewer(THREE) {
   const canvas = document.createElement('canvas');
   canvas.className = 't6-canvas';
-  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;display:block';
+  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block'; // cursor: styles.css
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(2, globalThis.devicePixelRatio || 1));
   renderer.setClearColor(0x000000, 0);
@@ -70,6 +71,7 @@ export function createViewer(THREE) {
   let faces = null, bounds = sceneBounds([]), view = {}, entries = [], ledData = [];
   let lookKey = '';
   let selectedItem = null;
+  let hoverItem = null;
   const raycaster = new THREE.Raycaster();
   const textures = new Map(); // spec key -> { id, texture, ready }
 
@@ -201,7 +203,10 @@ export function createViewer(THREE) {
       m.transparent = opacity < 1;
       m.opacity = opacity;
       // the selected piece glows softly so you can see what the inspector shows
-      if (m.emissive) m.emissive.setHex(selectedItem != null && face.item === selectedItem ? SELECT_TINT : 0x000000);
+      if (m.emissive) {
+        const tint = face.item == null ? 0 : face.item === selectedItem ? SELECT_TINT : face.item === hoverItem ? HOVER_TINT : 0;
+        m.emissive.setHex(tint);
+      }
       m.depthWrite = opacity >= 1;
       mesh.visible = opacity > 0;
       m.needsUpdate = true;
@@ -238,6 +243,13 @@ export function createViewer(THREE) {
       selectedItem = view.sel?.kind === 'item' ? view.sel.index : null;
       render();
     },
+    /** Tint the piece under the pointer (item index, or null for none) and redraw if it changed. */
+    hover(item) {
+      item = item ?? null;
+      if (item === hoverItem) return;
+      hoverItem = item;
+      if (faces) render();
+    },
     mount(parent) {
       if (canvas.parentElement !== parent) parent.appendChild(canvas);
       resize?.disconnect();
@@ -272,6 +284,10 @@ export function createViewer(THREE) {
       }
       return null;
     },
+    /** What the viewer last drew with, without rendering (cheap, for tests). */
+    shown() {
+      return { selected: selectedItem, hovered: hoverItem, zoom: view.zoom || 1 };
+    },
     /** Render now and read back the pixels — for tests and thumbnails. */
     sample() {
       render();
@@ -296,6 +312,8 @@ export function createViewer(THREE) {
         meshes: entries.length, solids: entries.filter((e) => e.solid).length, flat: entries.filter((e) => !e.solid).length, pointLights: leds.visible ? leds.children.length : 0,
         shadows: renderer.shadowMap.enabled && sun.castShadow,
         selected: selectedItem,
+        hovered: hoverItem,
+        zoom: view.zoom || 1,
         windowLights: windows.visible ? windows.children.filter((o) => o.isSpotLight).length : 0,
         windowShadows: windows.children.filter((o) => o.isSpotLight).every((o) => o.castShadow),
       };
