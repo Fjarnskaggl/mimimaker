@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -25,3 +27,8 @@ jobs:
           npm install --no-save playwright@1.48.2
           npx playwright install --with-deps chromium
           npm run test:e2e
+      - name: Tests before code
+        # The branch's new or changed tests must fail on main and pass here.
+        run: |
+          git fetch --quiet origin main
+          node scripts/check-test-first.js origin/main

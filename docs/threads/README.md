@@ -25,8 +25,16 @@ without a coordinator note on #1.
 
 1. **Free for everyone.** No accounts, servers, paid APIs or paid dependencies.
    The site stays static (GitHub Pages). Libraries load from a pinned CDN build.
-2. **Tests before code.** Write a failing test, then the code. `npm test` and
-   `npm run test:e2e` must pass before a PR. UI work needs a browser test.
+2. **Tests before code — enforced by CI.** Write a failing test, then the code.
+   On every PR, `scripts/check-test-first.js` re-runs your new or changed tests
+   against `main`'s code: they must **fail there** and **pass on your branch**.
+   A PR that changes `src/`, `index.html`, `styles.css` or `scripts/` without
+   such tests is rejected. Commit the failing test first (for example
+   `test: add failing test for …`, then `feat: …`) so the history shows the
+   order. Pure refactors may say `No-behaviour-change: <why>` in a commit
+   message; the full suite still has to pass. Run it locally with
+   `npm run check:test-first`. `npm test` and `npm run test:e2e` must pass,
+   and UI work needs a browser test.
 3. **Stay in your lane.** Change only the files your thread owns. When you need
    something from another thread's files, open an issue titled `[Tn → Tm] …`
    and link it from your tracking issue; meanwhile build against an interface
