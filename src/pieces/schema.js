@@ -128,9 +128,20 @@ export function validatePiece(piece) {
     return inner;
   };
 
+  // size is used for placement before any material is chosen: params only.
+  if (piece.size !== undefined) {
+    if (!Array.isArray(piece.size) || piece.size.length !== 3) err('size', 'needs 3 values');
+    else piece.size.forEach((x, i) => {
+      let c;
+      try { c = compileExpr(x); } catch (e) { err(`size[${i}]`, e.message); return; }
+      for (const n of c.names) if (!keys.has(n)) err(`size[${i}]`, `unknown name "${n}" (size only sees parameters)`);
+    });
+  } else if (!['w', 'd', 'h'].every((k) => keys.has(k))) {
+    err('size', 'required unless the piece has w, d and h parameters');
+  }
+
   let scope = new Set([...keys, ...RESERVED]);
   scope = defineLets('let', piece.let, scope);
-  if (piece.size !== undefined) exprList('size', piece.size, scope, 3);
 
   // ---------------------------------------------------- repeat wrapper
   // `{ repeat, as, let?, each, when? }` works for components, shapes and scores.
