@@ -16,6 +16,14 @@ const NEW = {
   bathcabinet: 'Bathroom',
   coatrack: 'Decor',
   wallclock: 'Decor',
+  // batch 2
+  piano: 'Living room',
+  firescreen: 'Living room',
+  lamptable: 'Living room',
+  pottedtree: 'Decor',
+  windowseat: 'Library',
+  dressingtable: 'Bedroom',
+  crib: 'Bedroom',
 };
 const S = 10 / 24; // cm → model mm at the default 1:24 scale
 
@@ -150,4 +158,67 @@ test('wall clock: twelve hour ticks and two hands showing the set time', () => {
   assert.ok(Math.abs(minute[1][0] - r) < 1e-6 && minute[1][1] > r + 1, `minute hand ${JSON.stringify(minute)}`);
   const half = build('wallclock', { hour: 6, minute: 30 })[0].scores.slice(12);
   assert.ok(half[1][1][1] < r - 1, '6:30 → minute hand points down');
+});
+
+// ------------------------------------------------------------------ batch 2
+
+test('upright piano: a keybed with one score per white-key gap, on two legs, in front of the body', () => {
+  const comps = build('piano', { octaves: 4 });
+  const keybed = comps.find((c) => c.name === 'Keybed');
+  assert.equal(keybed.scores.top.length, 7 * 4 - 1);
+  assert.equal(comps.filter((c) => c.name.startsWith('Leg')).length, 2);
+  const body = comps.find((c) => c.name === 'Piano');
+  assert.ok(Math.abs(body.at[1] - keybed.size[1]) < 1e-9, 'body starts behind the keybed');
+});
+
+test('fire screen: three arched panels, each with an opening', () => {
+  const panels = build('firescreen').filter((c) => c.kind === 'flat');
+  assert.equal(panels.length, 3);
+  for (const p of panels) assert.equal(p.polys.length, 2, p.name);
+});
+
+test('lamp table: one shelf and a round top lying on it', () => {
+  const comps = build('lamptable');
+  const box = comps.find((c) => c.kind === 'box');
+  assert.equal(box.shelves.length, 1);
+  const top = comps.find((c) => c.kind === 'flat');
+  assert.deepEqual(top.plane.n, [0, 0, 1]);
+  assert.ok(Math.abs(top.plane.o[2] - box.size[2]) < 1e-9, 'top sits at table height');
+});
+
+test('potted tree: a pot and two crossed crowns', () => {
+  const comps = build('pottedtree');
+  assert.ok(comps.some((c) => c.kind === 'box' && c.name === 'Pot'));
+  const crowns = comps.filter((c) => c.name.startsWith('Crown'));
+  assert.equal(crowns.length, 2);
+  const normals = crowns.map((c) => c.plane.n.map(Math.abs));
+  assert.deepEqual(normals.sort(), [[0, 1, 0], [1, 0, 0]], 'one faces front, one faces sideways');
+});
+
+test('window seat: a felt cushion lies on the seat', () => {
+  const comps = build('windowseat');
+  const seat = comps.find((c) => c.kind === 'box');
+  const cushion = comps.find((c) => c.name === 'Cushion');
+  assert.equal(cushion.material, 'felt');
+  assert.ok(Math.abs(cushion.plane.o[2] - seat.size[2]) < 1e-9);
+});
+
+test('dressing table: a framed mirror stands on the back of the top', () => {
+  const comps = build('dressingtable');
+  const table = comps.find((c) => c.kind === 'box');
+  const mirror = comps.find((c) => c.name === 'Mirror frame');
+  assert.equal(mirror.polys.length, 2, 'frame with an opening for mirror card');
+  assert.ok(Math.abs(mirror.plane.o[2] - table.size[2]) < 1e-9, 'stands on the top');
+});
+
+test('crib: slatted front and back, plain ends, raised base', () => {
+  const comps = build('crib', { slats: 8 });
+  const sides = comps.filter((c) => c.kind === 'flat' && c.name.startsWith('Side'));
+  assert.equal(sides.length, 2);
+  for (const s of sides) assert.equal(s.polys.length, 1 + 8 + 1, `${s.name}: outline + one gap between each pair of slats`);
+  const ends = comps.filter((c) => c.kind === 'flat' && c.name.startsWith('End'));
+  assert.equal(ends.length, 2);
+  for (const e of ends) assert.deepEqual(e.plane.n.map(Math.abs), [1, 0, 0]);
+  const base = comps.find((c) => c.kind === 'box');
+  assert.ok(base.at[2] > 0, 'base is raised');
 });
