@@ -14,23 +14,26 @@ const counts = new Map();
 
 /**
  * Number of cut parts a piece makes in each material kind, at its default
- * parameters (or with `params` overriding some of them).
+ * parameters (or with `params` overriding some of them). Pass `kinds` to
+ * count only some kinds; each count compiles the piece once and is cached.
  */
-export function partCount(id, params = {}) {
+export function partCount(id, params = {}, kinds = Object.keys(COUNT_MATERIAL)) {
   const def = CATALOG[id];
   if (!def) throw new Error(`Unknown piece "${id}"`);
-  const key = `${id} ${JSON.stringify(params)}`;
-  if (!counts.has(key)) {
-    const out = {};
-    for (const [kind, material] of Object.entries(COUNT_MATERIAL)) {
+  const out = {};
+  for (const kind of kinds) {
+    const material = COUNT_MATERIAL[kind];
+    if (!material) throw new Error(`Unknown material kind "${kind}"`);
+    const key = `${id} ${kind} ${JSON.stringify(params)}`;
+    if (!counts.has(key)) {
       const kit = defaultKit();
       kit.items = [{ type: id, params: { ...def.defaults, ...params }, material, x: 0, y: 0, rot: 0, wall: 'back', pos: 150, elev: 130 }];
       kit.lighting = { ...kit.lighting, enabled: false, leds: [] };
-      out[kind] = compileKit(kit).groups.at(-1).parts.length;
+      counts.set(key, compileKit(kit).groups.at(-1).parts.length);
     }
-    counts.set(key, out);
+    out[kind] = counts.get(key);
   }
-  return { ...counts.get(key) };
+  return out;
 }
 
 /** Everything a library card shows about a piece. */
@@ -46,7 +49,7 @@ export function pieceInfo(id) {
     tags: def.tags || [],
     difficulty: def.difficulty,
     difficultyLabel: DIFFICULTY[def.difficulty],
-    parts: partCount(id)[def.mat || 'board'],
+    parts: partCount(id, {}, [def.mat || 'board'])[def.mat || 'board'],
   };
 }
 
