@@ -38,7 +38,7 @@ test('layers, cavity and street exactly fill the width', () => {
     const { W } = sh.dims;
     const { cavity, layers } = sh.alley;
     const { x0, x1 } = sh.alley.street;
-    assert.ok(Math.abs(x0 - (t + cavity + layers * t)) < 1e-9);
+    assert.ok(Math.abs(x0 - (t + cavity + layers * t)) < 1e-9, 'no materials list: every layer is shell board');
     assert.ok(Math.abs(W - x1 - x0) < 1e-9, 'symmetric');
     for (const side of ['left', 'right']) {
       const layerBoxes = sh.parts.filter((p) => p.side === side && p.role === 'layer').map((p) => partBox(p, t)[0]);
@@ -206,4 +206,40 @@ test('relief layers open only over lit windows; unlit ones are drawn on the fron
       }
     }
   }
+});
+
+const MATS = [
+  { id: 'chip2', thickness: 2, kind: 'board' },
+  { id: 'bass08', thickness: 0.8, kind: 'board' },
+  { id: 'card110', thickness: 0.38, kind: 'card' },
+];
+
+test('relief layers can be cut from thinner material: they stack at its thickness and still fit', () => {
+  const t = 2;
+  for (const relief of ['bass08', 'card110']) for (const layers of [2, 3]) {
+    const sh = buildShell({ type: 'alley', gap, clearance: 2, material: 'chip2', params: { layers, reliefMaterial: relief } }, { t, materials: MATS });
+    const tr = MATS.find((m) => m.id === relief).thickness;
+    const reliefs = sh.parts.filter((p) => p.role === 'layer' && p.layer > 0);
+    assert.ok(reliefs.length > 0);
+    for (const p of reliefs) {
+      assert.equal(p.material, relief, p.key);
+      assert.equal(p.thickness, tr, p.key);
+    }
+    for (const p of sh.parts.filter((q) => !(q.role === 'layer' && q.layer > 0))) {
+      assert.equal(p.material, 'chip2', `${p.key} stays board`);
+      assert.ok(p.thickness === undefined || p.thickness === t, p.key);
+    }
+    const { x0, x1 } = sh.alley.street;
+    assert.ok(Math.abs(x0 - (t + sh.alley.cavity + t + (layers - 1) * tr)) < 1e-9, 'street starts at the last relief face');
+    assert.ok(Math.abs(sh.dims.W - x1 - x0) < 1e-9);
+    assert.deepEqual(findOverlaps(sh.parts, t), [], `${relief} × ${layers}`);
+    assert.deepEqual(outsideEnvelope(sh.parts, t, sh.dims), []);
+    checkJoints(sh, t);
+  }
+});
+
+test('an unknown relief material falls back to the shell board, with a warning', () => {
+  const sh = buildShell({ type: 'alley', gap, material: 'chip2', params: { reliefMaterial: 'nope' } }, { t: 2, materials: MATS });
+  assert.ok(sh.warnings.some((w) => /relief/i.test(w.msg)), JSON.stringify(sh.warnings));
+  for (const p of sh.parts.filter((q) => q.role === 'layer' && q.layer > 0)) assert.equal(p.material, 'chip2');
 });

@@ -118,3 +118,14 @@ test('holes passed to a shell are cut through its walls', () => {
     assert.equal(sh.parts.find((p) => p.key === 'shell-left').polys.length, 2, `${type}: left wall hole`);
   }
 });
+
+test("fit checker uses a part's own thickness when it has one", () => {
+  const plane = (x) => ({ o: [x, 0, 0], U: [0, 1, 0], V: [0, 0, 1], n: [1, 0, 0] });
+  const board = { key: 'board', polys: [rectPoly(0, 0, 20, 20)], plane: plane(2) }; // x ∈ [0, 2]
+  const thin = { key: 'thin', thickness: 0.8, polys: [rectPoly(0, 0, 20, 20)], plane: plane(2.8) }; // x ∈ [2, 2.8]
+  const [[x0, x1]] = partBox(thin, 2);
+  assert.ok(Math.abs(x0 - 2) < 1e-9 && Math.abs(x1 - 2.8) < 1e-9);
+  assert.deepEqual(findOverlaps([board, thin], 2), [], 'a 2 mm default would wrongly overlap');
+  assert.ok(Math.abs(partVolume(thin, 2) - 400 * 0.8) < 1e-9);
+  assert.deepEqual(outsideEnvelope([thin], 2, { W: 2.8, D: 20, H: 20 }), []);
+});
