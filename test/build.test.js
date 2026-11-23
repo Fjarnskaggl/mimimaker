@@ -140,3 +140,10 @@ test('the place-in-room joint belongs to the place step, not to building the pie
     else assert.deepEqual(placing, [], `${s.title} should not include placing the piece`);
   }
 });
+
+test('gluing boxes of one piece together happens on the finish step, not while building each box', () => {
+  const { steps } = build(defaultKit());
+  const owner = steps.filter((s) => s.joints.some((j) => j.note === 'boxes of one piece'));
+  assert.deepEqual(owner.map((s) => s.title), ['Finish the armchair', 'Finish the floor lamp']);
+  assert.equal(owner[0].joints.filter((j) => j.note === 'boxes of one piece').length, 2, 'both arms join the seat');
+});
