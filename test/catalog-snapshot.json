@@ -916,5 +916,112 @@
    "max@board": "85f66613208de4fa",
    "max@card": "922f2122d3642afc"
   }
+ },
+ "bookrow": {
+  "label": "Row of books",
+  "meta": "dc122172ea77a1d0",
+  "components": [
+   "flat:Book 1",
+   "flat:Book 2",
+   "flat:Book 3",
+   "flat:Book 4",
+   "flat:Book 5",
+   "flat:Book 6",
+   "flat:Book 7",
+   "flat:Book 8"
+  ],
+  "cases": {
+   "defaults@board": "17bebd9397a644ce",
+   "defaults@card": "17bebd9397a644ce",
+   "min@board": "4e9868fc76332dfa",
+   "min@card": "4e9868fc76332dfa",
+   "max@board": "06c88cd32034040a",
+   "max@card": "06c88cd32034040a"
+  }
+ },
+ "bakery": {
+  "label": "Bakery treats",
+  "meta": "d73c7d5438227fde",
+  "components": [
+   "box:Cake"
+  ],
+  "cases": {
+   "defaults@board": "c58953ecb634e61d",
+   "defaults@card": "c58953ecb634e61d",
+   "min@board": "72b237712ab47921",
+   "min@card": "72b237712ab47921",
+   "max@board": "a53e81bf334b2e37",
+   "max@card": "a53e81bf334b2e37",
+   "kind=cake@board": "c58953ecb634e61d",
+   "kind=cake@card": "c58953ecb634e61d",
+   "kind=loaf@board": "b0b5a2858e27dc26",
+   "kind=loaf@card": "b0b5a2858e27dc26",
+   "kind=pie@board": "3ae6f2c81db5cc3e",
+   "kind=pie@card": "3ae6f2c81db5cc3e"
+  }
+ },
+ "sign": {
+  "label": "Hanging sign",
+  "meta": "53392d0c62c98949",
+  "components": [
+   "flat:Sign"
+  ],
+  "cases": {
+   "defaults@board": "98f58073f6dc71e2",
+   "defaults@card": "98f58073f6dc71e2",
+   "min@board": "3b354efb2f9d6366",
+   "min@card": "3b354efb2f9d6366",
+   "max@board": "c9ac8fcaf3453819",
+   "max@card": "c9ac8fcaf3453819",
+   "shape=rect@board": "98f58073f6dc71e2",
+   "shape=rect@card": "98f58073f6dc71e2",
+   "shape=oval@board": "51b2c2badc0820c5",
+   "shape=oval@card": "51b2c2badc0820c5",
+   "shape=tag@board": "b8dc2b2da8d38adb",
+   "shape=tag@card": "b8dc2b2da8d38adb"
+  }
+ },
+ "poster": {
+  "label": "Poster",
+  "meta": "29163e669a0d2b33",
+  "components": [
+   "flat:Poster"
+  ],
+  "cases": {
+   "defaults@board": "a6b6f81a5dc08002",
+   "defaults@card": "a6b6f81a5dc08002",
+   "min@board": "de63327000c8be09",
+   "min@card": "de63327000c8be09",
+   "max@board": "6b556af7cfb7cdf8",
+   "max@card": "6b556af7cfb7cdf8",
+   "shape=portrait@board": "a6b6f81a5dc08002",
+   "shape=portrait@card": "a6b6f81a5dc08002",
+   "shape=landscape@board": "e4b1b3008b2731b1",
+   "shape=landscape@card": "e4b1b3008b2731b1",
+   "shape=square@board": "5187f3ee03151c59",
+   "shape=square@card": "5187f3ee03151c59"
+  }
+ },
+ "littleplant": {
+  "label": "Little plant",
+  "meta": "eab7e5ca478c6ce3",
+  "components": [
+   "box:Pot",
+   "flat:Leaves"
+  ],
+  "cases": {
+   "defaults@board": "73ee5b9126e82fbe",
+   "defaults@card": "73ee5b9126e82fbe",
+   "min@board": "f9ba56b374df456f",
+   "min@card": "f9ba56b374df456f",
+   "max@board": "1a7e988efb6b24c0",
+   "max@card": "1a7e988efb6b24c0",
+   "kind=succulent@board": "73ee5b9126e82fbe",
+   "kind=succulent@card": "73ee5b9126e82fbe",
+   "kind=fern@board": "4fd734f3b2456f40",
+   "kind=fern@card": "4fd734f3b2456f40",
+   "kind=grass@board": "5d3e410ce2c0ed9e",
+   "kind=grass@card": "5d3e410ce2c0ed9e"
+  }
  }
 }

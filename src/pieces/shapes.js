@@ -42,13 +42,13 @@ export function loopScores(pts) {
   return pts.map((p, i) => [p, pts[(i + 1) % pts.length]]);
 }
 
-/** Leafy plant silhouette (a lobed star) sitting on y=0. */
-export function plantPoly(w, h) {
+/** Leafy plant silhouette (a lobed star) sitting on y=0; `lobes` sets how many leaves. */
+export function plantPoly(w, h, lobes = 3.5) {
   const pts = [];
   const cx = w / 2, cy = h * 0.55, n = 160;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
-    const r = 0.62 + 0.38 * Math.abs(Math.cos(3.5 * a));
+    const r = 0.62 + 0.38 * Math.abs(Math.cos(lobes * a));
     pts.push([cx + Math.cos(a) * (w / 2) * r, cy + Math.sin(a) * (h * 0.45) * r]);
   }
   return pts;
@@ -68,7 +68,7 @@ export const SHAPE_FNS = {
   arch: (x, y, w, h, r, seg) => archPoly(x, y, w, h, r, seg),
   ellipse: (cx, cy, rx, ry, seg) => ellipsePoly(cx, cy, rx, ry, seg),
   circle: (cx, cy, r, seg) => ellipsePoly(cx, cy, r, r, seg),
-  plant: (w, h) => plantPoly(w, h),
+  plant: (w, h, lobes) => plantPoly(w, h, lobes),
   drape: (x0, pw, h) => drapePoly(x0, pw, h),
 };
 

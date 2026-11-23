@@ -235,7 +235,7 @@ test('crib: slatted front and back, plain ends, raised base', () => {
 
 test('the catalogue has the 20 new pieces the checklist asked for', () => {
   assert.equal(Object.keys(NEW).length, 20);
-  assert.equal(Object.keys(CATALOG).length, 37 + 20);
+  assert.equal(Object.values(CATALOG).filter((d) => d.theme !== 'Accessories').length, 37 + 20, 'furniture: the original 37 plus 20 new');
 });
 
 test('loveseat: a two-cushion seat between arms, under an arched back', () => {

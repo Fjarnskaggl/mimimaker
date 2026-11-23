@@ -7,7 +7,7 @@
 //
 //   numbers 1.5 · strings 'doors' · names w, t, k · ( )
 //   unary - !   * / %   + -   < <= > >= == !=   &&   ||   a ? b : c
-//   min max round floor ceil abs sqrt clamp sin cos (radians)
+//   min max round floor ceil abs sqrt clamp sin cos (radians) hash(k, seed)
 //
 // Operators keep JavaScript's precedence and left-to-right evaluation, so an
 // expression written in the same order as JS code gives bit-identical floats.
@@ -22,6 +22,8 @@ export const FUNCTIONS = {
   sqrt: Math.sqrt,
   sin: Math.sin,
   cos: Math.cos,
+  /** Repeatable pseudo-random number in [0, 1) for (k, seed): variety without randomness. */
+  hash: (k, seed = 0) => { const x = Math.sin(k * 127.1 + seed * 311.7) * 43758.5453; return x - Math.floor(x); },
   clamp: (x, lo, hi) => Math.min(hi, Math.max(lo, x)),
 };
 

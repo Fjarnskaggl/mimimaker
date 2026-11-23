@@ -69,5 +69,5 @@ test('allTags lists each tag once, sorted, with counts', () => {
   assert.deepEqual(tags.map((t) => t.tag), [...new Set(PIECES.flatMap((p) => p.tags))].sort());
   const storage = tags.find((t) => t.tag === 'storage');
   assert.equal(storage.count, PIECES.filter((p) => p.tags.includes('storage')).length);
-  assert.ok(THEMES.length === 8);
+  assert.equal(THEMES.at(-1), 'Accessories', 'accessories come after the furniture themes');
 });

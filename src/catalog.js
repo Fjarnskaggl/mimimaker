@@ -19,7 +19,7 @@ import { PIECES } from './pieces/index.js';
 import { loadPiece } from './pieces/load.js';
 
 /** Theme groups, in picker order. */
-export const THEMES = ['Basics', 'Living room', 'Bedroom', 'Kitchen', 'Bathroom', 'Café', 'Library', 'Decor'];
+export const THEMES = ['Basics', 'Living room', 'Bedroom', 'Kitchen', 'Bathroom', 'Café', 'Library', 'Decor', 'Accessories'];
 
 /** Catalogue entries keyed by piece id, in picker order. */
 export const CATALOG = Object.fromEntries(PIECES.map((p) => [p.id, loadPiece(p)]));
