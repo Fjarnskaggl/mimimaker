@@ -129,7 +129,7 @@ test('small parts go into window holes of bigger parts', () => {
 });
 
 test('nestParts never uses more sheets than rectangle packing (every room type, every material)', () => {
-  for (const id of Object.keys(ROOM_TYPES)) {
+  for (const { id } of ROOM_TYPES) {
     const r = compileKit(applyRoomType(defaultKit(), id));
     for (const m of r.usedMats) {
       const [sw, sh] = effectiveSheet(m, r.machine);
