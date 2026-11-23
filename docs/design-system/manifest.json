@@ -1,0 +1,435 @@
+{
+  "manifestVersion": 3,
+  "name": "mimimaker",
+  "namespace": "Mimimaker",
+  "files": [
+    "assets/Icons/README.md",
+    "assets/Logos/README.md",
+    "assets/Mimi/README.md",
+    "components/Button/README.md",
+    "components/Checks/README.md",
+    "components/Chip/README.md",
+    "components/DesignScreen/README.md",
+    "components/EmptyState/README.md",
+    "components/Field/README.md",
+    "components/Inspector/README.md",
+    "components/KitMeter/README.md",
+    "components/Notice/README.md",
+    "components/PieceCard/README.md",
+    "components/Segmented/README.md",
+    "components/SheetCard/README.md",
+    "components/SlotPicker/README.md",
+    "components/StepNav/README.md",
+    "components/Toast/README.md",
+    "components/bundle.css",
+    "flow.md",
+    "mimi.md",
+    "tokens.css"
+  ],
+  "libraries": [],
+  "components": [
+    {
+      "name": "Button",
+      "group": "Actions",
+      "summary": "Buttons do one thing, named by a verb in sentence case: \"Download kit\", \"Cut sheets\", \"Add light\"."
+    },
+    {
+      "name": "Checks",
+      "group": "Feedback",
+      "summary": "All of a kit's problems live behind one pill in the header: a dot (success, warning or danger), the word and a count — \"All good\", \"2 to check\", \"1 blocks cutt…"
+    },
+    {
+      "name": "Chip",
+      "group": "Feedback",
+      "summary": "A small status or property label: \"Calibrated\" (success), \"Not calibrated\" (warning), \"Knife Blade\", \"3 LEDs\" (light)."
+    },
+    {
+      "name": "DesignScreen",
+      "group": "Showcase",
+      "summary": "The Design step laid out with the system: header (mark, kit name, StepNav, compact KitMeter, Checks pill, Undo, Share), a three-button tool rail, the stage wit…",
+      "page": true
+    },
+    {
+      "name": "EmptyState",
+      "group": "Feedback",
+      "summary": "When a step has nothing to show yet, Mimi says what will appear and offers the first action."
+    },
+    {
+      "name": "Field",
+      "group": "Inputs",
+      "summary": "A labelled input."
+    },
+    {
+      "name": "Inspector",
+      "group": "Panels",
+      "summary": "The right-hand panel shows only the selected thing: a piece, the room, an opening, a light."
+    },
+    {
+      "name": "KitMeter",
+      "group": "Feedback",
+      "summary": "The kit's vital numbers in measure: model size, parts, sheets and cut time."
+    },
+    {
+      "name": "Notice",
+      "group": "Feedback",
+      "summary": "An inline message about the thing in front of you."
+    },
+    {
+      "name": "PieceCard",
+      "group": "Panels",
+      "summary": "A tile in the library drawer: a thumbnail from the renderer, the piece name, and two facts — difficulty (three dots plus the word in the tooltip) and part coun…"
+    },
+    {
+      "name": "Segmented",
+      "group": "Actions",
+      "summary": "A segmented control switches between views of the same thing: Plan ↔ 3D on the stage, Day ↔ Night, Warm ↔ Amber."
+    },
+    {
+      "name": "SheetCard",
+      "group": "Panels",
+      "summary": "One material sheet on the Make step: material swatch and name, the sheet drawing (cut lines in ink on kraft, folds dashed in score), file buttons for the chose…"
+    },
+    {
+      "name": "SlotPicker",
+      "group": "Inputs",
+      "summary": "The fit test: a drawn comb with five numbered slots around the board's nominal thickness, and one button per slot."
+    },
+    {
+      "name": "StepNav",
+      "group": "Navigation",
+      "summary": "The header's step nav is the spine of the app: 1 Design · 2 Light · 3 Make · 4 Build."
+    },
+    {
+      "name": "Toast",
+      "group": "Feedback",
+      "summary": "A short confirmation that floats at the bottom centre for four seconds: \"Added floor lamp\", \"Link copied\", \"Removed window\" with an Undo button."
+    }
+  ],
+  "assetGroups": [
+    {
+      "name": "Logos",
+      "tile": "l",
+      "order": [
+        "mimimaker-mark.svg"
+      ],
+      "files": [
+        {
+          "path": "assets/Logos/mimimaker-mark.svg",
+          "id": "5e35ef96ec8b1da3d99b86418ea84280"
+        }
+      ]
+    },
+    {
+      "name": "Mimi",
+      "order": [
+        "mimi-hello.svg",
+        "mimi-idle.svg",
+        "mimi-working.svg",
+        "mimi-done.svg",
+        "mimi-oops.svg",
+        "mimi-sleep.svg"
+      ],
+      "files": [
+        {
+          "path": "assets/Mimi/mimi-hello.svg",
+          "id": "e809fc7926f39d853742c304a9fa94a5"
+        },
+        {
+          "path": "assets/Mimi/mimi-idle.svg",
+          "id": "0647e35dd32bc7e4299737ab81a19644"
+        },
+        {
+          "path": "assets/Mimi/mimi-working.svg",
+          "id": "d51a1b59385cbfe026c5ce74c8ab81f6"
+        },
+        {
+          "path": "assets/Mimi/mimi-done.svg",
+          "id": "2cb193cd0011596c8ce19b6d61bad334"
+        },
+        {
+          "path": "assets/Mimi/mimi-oops.svg",
+          "id": "afc522574fb2b5151389fcaf2a66789a"
+        },
+        {
+          "path": "assets/Mimi/mimi-sleep.svg",
+          "id": "4964ce93537a599f68b85cd02d69a5f1"
+        }
+      ]
+    },
+    {
+      "name": "Icons",
+      "tile": "xs",
+      "order": [
+        "plan.svg",
+        "cube.svg",
+        "bulb.svg",
+        "knife.svg",
+        "joint.svg",
+        "ruler.svg",
+        "sheets.svg",
+        "check.svg",
+        "alert.svg",
+        "info.svg",
+        "undo.svg",
+        "redo.svg",
+        "link.svg",
+        "download.svg",
+        "plus.svg",
+        "search.svg",
+        "sliders.svg",
+        "close.svg",
+        "chair.svg",
+        "window.svg"
+      ],
+      "files": [
+        {
+          "path": "assets/Icons/plan.svg",
+          "id": "04954d2f4ec09947a47d49ce3a362a93"
+        },
+        {
+          "path": "assets/Icons/cube.svg",
+          "id": "a3dcae89d3b94439fcbac3fd9c78c507"
+        },
+        {
+          "path": "assets/Icons/bulb.svg",
+          "id": "13b3976bd596bbbc6c979f506bfded36"
+        },
+        {
+          "path": "assets/Icons/knife.svg",
+          "id": "8a7cfc5f515541520afdfd0843457c75"
+        },
+        {
+          "path": "assets/Icons/joint.svg",
+          "id": "27a775f82eb68e72fd0d9fe97c2fd35b"
+        },
+        {
+          "path": "assets/Icons/ruler.svg",
+          "id": "9001da0b23b3a5bf4e18980d832750ed"
+        },
+        {
+          "path": "assets/Icons/sheets.svg",
+          "id": "fdc013b05e30cd7e84148484de60c52c"
+        },
+        {
+          "path": "assets/Icons/check.svg",
+          "id": "daddc42c386a1cb50bc7aaee1e0bf721"
+        },
+        {
+          "path": "assets/Icons/alert.svg",
+          "id": "afdba142781a7c7230af014113de3d15"
+        },
+        {
+          "path": "assets/Icons/info.svg",
+          "id": "d0f442592610e68e0b71cc5d58f31d07"
+        },
+        {
+          "path": "assets/Icons/undo.svg",
+          "id": "33ed65e3934364ba7fa1a46f6468b5c6"
+        },
+        {
+          "path": "assets/Icons/redo.svg",
+          "id": "b55f4fac352e59a2a14a3537e6e32140"
+        },
+        {
+          "path": "assets/Icons/link.svg",
+          "id": "097583e407f1c092a19c1b79c127b2e6"
+        },
+        {
+          "path": "assets/Icons/download.svg",
+          "id": "9deff820bc8f2b8a1b8f9a4268b45bd8"
+        },
+        {
+          "path": "assets/Icons/plus.svg",
+          "id": "510de816c733d26caefb041c2d3e0c7c"
+        },
+        {
+          "path": "assets/Icons/search.svg",
+          "id": "736e406aa12a469726eb43fe92e8934e"
+        },
+        {
+          "path": "assets/Icons/sliders.svg",
+          "id": "c62c8d0676adc99cadf05aa7664460cb"
+        },
+        {
+          "path": "assets/Icons/close.svg",
+          "id": "5fa887c227857f98906601896397a91a"
+        },
+        {
+          "path": "assets/Icons/chair.svg",
+          "id": "8e780b3af082a63a530d27ab4b4f1216"
+        },
+        {
+          "path": "assets/Icons/window.svg",
+          "id": "d9765d25a879f56bf7714536bb368715"
+        }
+      ]
+    }
+  ],
+  "storage": {
+    "files": {
+      "assets/Icons/alert.svg": {
+        "store": "blob",
+        "id": "afdba142781a7c7230af014113de3d15",
+        "bytes": 245,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/bulb.svg": {
+        "store": "blob",
+        "id": "13b3976bd596bbbc6c979f506bfded36",
+        "bytes": 307,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/chair.svg": {
+        "store": "blob",
+        "id": "8e780b3af082a63a530d27ab4b4f1216",
+        "bytes": 297,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/check.svg": {
+        "store": "blob",
+        "id": "daddc42c386a1cb50bc7aaee1e0bf721",
+        "bytes": 253,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/close.svg": {
+        "store": "blob",
+        "id": "5fa887c227857f98906601896397a91a",
+        "bytes": 218,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/cube.svg": {
+        "store": "blob",
+        "id": "a3dcae89d3b94439fcbac3fd9c78c507",
+        "bytes": 276,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/download.svg": {
+        "store": "blob",
+        "id": "9deff820bc8f2b8a1b8f9a4268b45bd8",
+        "bytes": 252,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/info.svg": {
+        "store": "blob",
+        "id": "d0f442592610e68e0b71cc5d58f31d07",
+        "bytes": 249,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/joint.svg": {
+        "store": "blob",
+        "id": "27a775f82eb68e72fd0d9fe97c2fd35b",
+        "bytes": 267,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/knife.svg": {
+        "store": "blob",
+        "id": "8a7cfc5f515541520afdfd0843457c75",
+        "bytes": 253,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/link.svg": {
+        "store": "blob",
+        "id": "097583e407f1c092a19c1b79c127b2e6",
+        "bytes": 330,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/plan.svg": {
+        "store": "blob",
+        "id": "04954d2f4ec09947a47d49ce3a362a93",
+        "bytes": 283,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/plus.svg": {
+        "store": "blob",
+        "id": "510de816c733d26caefb041c2d3e0c7c",
+        "bytes": 214,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/redo.svg": {
+        "store": "blob",
+        "id": "b55f4fac352e59a2a14a3537e6e32140",
+        "bytes": 260,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/ruler.svg": {
+        "store": "blob",
+        "id": "9001da0b23b3a5bf4e18980d832750ed",
+        "bytes": 300,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/search.svg": {
+        "store": "blob",
+        "id": "736e406aa12a469726eb43fe92e8934e",
+        "bytes": 251,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/sheets.svg": {
+        "store": "blob",
+        "id": "fdc013b05e30cd7e84148484de60c52c",
+        "bytes": 277,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/sliders.svg": {
+        "store": "blob",
+        "id": "c62c8d0676adc99cadf05aa7664460cb",
+        "bytes": 286,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/undo.svg": {
+        "store": "blob",
+        "id": "33ed65e3934364ba7fa1a46f6468b5c6",
+        "bytes": 258,
+        "type": "image/svg+xml"
+      },
+      "assets/Icons/window.svg": {
+        "store": "blob",
+        "id": "d9765d25a879f56bf7714536bb368715",
+        "bytes": 257,
+        "type": "image/svg+xml"
+      },
+      "assets/Logos/mimimaker-mark.svg": {
+        "store": "blob",
+        "id": "5e35ef96ec8b1da3d99b86418ea84280",
+        "bytes": 808,
+        "type": "image/svg+xml"
+      },
+      "assets/Mimi/mimi-done.svg": {
+        "store": "blob",
+        "id": "2cb193cd0011596c8ce19b6d61bad334",
+        "bytes": 1774,
+        "type": "image/svg+xml"
+      },
+      "assets/Mimi/mimi-hello.svg": {
+        "store": "blob",
+        "id": "e809fc7926f39d853742c304a9fa94a5",
+        "bytes": 1709,
+        "type": "image/svg+xml"
+      },
+      "assets/Mimi/mimi-idle.svg": {
+        "store": "blob",
+        "id": "0647e35dd32bc7e4299737ab81a19644",
+        "bytes": 1680,
+        "type": "image/svg+xml"
+      },
+      "assets/Mimi/mimi-oops.svg": {
+        "store": "blob",
+        "id": "afc522574fb2b5151389fcaf2a66789a",
+        "bytes": 1479,
+        "type": "image/svg+xml"
+      },
+      "assets/Mimi/mimi-sleep.svg": {
+        "store": "blob",
+        "id": "4964ce93537a599f68b85cd02d69a5f1",
+        "bytes": 1731,
+        "type": "image/svg+xml"
+      },
+      "assets/Mimi/mimi-working.svg": {
+        "store": "blob",
+        "id": "d51a1b59385cbfe026c5ce74c8ab81f6",
+        "bytes": 1674,
+        "type": "image/svg+xml"
+      }
+    },
+    "blobBytesUsed": 16188
+  }
+}

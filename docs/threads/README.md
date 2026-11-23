@@ -42,6 +42,8 @@ without a coordinator note on #1.
 4. **UI goes in your own module.** Put screens and panels in `src/ui/<thread>.js`
    exporting render functions. Keep edits to `src/app.js` / `index.html` /
    `styles.css` to small, clearly marked wiring hunks; rebase on `main` first.
+   Follow the [design system](../design-system/README.md): its tokens, components,
+   icons and voice. Use the CSS variables, never raw colours or sizes.
 5. **Small PRs into `main`.** Title `[Tn] …`, body says `Part of #<issue>`,
    lists tests added, and says what the UI should look like for UI changes.
    One feature per PR. The owner (or the coordinator on the owner's say-so)
