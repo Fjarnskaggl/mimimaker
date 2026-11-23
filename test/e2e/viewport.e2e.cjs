@@ -299,3 +299,31 @@ test('zoom carries between the sketch view and Realistic 3D, and resets when ano
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('wheel zoom: line-mode wheels zoom a useful step, the page scrolls past the limits, hover clears', async () => {
+  const page = await open();
+  const wheel = (init) => page.evaluate((i) => {
+    const stage = document.querySelector('.stage');
+    const r = stage.getBoundingClientRect();
+    const ev = new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, ...i });
+    const notPrevented = (stage.querySelector('svg') || stage).dispatchEvent(ev);
+    return new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => res({ prevented: !notPrevented, zoom: Number(stage.dataset.zoom) }))));
+  }, init);
+  // Firefox mouse wheels report lines: 3 lines up is one notch
+  const notch = await wheel({ deltaY: -3, deltaMode: 1 });
+  assert.ok(notch.prevented);
+  assert.ok(notch.zoom > 1.05, `one line-mode notch zooms in (${notch.zoom})`);
+  // zoomed all the way out, more wheel-down is left to the page
+  for (let i = 0; i < 10; i++) await wheel({ deltaY: 1000 });
+  const atLimit = await wheel({ deltaY: 100 });
+  assert.equal(atLimit.zoom, 0.6);
+  assert.equal(atLimit.prevented, false, 'the page can scroll once zoom is at its limit');
+  // the hover outline doesn't stay on a piece the zoom moved away
+  const p = await pointFor(page, 2);
+  await page.mouse.move(p.x, p.y);
+  await page.waitForFunction(() => document.querySelector('.stage path.hover'), null, { timeout: 10000 });
+  await wheel({ deltaY: -600 });
+  assert.equal(await page.evaluate(() => document.querySelector('.stage').t6hover ?? null), null);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
