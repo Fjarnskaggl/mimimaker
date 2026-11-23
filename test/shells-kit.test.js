@@ -91,3 +91,17 @@ test('a bad shell spec is reported, not thrown', () => {
   const r = compileKit(kit);
   assert.ok(r.warnings.some((w) => w.level === 'error' && /street/i.test(w.msg)));
 });
+
+test('shell parts are solid in 3D: each face carries its material thickness, LED spots stay flat', () => {
+  for (const type of ['nook', 'alley']) {
+    const kit = withShell(type);
+    const r = compileKit(kit);
+    const t = kit.materials.find((m) => m.id === kit.room.material).thickness;
+    const shellFaces = r.faces3d.filter((f) => f.layer === 0);
+    assert.ok(shellFaces.length >= 5);
+    for (const f of shellFaces) assert.equal(f.thickness, t, `${type}: shell face thickness`);
+    const glows = r.faces3d.filter((f) => f.glow);
+    if (type === 'alley') assert.ok(glows.length > 0);
+    for (const f of glows) assert.equal(f.thickness, undefined, 'LED spots are flat');
+  }
+});
