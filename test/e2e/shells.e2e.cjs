@@ -259,6 +259,10 @@ test('light step: with an alley, lights off still shows the shell panel, not the
   assert.equal((await kit(page)).lighting.enabled, false);
   assert.equal(await page.locator('#sidebar [data-shell-lights]').count(), 1, 'still explains the shell places its LEDs');
   assert.equal(await page.locator('#sidebar .add-row').count(), 0, 'no buttons that add room LEDs');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('shell panel: a two-storey house, with a stair picker and internal walls', async () => {
   const page = await open();
   await page.click('[data-step=design]');
