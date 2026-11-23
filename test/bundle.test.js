@@ -1,11 +1,11 @@
 // Tests for the single-file bundler (scripts/build-single.js), issue #12.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import vm from 'node:vm';
-import { bundle } from '../scripts/build-single.js';
+import { bundle, buildPage } from '../scripts/build-single.js';
 
 function project(files) {
   const dir = mkdtempSync(join(tmpdir(), 'bundle-'));
@@ -88,4 +88,30 @@ test('exports every name in a multi-declarator export', () => {
   const ctx = runBundle(bundle(join(p.dir, 'app.js')).js);
   p.done();
   assert.deepEqual(ctx.result, [[1, 2], { x: [3, 4] }, 'a, b = 1', 't, 5,6', 4]);
+});
+
+test('the built page keeps the web fonts and the icon from index.html', () => {
+  const html = `<!doctype html><html><head><title>mimimaker</title>
+<link rel="icon" href="data:image/svg+xml,ICON">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree&display=swap">
+<link rel="stylesheet" href="styles.css"></head>
+<body><main id="view"></main><script type="module" src="src/app.js"></script></body></html>`;
+  for (const fragment of [false, true]) {
+    const page = buildPage({ html, css: 'body{}', js: 'void 0', fragment });
+    assert.match(page, /<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2\?family=Figtree&display=swap">/, `fonts (fragment: ${fragment})`);
+    assert.doesNotMatch(page, /href="styles\.css"/, 'the local stylesheet is inlined, not linked');
+    assert.match(page, /<style>\nbody\{\}\n<\/style>/);
+    assert.match(page, /<main id="view"><\/main>/);
+    assert.doesNotMatch(page, /src="src\/app\.js"/);
+  }
+  assert.match(buildPage({ html, css: '', js: '', fragment: false }), /<link rel="icon" href="data:image\/svg\+xml,ICON">/);
+});
+
+test('the published pages ask search engines not to index them', () => {
+  const index = readFileSync(resolve('index.html'), 'utf8');
+  assert.match(index, /<meta name="robots" content="noindex">/, 'index.html (served as-is by the dev server)');
+  const page = buildPage({ html: index, css: '', js: '', fragment: false });
+  const head = page.slice(0, page.indexOf('</head>'));
+  assert.match(head, /<meta name="robots" content="noindex">/, 'the single-file build that Pages publishes');
 });

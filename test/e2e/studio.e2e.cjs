@@ -27,7 +27,7 @@ const kit = (page) => page.evaluate(() => JSON.parse(JSON.stringify(window.mimim
 
 test('floor plan: drag moves an item by the distance dragged, on a 5 cm grid', async () => {
   const page = await open();
-  await page.click('[data-tab=plan]');
+  await page.click('[data-view=plan]');
   const cmPerPx = await page.evaluate(() => 1 / document.querySelector('.plan-canvas svg').getScreenCTM().a);
   for (const [dxPx, dyPx] of [[60, 30], [-40, 50], [10, 0]]) {
     const before = (await kit(page)).items[0];
@@ -49,7 +49,7 @@ test('floor plan: drag moves an item by the distance dragged, on a 5 cm grid', a
 
 test('floor plan: sliding a wall piece follows the pointer', async () => {
   const page = await open();
-  await page.click('[data-tab=plan]');
+  await page.click('[data-view=plan]');
   const cmPerPx = await page.evaluate(() => 1 / document.querySelector('.plan-canvas svg').getScreenCTM().a);
   const i = (await kit(page)).items.findIndex((it) => it.wall === 'back');
   const before = (await kit(page)).items[i];
@@ -66,7 +66,7 @@ test('floor plan: sliding a wall piece follows the pointer', async () => {
 
 test('floor plan: R rotates, Delete removes, and undo/redo restore', async () => {
   const page = await open();
-  await page.click('[data-tab=plan]');
+  await page.click('[data-view=plan]');
   const count = (await kit(page)).items.length;
   await page.click('.plan-item[data-index="1"]');
   await page.keyboard.press('r');
@@ -86,7 +86,7 @@ test('floor plan: R rotates, Delete removes, and undo/redo restore', async () =>
 
 test('floor plan: overlapping furniture is flagged', async () => {
   const page = await open();
-  await page.click('[data-tab=plan]');
+  await page.click('[data-view=plan]');
   assert.equal(await page.locator('.plan-item.clash').count(), 0);
   await page.evaluate(() => { const k = window.mimimaker.kit; k.items[1].x = k.items[0].x; k.items[1].y = k.items[0].y; window.mimimaker.refresh(); });
   assert.ok(await page.locator('.plan-item.clash').count() >= 2);
@@ -101,9 +101,9 @@ test('3D preview: night mode switches the lights on', async () => {
   await page.close();
 });
 
-test('make tab: fit test calibrates board thickness and sheets show cut times', async () => {
+test('make step: fit test calibrates board thickness and sheets show cut times', async () => {
   const page = await open();
-  await page.click('[data-tab=sheets]');
+  await page.click('[data-step=make]');
   assert.ok(await page.locator('.cut-time').count() > 0, 'cut time per sheet');
   const card = page.locator('[data-calibrate="chip2"]');
   await card.locator('button.slot').nth(3).click(); // 2.1 mm slot
@@ -140,7 +140,7 @@ test('floor plan: furniture under a ceiling light can still be selected', async 
     k.lighting.leds.push({ name: 'Over it', mount: 'ceiling', x: (it.x ?? 0) + it.params.w / 2 + 6, y: (it.y ?? 0) + it.params.d / 2, color: 'warm' }); // its glow covers the centre, where clicks land; the bulb is beside it
     window.mimimaker.refresh();
   });
-  await page.click('[data-tab=plan]');
+  await page.click('[data-view=plan]');
   await page.click('.plan-item[data-index="0"]', { timeout: 3000 });
   assert.equal(await page.locator('.plan-item.sel[data-index="0"]').count(), 1);
   await page.close();
@@ -156,12 +156,12 @@ test('share box stays hidden until Share link is clicked', async () => {
   await page.close();
 });
 
-test('no sideways scrolling at phone width on any tab', async () => {
+test('no sideways scrolling at phone width on any step or view', async () => {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await page.goto(URL);
   await page.waitForFunction(() => window.mimimaker?.kit, null, { timeout: 8000 });
-  for (const tab of ['preview', 'plan', 'sheets', 'ledmap', 'guide']) {
-    await page.click(`[data-tab=${tab}]`);
+  for (const tab of ['[data-view="3d"]', '[data-view=plan]', '[data-step=light]', '[data-view=wiring]', '[data-step=make]', '[data-step=build]']) {
+    await page.click(tab);
     await page.waitForTimeout(150);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     assert.ok(overflow <= 0, `${tab}: page is ${overflow}px too wide`);
