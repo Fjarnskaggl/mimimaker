@@ -93,3 +93,19 @@ test('shoppingFile: a ready-to-zip CSV, or nothing without lights', () => {
   assert.equal(shoppingFile(lit([])), null);
   assert.equal(shoppingFile({ enabled: false }), null);
 });
+
+test('strips of different densities are bought separately, one line per density', () => {
+  const list = shoppingList(lit([
+    wall({ effect: 'strip', lengthMm: 100, pos: 10, ledsPerM: 60 }),
+    wall({ effect: 'strip', lengthMm: 50, pos: 10, elev: 100, ledsPerM: 120 }),
+    wall({ effect: 'strip', lengthMm: 50, pos: 10, elev: 50, ledsPerM: 60 }),
+  ], { supply: 'usb', kind: 'usb' }));
+  const strips = list.items.filter((i) => i.id.startsWith('strip'));
+  assert.equal(strips.length, 2);
+  const s60 = strips.find((i) => /60 LED\/m/.test(i.name));
+  const s120 = strips.find((i) => /120 LED\/m/.test(i.name));
+  assert.ok(s60 && s120, strips.map((i) => i.name).join(' | '));
+  assert.match(s60.note, /150 mm in total/);
+  assert.match(s120.note, /50 mm in total/);
+  assert.notEqual(s60.id, s120.id);
+});

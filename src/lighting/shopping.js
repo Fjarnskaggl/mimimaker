@@ -55,14 +55,18 @@ export function shoppingList(lighting) {
     add(`fairy-${b}`, f.qty, `Micro fairy-light string, ${b} bulbs`, `copper wire, at least ${Math.round(f.len)} mm long; battery or USB to match your power`, 'fairy');
   }
 
-  // LED strip: total length, bought in 0.5 m reels
-  const strips = lighting.leds.filter((x) => x.effect === 'strip');
-  if (strips.length) {
-    const lens = strips.map((l) => Math.round(l.load?.lengthMm ?? 0));
+  // LED strip: total length per density (LEDs per metre), bought in 0.5 m reels
+  const strips = new Map();
+  for (const l of lighting.leds.filter((x) => x.effect === 'strip')) {
+    const perM = l.load?.ledsPerM ?? 60;
+    (strips.get(perM) || strips.set(perM, []).get(perM)).push(Math.round(l.load?.lengthMm ?? 0));
+  }
+  for (const [perM, lens] of strips) {
     const total = lens.reduce((a, b) => a + b, 0);
     const reels = Math.max(1, Math.ceil(total / STRIP_REEL_MM));
-    const perM = strips[0].load?.ledsPerM ?? 60;
-    add('strip', reels, `5 V LED strip, ${perM} LED/m, ${STRIP_REEL_MM / 1000} m reel`, `cut ${total} mm in total (${lens.join(' + ')} mm) at the cut marks`, 'stripReel');
+    // one density keeps the plain id; several get one line each
+    const id = strips.size === 1 ? 'strip' : `strip-${perM}`;
+    add(id, reels, `5 V LED strip, ${perM} LED/m, ${STRIP_REEL_MM / 1000} m reel`, `cut ${total} mm in total (${lens.join(' + ')} mm) at the cut marks`, 'stripReel');
   }
 
   // power

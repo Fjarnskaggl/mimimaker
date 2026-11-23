@@ -1,14 +1,18 @@
 // Joint graph: which parts join which, and how.
 //
 // Derived from compileKit's output (parts, groups, materials), so nothing in
-// the compiler has to change. Box parts are recognised by the names kit.js
-// gives them ("<box> <face>", "<box> shelf N", "<box> net"); if a part carries
-// `part.build = { unit, role, face }` (proposed kit.js hook, see #5) that wins.
+// the compiler has to change. Book-nook shells declare their joints
+// (compiled.shell.joints, from src/shells/), and those are used exactly as
+// given. Everything else is recognised by the names kit.js gives it ("<box>
+// <face>", "<box> shelf N", "<box> net", room-box walls, the gable roof); if a
+// part carries `part.build = { unit, role, face }` (proposed kit.js hook, see
+// #5) that wins.
 //
 // nodes:  { id, name, group, unit, role, face, kind }
 //   role: panel (board box face) | piece (separate card face) | net (one-piece
 //         card net) | shelf | flat (item flat) | overlay (wallpaper, flooring)
-//         | trim (window/door frame)
+//         | trim (window/door frame) | shell (a shell's built-in part)
+//         | roof (gable and roof slopes)
 //   kind: material kind — board | card | fabric
 // joints: { a, b, kind, note }
 //   kind: finger | slot | glue-tab | flat
@@ -32,11 +36,40 @@ const WALL_WORD = { Back: 'back', Left: 'left', Right: 'right' };
 export const ROOM_UNIT = 'Room box';
 /** Groups compileKit makes before the items, in order. */
 const STRUCTURE = ['Room box', 'Window & door trim', 'Wallpaper', 'Flooring', 'Lighting'];
+/** A shell's walls (group 'Shell', see src/shells/nook.js) by name → box face. */
+const SHELL_FACES = { Floor: 'bottom', Roof: 'top', 'Back wall': 'back', 'Left wall': 'left', 'Right wall': 'right' };
+/** The room-box gable roof (src/shells/roof.js), which has no joint list in the compiled kit. */
+const ROOF_JOINTS = [
+  ['Left roof', 'Gable', 'finger'], ['Right roof', 'Gable', 'finger'], ['Left roof', 'Right roof', 'flat'],
+  ['Gable', 'back', 'flat'], ['Left roof', 'left', 'flat'], ['Right roof', 'right', 'flat'],
+];
+
+/**
+ * The room box's gable roof group (kit.room.roof), made right after the room
+ * box — found by position, so a piece of furniture called "Roof" isn't it.
+ */
+export function roomRoofGroup(kit, compiled) {
+  if (kit.room?.roof?.type !== 'gable') return null;
+  const i = compiled.groups.findIndex((g) => g.title === 'Room box');
+  const g = i >= 0 ? compiled.groups[i + 1] : null;
+  return g?.title === 'Roof' ? g : null;
+}
+
+/** Part ids that belong to the kit's book-nook shell (every shell part is jointed). */
+export function shellPartIds(compiled) {
+  return new Set((compiled.shell?.joints || []).flatMap((j) => [j.a, j.b]).filter((id) => id != null));
+}
+/** Groups made by the shell: all of their parts are shell parts. */
+export function isShellGroup(group, shellIds) {
+  return group.parts.length > 0 && group.parts.every((id) => shellIds.has(id));
+}
 
 /** Map item groups (by title) to the kit item that produced them. */
 export function itemGroups(kit, compiled) {
   const out = new Map();
-  let gi = compiled.groups.findIndex((g) => !STRUCTURE.includes(g.title));
+  const shellIds = shellPartIds(compiled);
+  const roof = roomRoofGroup(kit, compiled);
+  let gi = compiled.groups.findIndex((g) => !STRUCTURE.includes(g.title) && g !== roof && !isShellGroup(g, shellIds));
   if (gi < 0) return out;
   for (const item of kit.items || []) {
     const def = CATALOG[item.type];
@@ -74,8 +107,24 @@ export function jointGraph(kit, compiled) {
   };
 
   const roomFaces = {};
+  const shellIds = shellPartIds(compiled);
+  const roomRoof = roomRoofGroup(kit, compiled);
   for (const g of compiled.groups) {
     const parts = g.parts.map((id) => byId.get(id));
+    if (isShellGroup(g, shellIds)) {
+      for (const p of parts) {
+        const face = g.title === 'Shell' ? SHELL_FACES[p.name] || null : null;
+        const n = node(p, { unit: g.title, face });
+        n.role = face ? (n.kind === 'board' ? 'panel' : 'piece') : g.title === 'Roof' ? 'roof' : 'shell';
+        if (face) roomFaces[face] = n;
+      }
+      continue;
+    }
+    if (g === roomRoof) {
+      const named = Object.fromEntries(parts.map((p) => [p.name, node(p, { unit: 'Roof', role: 'roof' })]));
+      for (const [a, b, kind] of ROOF_JOINTS) join(named[a]?.id, (named[b] || roomFaces[b])?.id, kind);
+      continue;
+    }
     if (g.title === 'Room box') {
       for (const p of parts) {
         const face = ROOM_FACES[p.name];
@@ -163,6 +212,8 @@ export function jointGraph(kit, compiled) {
     const rep = anchors[0] || nodes.find((n) => n.id === flats[0]?.id);
     if (rep) join(rep.id, roomFaces[where]?.id, 'flat', 'place in room');
   }
+  // the shell's own joints, exactly as declared
+  for (const j of compiled.shell?.joints || []) join(j.a, j.b, j.kind);
   return { nodes, joints };
 }
 
