@@ -1,6 +1,7 @@
 // T4 build companion UI: a phone-friendly, one-step-at-a-time build mode on
-// the Build step, with a part checklist, glue timers and progress saved in
-// the browser. The printable guide stays one tap away.
+// the Build step, with a part checklist, glue timers, an exploded view per
+// step, a bill of materials and progress saved in the browser. The printable
+// guide stays one tap away.
 //
 //   buildCompanion(pageEl, kit, compiled)
 // pageEl is the Build step's `.page` (its `.guide-tools` header and
@@ -12,6 +13,10 @@ import {
   progressKey, emptyProgress, loadProgress, saveProgress,
   toggleStep, togglePart, goTo, summary, startTimer, timerLeft, formatClock,
 } from '../build/progress.js';
+import { billOfMaterials } from '../build/bom.js';
+import { explodedViewSVG } from '../build/exploded.js';
+import { jointGraph } from '../build/joints.js';
+import { formatMinutes } from '../make.js';
 
 const MODE_KEY = 'mimimaker.build.mode';
 const STYLE_ID = 't4-style';
@@ -45,6 +50,19 @@ const CSS = `
 .t4-nav button { min-height: 48px; }
 .t4-foot { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
 .t4-foot select { min-height: 44px; max-width: 100%; }
+.t4-exploded { margin: 0; border-radius: var(--radius-md); background: var(--surface-sunken); padding: var(--space-3); }
+.t4-exploded svg { display: block; width: 100%; height: auto; max-height: 360px; }
+.t4-exploded figcaption { font-size: 12px; color: var(--ink-muted); margin-top: var(--space-1); }
+.t4-bom { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 0 var(--space-4); }
+.t4-bom summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; overflow-wrap: anywhere; }
+.t4-bom[open] { padding-bottom: var(--space-4); }
+.t4-bom h4 { margin: var(--space-3) 0 var(--space-1); font-size: 13px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .04em; }
+.t4-bom ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+.t4-bom li { display: grid; grid-template-columns: 3ch minmax(0, 1fr) auto; gap: var(--space-2); font-size: 14px; }
+.t4-bom li small { grid-column: 2; color: var(--ink-muted); }
+.t4-bom .cost { font-family: var(--font-mono); white-space: nowrap; }
+.t4-bom p { font-size: 14px; margin: var(--space-2) 0 0; }
+.t4-bom .note { color: var(--ink-muted); font-size: 12px; }
 @media (max-width: 520px) {
   .t4-step { padding: var(--space-4); }
   .t4-title { font-size: 20px; }
@@ -78,6 +96,34 @@ const writeMode = (m) => { try { store()?.setItem(MODE_KEY, m); } catch { /* pri
 /** Glue clock; tests speed it up with window.__t4Speed. */
 const clock = () => Date.now() * (Number(window.__t4Speed) || 1);
 
+const money = (c) => `$${c.low.toFixed(2)}–${c.high.toFixed(2)}`;
+
+/** The step's exploded view (trusted SVG from our own renderer). */
+function exploded(svg) {
+  if (!svg) return null;
+  const fig = el('figure', { class: 't4-exploded' });
+  fig.innerHTML = svg;
+  fig.append(el('figcaption', {}, 'Exploded view: the parts for this step, pulled apart where they go.'));
+  return fig;
+}
+
+/** "What you'll need": sheets, supplies, lights, cost, difficulty and time. */
+function bomDetails(kit, compiled, steps) {
+  let bom;
+  try { bom = billOfMaterials(kit, compiled, steps); } catch (err) { console.error('bill of materials', err); return null; }
+  const list = (title, items) => (items.length ? [el('h4', {}, title), el('ul', {}, items.map((i) => el('li', {},
+    el('span', {}, `${i.qty}×`), el('span', {}, i.name), el('span', { class: 'cost' }, money(i.cost)), el('small', {}, i.note))))] : []);
+  const t = bom.time;
+  return el('details', { class: 't4-bom' },
+    el('summary', {}, `What you'll need · about ${money(bom.total)} · ${bom.difficulty.level} · about ${formatMinutes(t.totalMin)}`),
+    ...list('Sheets', bom.sheets),
+    ...list('Glue and supplies', bom.supplies),
+    ...list('Lights', bom.lights),
+    el('p', {}, el('strong', {}, `${bom.difficulty.level}: `), bom.difficulty.reasons.join(', '), '.'),
+    el('p', {}, `About ${formatMinutes(t.totalMin)} in all: cutting ${formatMinutes(t.cutMin)}, assembly ${formatMinutes(t.assemblyMin)}, waiting for glue ${formatMinutes(t.glueMin)}.`),
+    el('p', { class: 'note' }, bom.note));
+}
+
 export function buildCompanion(page, kit, compiled) {
   if (!page) return null;
   if (!document.getElementById(STYLE_ID)) document.head.append(el('style', { id: STYLE_ID }, CSS));
@@ -87,6 +133,13 @@ export function buildCompanion(page, kit, compiled) {
   const partById = new Map(compiled.parts.map((p) => [p.id, p]));
   const matOf = new Map(compiled.groups.map((g) => [g.title, g.material]));
   let p = loadProgress(store(), key, steps);
+  const graph = jointGraph(kit, compiled);
+  const views = new Map(); // step n → exploded view SVG (drawn on first visit)
+  const viewOf = (n) => {
+    if (!views.has(n)) { try { views.set(n, explodedViewSVG(kit, compiled, steps, n, { graph })); } catch (err) { console.error('exploded view', err); views.set(n, null); } }
+    return views.get(n);
+  };
+  const bomPanel = bomDetails(kit, compiled, steps);
   let tick = null;
 
   const frame = page.querySelector('.guide-frame');
@@ -150,6 +203,7 @@ export function buildCompanion(page, kit, compiled) {
       el('h3', { class: 't4-title' }, step.title),
       done ? el('span', { class: 't4-done-badge' }, 'Done') : null,
       meta ? el('p', { class: 't4-meta' }, meta) : null,
+      exploded(viewOf(step.n)),
       parts,
       el('ol', { class: 't4-text' }, step.text.map((t) => el('li', {}, t))),
       timerRow(step),
@@ -165,7 +219,7 @@ export function buildCompanion(page, kit, compiled) {
       if (window.confirm('Start this build over? Your ticks and timers will be cleared.')) update(emptyProgress());
     } }, 'Start over');
 
-    root.replaceChildren(head, card, el('div', { class: 't4-foot' }, jump, reset));
+    root.replaceChildren(head, bomPanel || '', card, el('div', { class: 't4-foot' }, jump, reset));
     // only the timer row redraws while the glue sets, so ticks and focus stay put
     if (timerLeft(p, step.n, clock()) > 0) {
       tick = setInterval(() => {
