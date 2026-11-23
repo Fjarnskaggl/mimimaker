@@ -8,7 +8,8 @@
     "start": "node scripts/serve.js",
     "test": "node --test test/*.test.js",
     "build": "node scripts/build-single.js",
-    "test:e2e": "node --test test/e2e/studio.e2e.cjs"
+    "test:e2e": "node --test test/e2e/studio.e2e.cjs",
+    "check:test-first": "node scripts/check-test-first.js origin/main"
   },
   "license": "MIT"
 }
