@@ -107,10 +107,15 @@ test('room box section: a shell locks the size fields, an alley also the overlay
 
   await panel(page).locator('select[data-shell=type]').selectOption('alley');
   assert.deepEqual(await state(), { width: true, height: true, ceiling: true, wallpaper: true, floor: true, note: 1 });
+  // shown as off (they are), without forgetting the room's own setting
+  assert.equal(await field('Wallpaper').isChecked(), false);
+  assert.equal(await field('Floor covering').isChecked(), false);
+  assert.equal((await kit(page)).room.wallpaper.enabled, true, 'room setting kept for when the shell goes');
   if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'shell-room-locks.png') });
 
   await panel(page).locator('select[data-shell=type]').selectOption('');
   assert.deepEqual(await state(), { width: false, height: false, ceiling: false, wallpaper: false, floor: false, note: 0 });
+  assert.equal(await field('Wallpaper').isChecked(), true, 'wallpaper back on with the room');
   assert.deepEqual(page.errors, []);
   await page.close();
 });
