@@ -130,11 +130,13 @@ function assertClosed(pos) {
   }
 }
 const fan = (contour, holes) => { assert.equal(holes.length, 0); return contour.slice(2).map((_, i) => [0, i + 1, i + 2]); };
-// frame triangulation for a square outline (4 pts) with one square hole (4 pts), both CCW
+// frame triangulation for a square outline (4 pts) with one square hole (4 pts),
+// either winding: each outline corner pairs with its nearest hole corner
 const frame = (contour, holes) => {
   assert.equal(holes.length, 1);
+  const near = (p) => 4 + holes[0].reduce((best, q, k) => (Math.hypot(q[0] - p[0], q[1] - p[1]) < Math.hypot(holes[0][best][0] - p[0], holes[0][best][1] - p[1]) ? k : best), 0);
   const tris = [];
-  for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; tris.push([i, j, 4 + j], [i, 4 + j, 4 + i]); }
+  for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; tris.push([i, j, near(contour[j])], [i, near(contour[j]), near(contour[i])]); }
   return tris;
 };
 const square = (x0, y0, s, z = 0) => [[x0, y0, z], [x0 + s, y0, z], [x0 + s, y0 + s, z], [x0, y0 + s, z]];

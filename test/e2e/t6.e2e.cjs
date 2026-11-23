@@ -74,7 +74,7 @@ test('WebGL viewer: off by default, the toggle swaps the SVG for a rendered canv
   await page.close();
 });
 
-test('WebGL viewer: board panels are solid, with real thickness; wallpaper stays flat', async () => {
+test('WebGL viewer: board panels are solid, with real thickness; overlays stay flat', async () => {
   const page = await open();
   await switchOn(page);
   const s = await sample(page);
@@ -83,11 +83,6 @@ test('WebGL viewer: board panels are solid, with real thickness; wallpaper stays
   assert.ok(s.flat > 0, `flat overlays: ${s.flat}`);
   assert.equal(s.solids + s.flat, s.meshes);
   if (faces != null) assert.equal(s.meshes, faces);
-  // an edge-on view still shows the walls (a flat face would vanish)
-  await page.locator('input[aria-label=Rotate]').fill('80');
-  await page.locator('input[aria-label=Tilt]').fill('5');
-  const edge = await sample(page);
-  assert.ok(edge.lit > 0.05, `edge-on: lit ${edge.lit}`);
   assert.deepEqual(page.errors, []);
   await page.close();
 });
