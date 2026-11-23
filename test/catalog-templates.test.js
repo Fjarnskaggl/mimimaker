@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { ROOM_TYPES, applyRoomType } from '../src/templates.js';
 import { defaultKit } from '../src/catalog.js';
+import { compileKit } from '../src/kit.js';
 import { PIECES } from '../src/pieces/index.js';
 import { validateRoomType, validateRoomTypes, expandItem } from '../src/pieces/rooms.js';
 
@@ -25,7 +26,10 @@ test('room types produce exactly the kits they always did', () => {
     writeFileSync(FILE, `${JSON.stringify(now, null, 1)}\n`);
     return;
   }
-  assert.deepEqual(now, JSON.parse(readFileSync(FILE, 'utf8')));
+  // Pinned room types never change; a new room type must be added to the snapshot.
+  const want = JSON.parse(readFileSync(FILE, 'utf8'));
+  for (const k of Object.keys(want)) assert.equal(now[k], want[k], k);
+  assert.deepEqual(Object.keys(now).filter((k) => !(k in want)), [], 'new room types are missing from the snapshot — run with UPDATE_SNAPSHOTS=1');
 });
 
 test('every room type is valid', () => {
@@ -97,4 +101,26 @@ test('the validator catches broken room types', () => {
 test('room type ids are unique', () => {
   const e = validateRoomTypes([...ROOM_TYPES, structuredClone(ROOM_TYPES[0])]);
   assert.ok(e.some((m) => /duplicate id "reading-nook"/.test(m)), e.join('\n'));
+});
+
+// ------------------------------------------------- room types for new pieces
+const NEW_FURNITURE = ['sideboard', 'bunkbed', 'island', 'bathcabinet', 'coatrack', 'wallclock', 'piano', 'firescreen', 'lamptable',
+  'pottedtree', 'windowseat', 'dressingtable', 'crib', 'loveseat', 'cornersofa', 'stepcupboard', 'shopshelving', 'barcounter', 'filingcabinet', 'planter'];
+
+test('the corner bakery and the music room show off the new pieces and accessories', () => {
+  const byId = Object.fromEntries(PIECES.map((p) => [p.id, p]));
+  for (const id of ['bakery', 'music-room']) {
+    const rt = ROOM_TYPES.find((r) => r.id === id);
+    assert.ok(rt, `${id} exists`);
+    assert.deepEqual(validateRoomType(rt), [], id);
+    const types = new Set(rt.kit.items.map((it) => it.type));
+    const fresh = [...types].filter((t) => NEW_FURNITURE.includes(t));
+    const accessories = [...types].filter((t) => byId[t].theme === 'Accessories');
+    assert.ok(fresh.length >= 3, `${id} uses at least 3 new pieces (${fresh})`);
+    assert.ok(accessories.length >= 2, `${id} uses at least 2 accessories (${accessories})`);
+    const r = compileKit(applyRoomType(defaultKit(), id));
+    assert.deepEqual(r.warnings.filter((w) => w.level !== 'info').map((w) => w.msg ?? w), [], `${id} compiles without warnings`);
+  }
+  assert.ok(ROOM_TYPES.find((r) => r.id === 'music-room').kit.items.some((it) => it.type === 'piano'));
+  assert.ok(ROOM_TYPES.find((r) => r.id === 'bakery').kit.items.some((it) => it.type === 'barcounter'));
 });

@@ -21,6 +21,9 @@ export const ROOM_PALETTES = {
   'living-room': { wall: wall('wallpaper-stripes', ['#efe0c8', '#d9b99a'], { stripeWidth: 5 }), floor: floor('wood-planks', ['#a57449', '#b17f52', '#986a42', '#a9784c']) },
   library: { wall: wall('wallpaper-stripes', ['#2f4a3e', '#294236'], { stripeWidth: 4 }), floor: floor('wood-planks', ['#5e3d26', '#6a462c', '#553722', '#62402a']) },
   studio: { wall: wall('wallpaper-sprig', ['#f2ede3', '#8f9fb4', '#e0a35c']), floor: floor('wood-planks', ['#c8a57a', '#d2b085', '#bd9a70', '#cba87d']) },
+  // room types from T1 (#67); colourways as suggested there
+  bakery: { wall: wall('tiles', ['#f6efe2', '#f2d9d0', '#e8c9bf'], { tileSize: 8 }), floor: floor('tiles', ['#efe7da', '#8a5a44', '#c9b9a6'], { checker: true, tileSize: 18 }) },
+  'music-room': { wall: wall('wallpaper-stripes', ['#e9e2f0', '#c9bcd8'], { stripeWidth: 4 }), floor: floor('wood-planks', ['#7b5436', '#86603e', '#6f4b30', '#80593a']) },
   default: { wall: wall('wallpaper-stripes', ['#efe3cf', '#d8b9a0']), floor: floor('wood-planks', ['#a5764a', '#b6875a', '#93653d', '#aa7b4c']) },
 };
 

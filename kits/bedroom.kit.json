@@ -1,0 +1,315 @@
+{
+  "format": "mimimaker-kit",
+  "formatVersion": 1,
+  "meta": {
+    "id": "bedroom",
+    "title": "Cozy Bedroom",
+    "author": "mimimaker",
+    "licence": "CC0",
+    "remixedFrom": null,
+    "description": "Double bed, bedside tables with reading lights, wardrobe and rug.",
+    "tags": [
+      "starter"
+    ]
+  },
+  "kit": {
+    "version": 1,
+    "scale": 24,
+    "machine": "maker",
+    "fingerWidth": 0,
+    "tabWidth": 5,
+    "drawLabels": false,
+    "materials": [
+      {
+        "id": "chip2",
+        "name": "Chipboard 2.0 mm",
+        "thickness": 2,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#b8956a",
+        "cricut": "Heavy Chipboard – 2.0 mm",
+        "passes": 16,
+        "speed": 12
+      },
+      {
+        "id": "chip15",
+        "name": "Chipboard 1.5 mm",
+        "thickness": 1.5,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#c9a77d",
+        "cricut": "Chipboard – 1.5 mm",
+        "passes": 13,
+        "speed": 12
+      },
+      {
+        "id": "bass16",
+        "name": "Basswood 1/16\" (1.6 mm)",
+        "thickness": 1.6,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#e6d2a6",
+        "cricut": "Basswood – 1/16\"",
+        "passes": 11,
+        "speed": 12
+      },
+      {
+        "id": "bass08",
+        "name": "Basswood 1/32\" (0.8 mm)",
+        "thickness": 0.8,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#eedfbf",
+        "cricut": "Basswood – 1/32\"",
+        "passes": 6,
+        "speed": 12
+      },
+      {
+        "id": "card110",
+        "name": "Heavy cardstock 110 lb",
+        "thickness": 0.38,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#fbf8f2",
+        "cricut": "Heavy Cardstock – 100 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "card65",
+        "name": "Cardstock 65 lb",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#e9dcc7",
+        "cricut": "Medium Cardstock – 80 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "paper",
+        "name": "Patterned paper",
+        "thickness": 0.15,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#d9d3ea",
+        "cricut": "Patterned Paper",
+        "passes": 1,
+        "speed": 60
+      },
+      {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
+        "id": "felt",
+        "name": "Craft felt 1 mm",
+        "thickness": 1,
+        "kind": "fabric",
+        "tool": "rotary",
+        "sheet": [
+          229,
+          305
+        ],
+        "color": "#9db592",
+        "cricut": "Felt",
+        "passes": 1,
+        "speed": 35
+      }
+    ],
+    "name": "Cozy Bedroom",
+    "room": {
+      "width": 320,
+      "depth": 260,
+      "height": 260,
+      "ceiling": false,
+      "material": "chip2",
+      "wallpaper": {
+        "enabled": true,
+        "material": "paper"
+      },
+      "floor": {
+        "enabled": true,
+        "material": "card65"
+      },
+      "trimMaterial": "card110"
+    },
+    "openings": [
+      {
+        "wall": "back",
+        "kind": "window",
+        "pos": 160,
+        "sill": 125,
+        "width": 80,
+        "height": 80,
+        "trim": true
+      },
+      {
+        "wall": "right",
+        "kind": "door",
+        "pos": 60,
+        "sill": 0,
+        "width": 85,
+        "height": 205,
+        "trim": true
+      }
+    ],
+    "items": [
+      {
+        "type": "bed",
+        "material": "chip15",
+        "x": 90,
+        "y": 0,
+        "rot": 0,
+        "params": {
+          "w": 140,
+          "d": 200,
+          "h": 45,
+          "head": 100
+        }
+      },
+      {
+        "type": "nightstand",
+        "material": "chip15",
+        "x": 40,
+        "y": 0,
+        "rot": 0,
+        "params": {
+          "w": 45,
+          "d": 40,
+          "h": 55,
+          "count": 2
+        }
+      },
+      {
+        "type": "nightstand",
+        "material": "chip15",
+        "x": 235,
+        "y": 0,
+        "rot": 0,
+        "params": {
+          "w": 45,
+          "d": 40,
+          "h": 55,
+          "count": 2
+        }
+      },
+      {
+        "type": "wardrobe",
+        "material": "bass16",
+        "x": 0,
+        "y": 150,
+        "rot": 90,
+        "params": {
+          "w": 100,
+          "d": 60,
+          "h": 200,
+          "count": 2
+        }
+      },
+      {
+        "type": "rug",
+        "params": {
+          "w": 160,
+          "d": 90,
+          "shape": "rect"
+        },
+        "material": "felt",
+        "x": 80,
+        "y": 160,
+        "rot": 0
+      },
+      {
+        "type": "curtains",
+        "params": {
+          "w": 110,
+          "h": 110
+        },
+        "material": "card110",
+        "wall": "back",
+        "pos": 160,
+        "elev": 160
+      },
+      {
+        "type": "frame",
+        "params": {
+          "w": 45,
+          "h": 35,
+          "border": 4
+        },
+        "material": "card110",
+        "wall": "right",
+        "pos": 170,
+        "elev": 150
+      }
+    ],
+    "lighting": {
+      "enabled": true,
+      "holeDiameter": 3,
+      "power": {
+        "wall": "back",
+        "pos": 160,
+        "elev": 30,
+        "kind": "battery"
+      },
+      "leds": [
+        {
+          "name": "Left reading light",
+          "mount": "wall",
+          "wall": "back",
+          "pos": 62,
+          "elev": 120,
+          "color": "warm"
+        },
+        {
+          "name": "Right reading light",
+          "mount": "wall",
+          "wall": "back",
+          "pos": 257,
+          "elev": 120,
+          "color": "warm"
+        }
+      ]
+    },
+    "roomType": "bedroom"
+  }
+}

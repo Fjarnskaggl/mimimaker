@@ -198,3 +198,67 @@ test('room box: a gable roof from the Room section', async () => {
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('shell panel: the room keeps the shell size when the scale changes', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await panel(page).locator('select[data-shell=type]').selectOption('nook');
+  const roomWidth = (k) => {
+    const t = k.materials.find((m) => m.id === k.room.material).thickness;
+    return ((k.shell.gap.w - k.shell.clearance - 2 * t) * k.scale) / 10;
+  };
+  let k = await kit(page);
+  assert.ok(Math.abs(k.room.width - roomWidth(k)) < 1e-6);
+
+  await page.click('[data-step=make]');
+  const scale = page.locator('label.field', { hasText: 'Scale' }).locator('select');
+  const other = await scale.evaluate((s) => [...s.options].map((o) => o.value).find((v) => v !== s.value));
+  await scale.selectOption(other);
+  k = await kit(page);
+  assert.equal(k.scale, Number(other));
+  // the room follows straight away, not at the next shell edit
+  assert.ok(Math.abs(k.room.width - roomWidth(k)) < 1e-6, `room width ${k.room.width} vs ${roomWidth(k)} at 1:${k.scale}`);
+
+  await page.click('[data-step=design]');
+  const insp = await page.locator('body').innerText();
+  assert.match(insp, new RegExp(`1:${k.scale}`));
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('light step: an alley\'s own LEDs are on the wiring map, with runs inside the shell', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await panel(page).locator('select[data-shell=type]').selectOption('alley');
+  await page.click('[data-step=light]');
+  await page.click('[data-view=wiring]');
+  const wiring = page.locator('.wiring');
+  await wiring.locator('.led-table').waitFor({ timeout: 4000 });
+  const where = await wiring.locator('.led-table tbody tr td:nth-child(3)').allInnerTexts();
+  assert.ok(where.length > 0, 'shell LEDs listed');
+  assert.ok(where.every((w) => /cavity/i.test(w)), where.join(', '));
+  assert.equal(await wiring.locator('svg polyline.inside').count(), where.length, 'each LED has its inside run');
+  assert.match(await wiring.locator('.map-head .hint').innerText(), /inside the shell/i);
+  // the sidebar lists the shell's LEDs, not the room's set-aside ones
+  const sideRows = page.locator('#sidebar .insp-list .insp-row');
+  assert.equal(await sideRows.count(), where.length);
+  assert.equal(await page.locator('#sidebar [data-shell-lights]').count(), 1);
+  assert.equal(await page.locator('#warnings .warn.error').count(), 0, await page.locator('#warnings').innerText());
+  if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'shell-alley-wiring.png') });
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('light step: with an alley, lights off still shows the shell panel, not the room LEDs', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await panel(page).locator('select[data-shell=type]').selectOption('alley');
+  await page.click('[data-step=light]');
+  await page.evaluate(() => { for (const d of document.querySelectorAll('#sidebar details.section')) d.open = true; });
+  await page.locator('#sidebar label', { hasText: 'Lights on' }).locator('input').uncheck();
+  assert.equal((await kit(page)).lighting.enabled, false);
+  assert.equal(await page.locator('#sidebar [data-shell-lights]').count(), 1, 'still explains the shell places its LEDs');
+  assert.equal(await page.locator('#sidebar .add-row').count(), 0, 'no buttons that add room LEDs');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
