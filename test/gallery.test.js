@@ -104,7 +104,7 @@ test('buildGallery writes one card per kit with a render and an Open link that d
 });
 
 test('gallery cards show title, author, licence and remix credit, escaped', async () => {
-  const a = sample({ id: 'base', title: 'Base room' });
+  const a = sample({ id: 'base', title: 'Base room', licence: 'CC0' }); // a CC0 source may be remixed under any licence
   const b = sample({ id: 'evil', title: '<script>alert(1)</script> & co', author: 'maker_2', licence: 'CC0', remixedFrom: { id: 'base' }, description: 'A "quoted" <b>room</b>' });
   const { html } = await buildGallery([a, b], { appUrl: '../' });
   assert.ok(!html.includes('<script>alert(1)'));
