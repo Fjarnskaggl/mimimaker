@@ -17,7 +17,7 @@ export const UNITS = ['cm'];
 export const RESERVED = ['t'];
 
 /** Cut shapes: key → [min, max] argument count (poly takes a point list). */
-export const SHAPE_ARGS = { rect: [4, 4], arch: [4, 6], ellipse: [4, 5], circle: [3, 4], plant: [2, 2], drape: [3, 3] };
+export const SHAPE_ARGS = { rect: [4, 4], arch: [4, 6], ellipse: [4, 5], circle: [3, 4], plant: [2, 3], drape: [3, 3] };
 export const SHAPES = [...Object.keys(SHAPE_ARGS), 'poly'];
 /** Score (fold/engrave) line sets. */
 export const SCORE_ARGS = { rect: [4, 4], circle: [3, 4], ellipse: [4, 5] };

@@ -38,7 +38,7 @@ match the cut files. `searchPieces(query, { theme, tag, difficulty })` and
 
 Anywhere a number goes you may write a string expression (`src/pieces/expr.js`):
 `+ - * / %`, comparisons, `&& || !`, `a ? b : c`, `'strings'`, and
-`min max round floor ceil abs sqrt clamp sin cos` (radians), `PI`. Names in scope:
+`min max round floor ceil abs sqrt clamp sin cos` (radians), `hash(k, seed)` (a repeatable pseudo-random number in [0, 1) for seeded variety), `PI`. Names in scope:
 
 - every parameter (`unit: "cm"` values arrive already scaled to model mm),
 - `t` — the material thickness in mm,
@@ -59,7 +59,7 @@ front at depth `y`; `{ "floor": { "z" } }` lays it flat;
 `{ "custom": { "o", "U", "V", "n" } }` for anything else.
 
 Shapes: `rect [x, y, w, h]`, `arch [x, y, w, h, r?, seg?]`,
-`ellipse [cx, cy, rx, ry, seg?]`, `circle [cx, cy, r, seg?]`, `plant [w, h]`,
+`ellipse [cx, cy, rx, ry, seg?]`, `circle [cx, cy, r, seg?]`, `plant [w, h, lobes?]`,
 `drape [x, w, h]`, `poly [[x, y], …]`.
 
 Scores: `line [[x, y], [x, y]]`, `loop [[x, y], …]`, `rect`, `circle`

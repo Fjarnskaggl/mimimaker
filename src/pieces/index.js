@@ -10,5 +10,6 @@ import { BATHROOM } from './bathroom.js';
 import { CAFE } from './cafe.js';
 import { LIBRARY } from './library.js';
 import { DECOR } from './decor.js';
+import { ACCESSORIES } from './accessories.js';
 
-export const PIECES = [...BASICS, ...LIVING, ...BEDROOM, ...KITCHEN, ...BATHROOM, ...CAFE, ...LIBRARY, ...DECOR];
+export const PIECES = [...BASICS, ...LIVING, ...BEDROOM, ...KITCHEN, ...BATHROOM, ...CAFE, ...LIBRARY, ...DECOR, ...ACCESSORIES];
