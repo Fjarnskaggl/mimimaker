@@ -1,23 +1,22 @@
 // T3 (make & export) browser tests. Run with: npm run test:e2e
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { spawn } = require('node:child_process');
-const path = require('node:path');
 const fs = require('node:fs');
+const path = require('node:path');
 const { chromium } = require('playwright');
+const { startServer } = require('./helpers.cjs');
 
-const PORT = 5203;
-const URL = `http://localhost:${PORT}/`;
-let server, browser;
+// Set SHOT_DIR to save screenshots of the T3 UI for review.
+const shot = (page, name) => process.env.SHOT_DIR && page.screenshot({ path: path.join(process.env.SHOT_DIR, `t3-${name}.png`) });
+
+let server, browser, URL;
 
 before(async () => {
-  server = spawn(process.execPath, [path.join(__dirname, '../../scripts/serve.js')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
-  for (let i = 0; i < 50; i++) {
-    try { await fetch(URL); break; } catch { await new Promise((r) => setTimeout(r, 100)); }
-  }
+  server = await startServer();
+  URL = server.url;
   browser = await chromium.launch();
 });
-after(async () => { await browser?.close(); server?.kill(); });
+after(async () => { await browser?.close(); server?.close(); });
 
 async function open() {
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 }, acceptDownloads: true });
@@ -43,6 +42,7 @@ test('machine profiles: a laser gets SVG + DXF per sheet with kerf and laser hin
   const card = page.locator('.sheet-card').first();
   assert.deepEqual(await card.locator('header button').allTextContents(), ['SVG', 'DXF']);
   assert.match(await card.locator('.cut-time').textContent(), /kerf 0\.1 mm/);
+  await shot(page, 'make-laser');
   const [dl] = await Promise.all([page.waitForEvent('download'), card.locator('header button', { hasText: 'DXF' }).click()]);
   assert.match(dl.suggestedFilename(), /^laser-.*\.dxf$/);
   const text = fs.readFileSync(await dl.path(), 'utf8');
