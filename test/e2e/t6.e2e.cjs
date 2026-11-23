@@ -100,6 +100,37 @@ test('WebGL viewer: walls and floor wear the room paletteâ€™s textures; the cafÃ
   await page.close();
 });
 
+test('texture picker: change the floor, switch a texture off, undo; only shown with Realistic 3D', async () => {
+  const page = await open();
+  assert.equal(await page.locator('#texture-picker').isVisible(), false, 'hidden in the SVG preview');
+  await switchOn(page);
+  await page.waitForSelector('#texture-picker', { state: 'visible' });
+  const floorMat = await page.evaluate(() => window.mimimaker.kit.room.floor.material);
+  const floor = page.locator(`#texture-picker select[data-material="${floorMat}"]`);
+  assert.equal(await floor.inputValue(), '', 'follows the room palette');
+  const textures = () => page.evaluate(() => document.querySelector('.stage').t6viewer.sample().textures);
+  const before = await page.evaluate(() => document.querySelector('.stage').t6viewer.sample().textured);
+
+  await floor.selectOption('tiles');
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().textures.includes('tiles'));
+  assert.deepEqual(await page.evaluate((m) => window.mimimaker.kit.look.textures[m], floorMat), { id: 'tiles' });
+
+  await floor.selectOption('none');
+  await page.waitForFunction((n) => document.querySelector('.stage').t6viewer.sample().textured < n, before);
+  assert.ok(!(await textures()).includes('tiles'));
+
+  // undo goes back to tiles, and the picker follows
+  await page.waitForTimeout(500); // let the edit settle into its own undo step
+  await page.click('#btn-undo');
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().textures.includes('tiles'));
+  assert.equal(await floor.inputValue(), 'tiles');
+
+  await page.click('#renderer-toggle');
+  assert.equal(await page.locator('#texture-picker').isVisible(), false);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('WebGL viewer: dragging orbits the camera and the picture changes', async () => {
   const page = await open();
   await switchOn(page);

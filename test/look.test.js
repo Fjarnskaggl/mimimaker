@@ -109,3 +109,44 @@ test('roomTypeOf prefers kit.roomType, so renaming a kit keeps its palette; old 
   assert.equal(roomTypeOf(old), 'kitchen', 'name match for kits saved before roomType existed');
   assert.equal(roomTypeOf({ ...old, roomType: 'no-such-room' }), 'kitchen', 'unknown ids fall back too');
 });
+
+// ---------------------------------------------------------- texture picker logic
+import { textureChoices, textureChoice, setTextureChoice } from '../src/textures/look.js';
+
+test('textureChoices: one row per textured surface, offering wall/floor textures (not book spines)', () => {
+  const kit = applyRoomType(defaultKit(), 'cafe');
+  const rows = textureChoices(kit);
+  assert.deepEqual(rows.map((r) => r.role), ['wall', 'floor']);
+  assert.equal(rows[0].material, kit.room.wallpaper.material);
+  assert.equal(rows[1].material, kit.room.floor.material);
+  for (const r of rows) {
+    assert.ok(r.label && r.paletteName, 'labelled, and names the palette texture');
+    assert.ok(r.options.some((o) => o.id === 'tiles') && r.options.some((o) => o.id === 'wood-planks'));
+    assert.ok(!r.options.some((o) => o.id === 'book-spines'), 'decor textures are not surfaces');
+  }
+  assert.equal(rows[0].paletteName, 'Brick');
+  // no wallpaper → no wall row
+  const bare = { ...kit, room: { ...kit.room, wallpaper: { ...kit.room.wallpaper, enabled: false } } };
+  assert.deepEqual(textureChoices(bare).map((r) => r.role), ['floor']);
+});
+
+test('setTextureChoice: "" follows the palette, "none" switches off, an id overrides; the kit is not mutated', () => {
+  const kit = applyRoomType(defaultKit(), 'cafe');
+  const floor = kit.room.floor.material;
+  const a = setTextureChoice(kit, floor, 'tiles');
+  assert.deepEqual(a.look.textures[floor], { id: 'tiles' });
+  assert.equal(textureChoice(a, floor), 'tiles');
+  assert.equal(resolveLook(a)[floor].id, 'tiles');
+  assert.equal(kit.look, undefined, 'original kit untouched');
+
+  const b = setTextureChoice(a, floor, 'none');
+  assert.equal(b.look.textures[floor], null);
+  assert.equal(textureChoice(b, floor), 'none');
+  assert.equal(resolveLook(b)[floor], undefined);
+
+  const c = setTextureChoice(b, floor, '');
+  assert.equal(textureChoice(c, floor), '');
+  assert.equal(c.look, undefined, 'no overrides left → no look key at all');
+  assert.deepEqual(resolveLook(c), defaultLook(kit));
+  assert.throws(() => setTextureChoice(kit, floor, 'nope'), /unknown texture/i);
+});
