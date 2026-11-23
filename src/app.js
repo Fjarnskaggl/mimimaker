@@ -10,7 +10,7 @@ import { CATALOG, defaultKit, defaultMaterialFor } from './catalog.js';
 import { ROOM_TYPES, applyRoomType } from './templates.js';
 import { LED_COLORS } from './lighting.js';
 import { ledMapSVG, ledRows } from './ledmap.js';
-import { DEFAULT_MATERIALS, MACHINES, SCALES, TOOL_NAMES, withMaterialDefaults } from './materials.js';
+import { DEFAULT_MATERIALS, MACHINES, SCALES, TOOL_NAMES, withMaterialDefaults, formatMoney } from './materials.js';
 import { History } from './history.js';
 import { collisions, moveItem, rotateItem, slideOnWall, snap, itemParams, findFreeSpot } from './plan.js';
 import { planSVG, posOnWall } from './planview.js';
@@ -30,7 +30,7 @@ import { drawStage, rendererToggle, texturePicker, attachPicking } from './ui/t6
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 // T3 wiring: per-machine cut files
-import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, handCutButton, printCutButton, updatePrintCutButton } from './ui/t3.js';
+import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, handCutButton, printCutButton, updatePrintCutButton, materialLibrary, kitCost } from './ui/t3.js';
 import { kitCutFiles, machineReadme } from './export/machines.js';
 import { kitHandCutFiles } from './export/handcut.js';
 import { kitPrintCutFiles } from './export/printcut.js';
@@ -586,7 +586,7 @@ function renderSummary() {
   $('#summary').replaceChildren(
     h('span', {}, h('b', {}, parts.length), ' parts'),
     h('span', {}, h('b', {}, sheets.length), ` sheet${sheets.length === 1 ? '' : 's'}`),
-    h('span', {}, '≈ ', h('b', {}, formatMinutes(sheets.reduce((t, s) => t + estimateCutMinutes(s), 0)))),
+    h('span', {}, '≈ ', h('b', {}, formatMinutes(sheets.reduce((t, s) => t + estimateCutMinutes(s, compiled.machine), 0)))),
   );
 }
 
@@ -885,20 +885,11 @@ function renderCalibration() {
     h('div', { class: 'calib-grid' }, cards));
 }
 
-function materialsTable() {
-  const rows = kit.materials.map((m) => h('div', { class: 'mat-row' },
-    h('input', { type: 'color', value: m.color, 'aria-label': `${m.name} colour`, oninput: (e) => { m.color = e.target.value; changed(); } }),
-    h('input', { value: m.name, 'aria-label': 'Material name', onchange: (e) => { m.name = e.target.value; restructured(); } }),
-    h('input', { type: 'number', value: m.thickness, step: 0.05, min: 0.05, 'aria-label': `${m.name} thickness (mm)`, oninput: (e) => { const v = parseFloat(e.target.value); if (v > 0) { m.thickness = v; changed(); } } }),
-    h('input', { type: 'number', value: m.sheet[0], step: 1, min: 20, 'aria-label': `${m.name} sheet width (mm)`, oninput: (e) => { const v = parseFloat(e.target.value); if (v > 20) { m.sheet[0] = v; changed(); } } }),
-    h('input', { type: 'number', value: m.sheet[1], step: 1, min: 20, 'aria-label': `${m.name} sheet height (mm)`, oninput: (e) => { const v = parseFloat(e.target.value); if (v > 20) { m.sheet[1] = v; changed(); } } })));
-  return [
-    h('div', { class: 'mat-table' },
-      h('div', { class: 'mat-row mat-head' }, h('span'), h('span', {}, 'Name'), h('span', {}, 'Thick mm'), h('span', {}, 'Sheet W'), h('span', {}, 'Sheet H')),
-      rows),
-    h('p', { class: 'hint' }, 'Measure your board with calipers, or use the fit test: finger joints are sized from this thickness.'),
-    h('div', {}, h('button', { type: 'button', class: 'mm-btn mm-btn--sm', onclick: () => { kit.materials = structuredClone(DEFAULT_MATERIALS); restructured(); } }, 'Reset materials')),
-  ];
+// T3 material library (src/ui/t3.js); rebuilt when the kit object is replaced (undo, templates)
+let matLib = null, matsOpen = false; // matsOpen keeps the Materials panel open across Make rebuilds
+function materialsPanel() {
+  if (!matLib || matLib.kit !== kit) matLib = materialLibrary({ kit, machine: () => compiled?.machine, onChange: changed, onRestructure: restructured });
+  return matLib;
 }
 
 function renderMake(el) {
@@ -922,15 +913,21 @@ function renderMake(el) {
           numberField('Finger width (0 = auto)', kit.fingerWidth, (v) => { kit.fingerWidth = Math.max(0, v); changed(); }, { min: 0, max: 30, step: 0.5, unit: 'mm' }),
           numberField('Glue tab width', kit.tabWidth, (v) => { kit.tabWidth = Math.max(1, v); changed(); }, { min: 1, max: 15, step: 0.5, unit: 'mm' })),
         checkField('Draw part numbers with a Cricut pen', kit.drawLabels, (v) => { kit.drawLabels = v; changed(); }))),
-      h('details', { class: 'more' }, h('summary', {}, ic('sheets'), 'Materials'), h('div', {}, materialsTable()))));
+      h('details', { class: 'more', open: matsOpen, ontoggle: (e) => { matsOpen = e.target.open; } }, h('summary', {}, ic('sheets'), 'Materials'), h('div', { id: 'make-materials' }))));
   }
   const { dims, parts, sheets } = compiled;
-  const minutes = sheets.reduce((t, s) => t + estimateCutMinutes(s), 0);
+  const minutes = sheets.reduce((t, s) => t + estimateCutMinutes(s, compiled.machine), 0);
+  const cost = kitCost(kit, compiled); // T3
   el.querySelector('#make-meter').replaceChildren(
     h('div', {}, h('span', {}, 'Model'), h('b', {}, `${dims.W.toFixed(0)} × ${dims.D.toFixed(0)} × ${dims.H.toFixed(0)}`, h('small', {}, ' mm'))),
     h('div', {}, h('span', {}, 'Parts'), h('b', {}, parts.length)),
     h('div', {}, h('span', {}, 'Sheets'), h('b', {}, sheets.length)),
-    h('div', {}, h('span', {}, 'Cutting'), h('b', {}, `≈ ${formatMinutes(minutes)}`)));
+    h('div', {}, h('span', {}, 'Cutting'), h('b', {}, `≈ ${formatMinutes(minutes)}`)),
+    h('div', { title: 'Sheets × price per sheet (set prices under Materials)' }, h('span', {}, 'Material'), h('b', {}, formatMoney(cost.total, cost.currency)))); // T3
+  const lib = materialsPanel(); // T3
+  const slot = el.querySelector('#make-materials');
+  if (slot.firstChild !== lib) slot.replaceChildren(lib);
+  lib.update(compiled);
   updatePrintCutButton(el, kit, compiled); // T3
   const calib = renderCalibration();
   el.querySelector('#make-calib').replaceChildren(...(calib ? [calib] : []));
@@ -1059,7 +1056,7 @@ async function init() {
     }
     try { window.history.replaceState(null, "", location.pathname + location.search); } catch { /* ignore */ }
   }
-  window.mimimaker = { get kit() { return kit; }, refresh: () => restructured() };
+  window.mimimaker = { get kit() { return kit; }, get compiled() { return compiled; }, refresh: () => restructured() };
 
   $('#brand-mark').innerHTML = MARK;
   document.querySelectorAll('[data-icon]').forEach((el) => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon)));

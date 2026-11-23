@@ -2,7 +2,7 @@
 // estimates from path length, passes and speed.
 
 import { strokeText } from './labels.js';
-import { withMaterialDefaults } from './materials.js';
+import { machineSettings } from './materials.js';
 
 export const COUPON_STEPS = [-0.2, -0.1, 0, 0.1, 0.2];
 const SLOT_DEPTH = 8, SLOT_PITCH = 14, END = 9, HEIGHT = 22;
@@ -67,13 +67,18 @@ export function cutLength(part) {
 const SCORE_SPEED = 60; // mm/s
 const LOAD_MINUTES = 1; // loading, blade travel, unloading
 
-/** Rough minutes to cut one sheet on a Cricut. */
-export function estimateCutMinutes(sheet) {
-  const m = withMaterialDefaults(sheet.material);
+// Silhouette Studio's speed dial (1–30) is roughly this many mm/s per step.
+const SILHOUETTE_MM_PER_STEP = 10;
+
+/** Rough minutes to cut one sheet on `machine` (a Cricut when omitted). */
+export function estimateCutMinutes(sheet, machine) {
+  const s = machineSettings(sheet.material, machine);
+  const speed = s.family === 'silhouette' ? s.speed * SILHOUETTE_MM_PER_STEP : s.speed;
+  const scoreSpeed = s.family === 'laser' ? speed : SCORE_SPEED;
   let seconds = 0;
   for (const pl of sheet.placements) {
     const { cut, score } = cutLength(pl.part);
-    seconds += (cut * m.passes) / m.speed + score / SCORE_SPEED;
+    seconds += (cut * s.passes) / speed + score / scoreSpeed;
   }
   return LOAD_MINUTES + seconds / 60;
 }
