@@ -173,3 +173,22 @@ test('no sideways scrolling at phone width on any tab', async () => {
   }
   await page.close();
 });
+
+test('disabled fields look disabled', async () => {
+  const page = await open();
+  const styles = await page.evaluate(() => {
+    const field = document.createElement('label');
+    field.className = 'field';
+    field.innerHTML = '<span class="unit-wrap"><input type="number" value="1"></span><select><option>a</option></select>';
+    document.querySelector('#sidebar .section-body').append(field);
+    const [input, select] = [field.querySelector('input'), field.querySelector('select')];
+    const before = [getComputedStyle(input).opacity, getComputedStyle(input).cursor];
+    input.disabled = true; select.disabled = true;
+    return { before, input: [getComputedStyle(input).opacity, getComputedStyle(input).cursor], select: getComputedStyle(select).opacity };
+  });
+  assert.equal(styles.before[0], '1');
+  assert.ok(Number(styles.input[0]) < 0.8, `disabled input opacity ${styles.input[0]}`);
+  assert.equal(styles.input[1], 'not-allowed');
+  assert.ok(Number(styles.select) < 0.8, `disabled select opacity ${styles.select}`);
+  await page.close();
+});
