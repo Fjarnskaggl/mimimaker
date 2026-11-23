@@ -26,7 +26,7 @@ import { makeZip } from './zip.js';
 import { icon, MIMI, MARK } from './ui/art.js';
 import { checksSummary } from './ui/checks.js';
 // T6: WebGL viewer + SVG fallback
-import { drawStage, rendererToggle } from './ui/t6.js';
+import { drawStage, rendererToggle, texturePicker } from './ui/t6.js';
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 // T3 wiring: per-machine cut files
@@ -303,6 +303,7 @@ function roomInspector() {
     inspHead('Room', 'The room', `${cm(r.width)} × ${cm(r.depth)} × ${cm(r.height)} cm · 1:${kit.scale}`),
     roomSection(),
     shellSection(kit, { h, section, numberField, selectField, checkField, changed, restructured }), // T2 shells
+    texturePicker({ section, selectField, getKit: () => kit, setKit: (next) => { kit = next; update(); } }), // T6 textures
     section('Furniture & decor', [
       items.length ? h('div', { class: 'insp-list' }, items) : h('p', { class: 'hint' }, 'No pieces yet.'),
       h('div', { class: 'add-row' }, h('button', { type: 'button', class: 'mm-btn mm-btn--sm', onclick: openDrawer }, ic('plus'), 'Add a piece')),

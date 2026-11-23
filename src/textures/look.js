@@ -6,6 +6,7 @@
 // textureSVG(), so the 3D view shows what would be printed.
 
 import { ROOM_TYPES } from '../templates.js';
+import { TEXTURES } from './index.js';
 
 const wall = (id, colors, extra = {}) => ({ id, params: { colors, ...extra } });
 const floor = wall;
@@ -91,4 +92,43 @@ export function textureFrame(face) {
   }
   const uv = (p) => [p[0] * X[0] + p[1] * X[1] + p[2] * X[2], p[0] * Y[0] + p[1] * Y[1] + p[2] * Y[2]];
   return { X, Y, uv };
+}
+
+// ------------------------------------------------------------ texture picker
+const SURFACE_TEXTURES = TEXTURES.filter((t) => t.kind === 'wall' || t.kind === 'floor');
+
+/**
+ * Rows for the texture picker: one per textured surface the kit has, with the
+ * palette texture's name and the textures that can go there.
+ */
+export function textureChoices(kit) {
+  const pal = ROOM_PALETTES[roomTypeOf(kit)] || ROOM_PALETTES.default;
+  const room = kit?.room || {};
+  const name = (id) => TEXTURES.find((t) => t.id === id)?.name || id;
+  const options = SURFACE_TEXTURES.map((t) => ({ id: t.id, name: t.name }));
+  const rows = [];
+  if (room.wallpaper?.enabled && room.wallpaper.material) rows.push({ role: 'wall', label: 'Wallpaper', material: room.wallpaper.material, paletteName: name(pal.wall.id), options });
+  if (room.floor?.enabled && room.floor.material) rows.push({ role: 'floor', label: 'Floor', material: room.floor.material, paletteName: name(pal.floor.id), options });
+  return rows;
+}
+
+/** The picker value for a material: '' = room palette, 'none' = off, else a texture id. */
+export function textureChoice(kit, material) {
+  const t = kit?.look?.textures;
+  if (!t || !(material in t)) return '';
+  return t[material] == null ? 'none' : t[material].id;
+}
+
+/** A copy of the kit with the picker value applied (empty overrides are removed). */
+export function setTextureChoice(kit, material, value) {
+  if (value && value !== 'none' && !TEXTURES.some((t) => t.id === value)) throw new Error(`Unknown texture "${value}"`);
+  const textures = { ...(kit.look?.textures || {}) };
+  if (!value) delete textures[material];
+  else textures[material] = value === 'none' ? null : { id: value };
+  const next = { ...kit };
+  const look = { ...(kit.look || {}), textures };
+  if (!Object.keys(textures).length) delete look.textures;
+  if (Object.keys(look).length) next.look = look;
+  else delete next.look;
+  return next;
 }
