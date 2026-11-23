@@ -66,23 +66,33 @@ export function formatLife(hours) {
 export const ESTIMATE_NOTE = 'Estimates only: assumes 20 mA per LED (worst case for pre-wired micro LEDs) and less battery capacity than the packet says. Real numbers vary with brand, temperature and battery age.';
 
 /**
- * @param leds [{ color, duty? }] — duty (0–1) is the share of time an effect is lit
+ * @param leds [{ color, duty?, mA?, bulbs?, needs5V? }] — one entry per light (see
+ *   effects.js effectLoad); mA is its peak current, duty (0–1) its average share
  * @param supplyId key of SUPPLIES
  */
 export function planCircuit(leds, supplyId) {
   const supply = SUPPLIES[supplyId] || SUPPLIES.aa2;
-  const specs = leds.map((l) => ({ ...ledSpec(l.color), duty: Math.min(1, Math.max(0, l.duty ?? 1)) }));
+  const specs = leds.map((l) => {
+    const base = ledSpec(l.color);
+    return { vf: base.vf, mA: l.mA ?? base.mA, duty: Math.min(1, Math.max(0, l.duty ?? 1)), bulbs: l.bulbs ?? 1, needs5V: !!l.needs5V };
+  });
   const totalMA = specs.reduce((s, l) => s + l.mA, 0);
   const averageMA = specs.reduce((s, l) => s + l.mA * l.duty, 0);
   const n = leds.length;
+  const bulbs = specs.reduce((s, l) => s + l.bulbs, 0);
   const warnings = [];
   let status = 'ok';
-  const draw = `${n} LED${n === 1 ? '' : 's'} can draw up to ${totalMA} mA`;
+  const what = bulbs === n ? `${n} LED${n === 1 ? '' : 's'}` : `${n} light${n === 1 ? '' : 's'} (${bulbs} LEDs)`;
+  const draw = `${what} can draw up to ${totalMA} mA`;
+  if (supply.id !== 'usb' && specs.some((l) => l.needs5V)) {
+    status = 'error';
+    warnings.push({ level: 'error', msg: `LED strips need 5 V — a ${supply.short} can't light them. Switch the power to a USB lead.` });
+  }
   if (totalMA > supply.maxMA) {
     status = 'error';
     warnings.push({ level: 'error', msg: `${draw} — more than a ${supply.short} can supply (${supply.maxMA} mA). Use ${BIGGER[supply.id]}, or fewer lights.` });
   } else if (totalMA > supply.recommendedMA) {
-    status = 'warn';
+    if (status === 'ok') status = 'warn';
     warnings.push({ level: 'warn', msg: `${draw}, more than the ${supply.recommendedMA} mA a ${supply.short} handles comfortably — the lights will be dim and the battery won't last. ${cap(BIGGER[supply.id])} is safer.` });
   }
   if (n && supply.id === 'usb') {
@@ -93,7 +103,7 @@ export function planCircuit(leds, supplyId) {
   }
   const lifeHours = batteryLifeHours(supply.id, averageMA, totalMA);
   return {
-    wiring: 'parallel', supply, count: n, totalMA, averageMA,
+    wiring: 'parallel', supply, count: n, bulbs, totalMA, averageMA,
     budget: { recommendedMA: supply.recommendedMA, maxMA: supply.maxMA },
     load: totalMA / supply.maxMA, status, lifeHours,
     lifeText: n ? formatLife(lifeHours) : '',
