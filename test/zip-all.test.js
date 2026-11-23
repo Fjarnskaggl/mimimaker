@@ -60,3 +60,34 @@ test('zipFileList describes every file in the zip', () => {
   // folders are listed in order, files sorted inside them
   assert.ok(text.indexOf('assembly-guide.html') < text.indexOf('cut-files/'));
 });
+
+test('all machines: parts too big for a machine’s mat are named in the README', () => {
+  const kit = defaultKit();
+  const compiled = compileKit(kit);
+  const joy = compileKit({ ...kit, machine: 'joy' });
+  const missing = joy.warnings.filter((w) => /is larger than a/.test(w.msg)).length;
+  assert.ok(missing > 0, 'the default room has parts wider than a Cricut Joy mat');
+  const z = zipCutFiles(kit, compiled, compileKit, { ...opts, allMachines: true });
+  assert.match(z.readme, /cut-files\/joy\/[^\n]*\n(?:[^\n]*\n)*?\s+Missing \d+ parts? too big for its mat: #\d+/);
+});
+
+test('all machines: one machine failing to compile does not block the zip', () => {
+  const kit = defaultKit();
+  const compiled = compileKit(kit);
+  const flaky = (k) => { if (k.machine === 'cameo') throw new Error('boom'); return compileKit(k); };
+  const z = zipCutFiles(kit, compiled, flaky, { ...opts, allMachines: true });
+  assert.ok(!z.files.some((f) => f.name.startsWith('cut-files/cameo/')));
+  assert.ok(z.files.some((f) => f.name.startsWith('cut-files/laser/')));
+  assert.match(z.readme, /cut-files\/cameo\/[^\n]*couldn't/i);
+});
+
+test('all machines: the how-to text points at the machine folders', () => {
+  const kit = defaultKit();
+  const z = zipCutFiles(kit, compileKit(kit), compileKit, { ...opts, allMachines: true });
+  assert.doesNotMatch(z.readme, /each SVG in cut-files\/ /);
+});
+
+test('zipFileList: a folder’s own README is described as its instructions', () => {
+  const text = zipFileList([{ name: 'print-then-cut/README.txt' }, { name: 'print-then-cut/print-then-cut.pdf' }]);
+  assert.match(text, /print-then-cut\/README\.txt\s+how to use this folder/);
+});
