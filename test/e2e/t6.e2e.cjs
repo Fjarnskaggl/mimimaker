@@ -11,12 +11,18 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-const PORT = 5196; // each e2e file needs its own port: they run in parallel (studio 5199, shells 5198)
-const URL = `http://localhost:${PORT}/`;
+// A free port per run: node --test runs e2e files in parallel, so fixed
+// ports collide and one file's server gets killed by another's teardown.
+let PORT, URL, server, browser;
 const CDN = /three(\.js\/r128|@0\.128\.0)\/.*three\.min\.js$/;
-let server, browser;
+const freePort = () => new Promise((resolve) => {
+  const srv = require('node:net').createServer();
+  srv.listen(0, () => { const { port } = srv.address(); srv.close(() => resolve(port)); });
+});
 
 before(async () => {
+  PORT = await freePort();
+  URL = `http://localhost:${PORT}/`;
   server = spawn(process.execPath, [path.join(__dirname, '../../scripts/serve.js')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
   for (let i = 0; i < 50; i++) {
     try { await fetch(URL); break; } catch { await new Promise((r) => setTimeout(r, 100)); }
