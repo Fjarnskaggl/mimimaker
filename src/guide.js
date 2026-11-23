@@ -4,6 +4,7 @@ import { sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { TOOL_NAMES } from './materials.js';
 import { renderScene } from './preview3d.js';
 import { ledMapSVG, ledRows, powerName } from './ledmap.js';
+import { buildSteps, stepJointKinds } from './build/steps.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -15,21 +16,28 @@ export function guideHTML(kit, compiled) {
 
   const materialRows = sheetCounts.map(({ m, n }) => `<tr><td><span class="sw" style="background:${m.color}"></span>${esc(m.name)}</td><td>${m.thickness} mm</td><td>${n} × ${m.sheet[0]}×${m.sheet[1]} mm</td><td>${esc(TOOL_NAMES[m.tool])}</td></tr>`).join('');
 
-  const steps = groups.filter((g) => g.parts.length).map((g, i) => `
-    <section class="step">
-      <h3><span class="num">${i + 1}</span>${esc(g.title)}</h3>
-      <p class="meta">${esc(g.material || '')} · parts ${g.parts.map((p) => `#${p}`).join(', ')}</p>
-      <ol>${g.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
-    </section>`).join('');
+  const matOf = new Map(groups.map((g) => [g.title, g.material]));
+  const steps = buildSteps(kit, compiled).map((st) => {
+    const meta = [
+      matOf.get(st.group),
+      st.parts.length ? `part${st.parts.length === 1 ? '' : 's'} ${st.parts.map((p) => `#${p}`).join(', ')}` : '',
+      stepJointKinds(st).join(', '),
+      st.kind !== 'info' && st.cureMin ? `let the glue set ${st.cureMin} min` : '',
+    ].filter(Boolean);
+    return `
+    <section class="step step-${st.kind}" data-step="${st.n}">
+      <h3><span class="num">${st.n}</span>${esc(st.title)}</h3>
+      ${meta.length ? `<p class="meta">${esc(meta.join(' · '))}</p>` : ''}
+      <ol>${st.text.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
+    </section>`;
+  }).join('');
 
   const lit = compiled.lighting?.enabled && compiled.lighting.leds.length;
-  const lightSteps = groups.find((g) => g.title === 'Lighting')?.steps || [];
   const lighting = lit ? `
   <h2>Lighting</h2>
   <p>${compiled.lighting.leds.length} LED${compiled.lighting.leds.length === 1 ? '' : 's'} powered by a ${esc(powerName(compiled.lighting).toLowerCase())}. The map shows the room from behind, unfolded flat: wire holes are already cut, and each coloured line is that LED's wire route to the power box.</p>
   <div class="ledmap">${ledMapSVG(compiled, { standalone: true })}</div>
-  <table><tr><th>LED</th><th>Name</th><th>Mounted on</th><th>Colour</th><th>Lead needed</th></tr>${ledRows(compiled).map((r) => `<tr><td><span class="sw" style="background:${r.wireColor}"></span>${r.label}</td><td>${esc(r.name || '—')}</td><td>${r.where}</td><td>${esc(r.color)}</td><td>≥ ${r.leadCm} cm</td></tr>`).join('')}</table>
-  <ol class="ds">${lightSteps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : '';
+  <table><tr><th>LED</th><th>Name</th><th>Mounted on</th><th>Colour</th><th>Lead needed</th></tr>${ledRows(compiled).map((r) => `<tr><td><span class="sw" style="background:${r.wireColor}"></span>${r.label}</td><td>${esc(r.name || '—')}</td><td>${r.where}</td><td>${esc(r.color)}</td><td>≥ ${r.leadCm} cm</td></tr>`).join('')}</table>` : '';
 
   const sheetBlocks = sheets.map((s) => `
     <figure class="sheet">

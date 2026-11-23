@@ -27,7 +27,10 @@ export function buildSteps(kit, compiled, graph = jointGraph(kit, compiled)) {
   const steps = [];
   const push = (step) => {
     const mine = new Set(step.parts);
-    const joints = graph.joints.filter((j) => (mine.has(j.a) && (built.has(j.b) || mine.has(j.b))) || (mine.has(j.b) && built.has(j.a)));
+    const placing = (j) => j.note === 'place in room';
+    const joints = step.kind === 'place'
+      ? graph.joints.filter((j) => placing(j) && nodeById.get(j.a)?.group === step.group)
+      : graph.joints.filter((j) => !placing(j) && ((mine.has(j.a) && (built.has(j.b) || mine.has(j.b))) || (mine.has(j.b) && built.has(j.a))));
     step.parts.forEach((id) => built.add(id));
     steps.push({ kind: 'build', unit: null, cureMin: 0, ...step, joints, n: steps.length + 1 });
   };
