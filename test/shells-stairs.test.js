@@ -53,7 +53,9 @@ test('stairs generator: stringers, slotted treads and risers that never collide'
     // everything inside the stair's own box
     for (const p of st.parts) {
       const [[x0, x1], [y0], [z0, z1]] = partBox(p, t);
-      assert.ok(x0 >= -1e-9 && x1 <= s.width + 1e-9 && y0 >= -1e-9 && z0 >= -1e-9 && z1 <= s.steps * s.rise + 1e-9, p.key);
+      // a free-standing stair's stringers stand a little proud of the top tread (closed string)
+      const top = s.steps * s.rise + (s.topLanding === false && p.role === 'stringer' ? 3 : 0);
+      assert.ok(x0 >= -1e-9 && x1 <= s.width + 1e-9 && y0 >= -1e-9 && z0 >= -1e-9 && z1 <= top + 1e-9, p.key);
     }
   }
 });
