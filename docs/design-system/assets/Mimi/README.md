@@ -1,0 +1,1 @@
+Mimi's six poses, 120 × 140, drawn in `ink`, `kraft`, `basswood`, `paper`, `glow` and `score`. Same artwork in both themes. Use one per screen, at 64–120px wide; see the Mimi section for when each pose appears.

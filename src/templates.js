@@ -238,6 +238,65 @@ export const ROOM_TYPES = [
       ]),
     },
   },
+  {
+    id: 'bakery',
+    name: 'Corner bakery',
+    blurb: 'Bar counter with stools, shop shelving under a header sign, a café table and a planter by the door.',
+    colors: { paper: '#f4e3d7', card65: '#d9c2a5', card110: '#fbf6ee' },
+    kit: {
+      name: 'Corner Bakery',
+      room: { width: 320, depth: 240, height: 260, ceiling: false, material: 'chip2', wallpaper: { enabled: true, material: 'paper' }, floor: { enabled: true, material: 'card65' }, trimMaterial: 'card110' },
+      openings: [
+        { wall: 'left', kind: 'window', pos: 120, sill: 100, width: 60, height: 100, trim: true },
+        { wall: 'right', kind: 'door', pos: 60, sill: 0, width: 85, height: 205, trim: true },
+      ],
+      items: [
+        { type: 'shopshelving', material: 'bass16', x: 10, y: 0, rot: 0 },
+        { type: 'barcounter', material: 'chip15', x: 150, y: 0, rot: 0 },
+        { type: 'stool', material: 'chip15', x: 175, y: 65, rot: 0 },
+        { type: 'stool', material: 'chip15', x: 245, y: 65, rot: 0 },
+        { type: 'cafetable', material: 'bass16', x: 50, y: 150, rot: 0 },
+        { type: 'chair', material: 'bass16', x: 0, y: 157, rot: 90 },
+        { type: 'chair', material: 'bass16', x: 115, y: 157, rot: 270 },
+        { type: 'planter', material: 'chip15', x: 200, y: 205, rot: 0 },
+        { type: 'littleplant', material: 'card110', x: 290, y: 220, rot: 0 },
+        { type: 'sign', material: 'card110', wall: 'back', pos: 230, elev: 190 },
+        { type: 'poster', material: 'card110', wall: 'right', pos: 170, elev: 150 },
+      ],
+      lighting: lights({ wall: 'back', pos: 20, elev: 25, kind: 'usb' }, [
+        { name: 'Counter light', mount: 'wall', wall: 'back', pos: 230, elev: 150, color: 'warm' },
+        { name: 'Shelf glow', mount: 'wall', wall: 'left', pos: 200, elev: 200, color: 'amber' },
+      ]),
+    },
+  },
+  {
+    id: 'music-room',
+    name: 'Music room',
+    blurb: 'Upright piano, a loveseat by the lamp table, a fireplace behind a fire screen, and a wall clock.',
+    colors: { paper: '#e7dff0', card65: '#8a6a4c', card110: '#f7f2e8' },
+    kit: {
+      name: 'Music Room',
+      room: { width: 320, depth: 240, height: 260, ceiling: false, material: 'chip2', wallpaper: { enabled: true, material: 'paper' }, floor: { enabled: true, material: 'card65' }, trimMaterial: 'card110' },
+      openings: [
+        { wall: 'back', kind: 'arch', pos: 290, sill: 100, width: 50, height: 100, trim: true },
+      ],
+      items: [
+        { type: 'piano', material: 'chip15', x: 20, y: 0, rot: 0 },
+        { type: 'loveseat', material: 'chip15', x: 240, y: 60, rot: 270 },
+        { type: 'lamptable', material: 'bass16', x: 255, y: 5, rot: 0 },
+        { type: 'littleplant', params: { kind: 'fern' }, material: 'card110', x: 200, y: 5, rot: 0 },
+        { type: 'fireplace', material: 'chip15', x: 0, y: 90, rot: 90 },
+        { type: 'firescreen', material: 'card110', x: 45, y: 110, rot: 90 },
+        { type: 'rug', params: { w: 160, d: 100, shape: 'rect' }, material: 'felt', x: 60, y: 110, rot: 0 },
+        { type: 'wallclock', material: 'card110', wall: 'back', pos: 230, elev: 180 },
+        { type: 'poster', params: { shape: 'landscape', w: 60 }, material: 'card110', wall: 'back', pos: 90, elev: 190 },
+      ],
+      lighting: lights({ wall: 'back', pos: 180, elev: 25, kind: 'battery' }, [
+        { name: 'Table lamp', mount: 'floor', x: 277, y: 27, color: 'warm' },
+        { name: 'Fire glow', mount: 'floor', x: 17, y: 150, color: 'amber' },
+      ]),
+    },
+  },
 ];
 
 /** A room type's kit with every item's parameters filled in from the piece defaults. */

@@ -1,0 +1,165 @@
+/* mimimaker — generated from tokens.json */
+:root, [data-theme="light"] {
+  --paper: #f5f4ef; /* Page background behind the stage and panels. */
+  --surface: #ffffff; /* Panels, cards, the inspector and popovers. Text: ink, ink-muted. */
+  --surface-sunken: #ecebe4; /* Wells: inputs, the stage behind the 3D model, sheet previews. */
+  --line: #dedcd3; /* Hairline dividers between sections and rows. Decorative only, never a control edge. */
+  --line-control: #86837a; /* Edges of inputs, selects and secondary buttons: 3:1 on surface, paper and surface-sunken. */
+  --ink: #18211e; /* Body text and icons on paper, surface and surface-sunken. */
+  --ink-muted: #5a635f; /* Secondary text: hints, units, captions on paper, surface and surface-sunken. */
+  --mat: #1d5c52; /* Brand and primary action: the one primary button per view, selection outlines, the active step. Text on it: on-mat. */
+  --on-mat: #ffffff; /* Text and icons on a mat fill. */
+  --mat-soft: #dcebe6; /* Tint behind the selected row, the active segment and info notices. Text: ink. */
+  --glow: #f2b13a; /* LED light only: bulbs, halos, the Light step, night mode. Never a button fill or text colour. Text on it: on-glow. */
+  --on-glow: #2b1d00; /* Text on a glow fill (the lights counter). */
+  --glow-soft: #fdf0d3; /* Tint behind lighting notices and the circuit card. */
+  --kraft: #b98f5e; /* Chipboard: material swatches, Mimi, illustration. Never text. */
+  --basswood: #e8d3a6; /* Basswood: material swatches and illustration. Never text. */
+  --score: #c8336a; /* Score and fold lines on cut sheets and nets (dashed). 3:1 on surface-sunken and surface. */
+  --success: #1b6c8a; /* Done states: calibrated, fits, export ready. Always with the check icon and a word. Text on surface and paper. */
+  --success-soft: #dff0f6; /* Tint behind success notices. Text: ink. */
+  --warning: #8a5300; /* Needs a look: thin joints, long cut times. Always with the alert icon and a word. Text on surface, paper and warning-soft. */
+  --warning-soft: #fdf0d3; /* Tint behind warning notices. Text: ink or warning. */
+  --danger: #b5341b; /* Blocks a cut: overlaps, parts too big for the mat, unsupported blade; destructive actions. Always with an icon and a word. Text on surface, paper and danger-soft. */
+  --danger-soft: #fbe5df; /* Tint behind danger notices and the clash fill on the floor plan. Text: ink or danger. */
+  --focus: #1d5c52; /* Keyboard focus ring: 2px solid, 2px offset. 3:1 on every surface in both themes. */
+  --shadow-float: 0 1px 2px rgba(24,33,30,0.08), 0 8px 24px rgba(24,33,30,0.12); /* Popovers, the library drawer, toasts, the dragged piece. */
+  --shadow-raise: 0 1px 2px rgba(24,33,30,0.08); /* Piece and sheet cards on hover. */
+}
+[data-theme="dark"] {
+  --paper: #0f1513;
+  --surface: #171f1c;
+  --surface-sunken: #0b100e;
+  --line: #2a3531;
+  --line-control: #6b7a74;
+  --ink: #e9efeb;
+  --ink-muted: #a2afa9;
+  --mat: #5cbca8;
+  --on-mat: #0a1b17;
+  --mat-soft: #163a33;
+  --glow: #f2b13a;
+  --on-glow: #2b1d00;
+  --glow-soft: #3a2c10;
+  --kraft: #c49a69;
+  --basswood: #d7c094;
+  --score: #ff7aa8;
+  --success: #6cc3e2;
+  --success-soft: #12313d;
+  --warning: #f5c46b;
+  --warning-soft: #3a2c10;
+  --danger: #ff8b6e;
+  --danger-soft: #3d1d15;
+  --focus: #f2b13a;
+  --shadow-float: 0 1px 2px rgba(0,0,0,0.5), 0 10px 28px rgba(0,0,0,0.45);
+  --shadow-raise: 0 1px 2px rgba(0,0,0,0.4);
+}
+:root {
+  --space-1: 4px; /* Label to input, icon to its text. */
+  --space-2: 8px; /* Between chips, inside compact controls, between buttons in a group. */
+  --space-3: 12px; /* Between rows of fields; card inner gap. */
+  --space-4: 16px; /* Panel and card padding; the stage gutter. */
+  --space-5: 24px; /* Between sections of the inspector; page gutter on desktop. */
+  --space-6: 32px; /* Empty-state padding; between major regions. */
+  --space-7: 48px; /* Start-screen rhythm and the finger-joint pitch in illustrations. */
+  --radius-sm: 6px; /* Inputs, chips, segments, small buttons. */
+  --radius-md: 10px; /* Buttons, cards, notices. */
+  --radius-lg: 16px; /* Panels, the stage, dialogs and the cut-sheet frame. */
+  --radius-pill: 999px; /* Pills: the checks pill, the step indicator, toasts. */
+  --control-h: 36px; /* Buttons, inputs and selects. */
+  --control-h-sm: 28px; /* Compact buttons, segments and chips inside panels. */
+  --topbar-h: 60px; /* The header with the kit name and the step nav. */
+  --rail-w: 56px; /* The left tool rail. */
+  --drawer-w: 320px; /* The library drawer when open. */
+  --inspector-w: 340px; /* The right inspector. */
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-sans: Figtree, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --text-display-xl: 800 56px/58px var(--font-display); /* Start screen and celebration moments only. One per screen. */
+  --text-display: 700 32px/36px var(--font-display); /* The kit name in the header and step titles. */
+  --text-title: 700 20px/26px var(--font-display); /* Inspector heading (the selected thing), card and dialog titles. */
+  --text-heading: 700 15px/20px var(--font-sans); /* Section headings inside the inspector and panels. */
+  --text-body: 400 15px/22px var(--font-sans); /* Default text: explanations, notices, steps. */
+  --text-body-strong: 600 15px/22px var(--font-sans); /* Emphasis inside body text and button labels. */
+  --text-small: 400 13px/18px var(--font-sans); /* Hints and captions under controls, in ink-muted. */
+  --text-label: 600 12px/16px var(--font-sans); /* Field labels above inputs. */
+  --text-overline: 700 11px/14px var(--font-sans); /* Tiny uppercase section markers (set text-transform: uppercase in CSS). At most one per panel. */
+  --text-measure: 500 13px/18px var(--font-mono); /* Every dimension, time and count: inputs with units, sheet sizes, LED leads. Tabular figures. */
+  --text-numeral: 500 22px/26px var(--font-mono); /* Headline numbers in the kit meter and circuit card. */
+}
+.display-xl {
+  font-family: var(--font-display);
+  font-size: 56px;
+  line-height: 58px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.display {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.heading {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.body-strong {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.small {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.overline {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.measure {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.numeral {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  line-height: 26px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}

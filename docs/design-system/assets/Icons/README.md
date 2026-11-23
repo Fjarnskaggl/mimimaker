@@ -1,0 +1,1 @@
+The 20px interface icons, 1.75px stroke, round caps, drawn in `ink` (#18211e). In the app, inline the paths and set `stroke="currentColor"` so they follow text colour in both themes; `<img>` copies stay ink and are for documents only.
