@@ -55,7 +55,7 @@ test('resolveLook: the kit’s own choices (kit.look.textures) win over the pale
   assert.deepEqual(resolveLook(kit), defaultLook(kit));
 });
 
-test('faceMaterial: vertical overlays are wallpaper, upward ones are floor; shell and furniture are untextured', () => {
+test('faceMaterial: vertical overlays are wallpaper, upward ones are floor; shell and furniture name their own material', () => {
   const kit = applyRoomType(defaultKit(), 'cafe');
   const faces = compileKit(kit).faces3d;
   const walls = faces.filter((f) => f.layer === 1 && Math.abs(f.n[2]) < 0.5);
@@ -63,7 +63,8 @@ test('faceMaterial: vertical overlays are wallpaper, upward ones are floor; shel
   assert.ok(walls.length >= 3 && floors.length >= 1);
   for (const f of walls) assert.equal(faceMaterial(f, kit), kit.room.wallpaper.material);
   for (const f of floors) assert.equal(faceMaterial(f, kit), kit.room.floor.material);
-  for (const f of faces.filter((x) => x.layer !== 1)) assert.equal(faceMaterial(f, kit), null);
+  for (const f of faces.filter((x) => x.layer !== 1 && !x.glow)) assert.ok(kit.materials.some((m) => m.id === faceMaterial(f, kit)), 'cut from a kit material');
+  assert.equal(faceMaterial({ ...walls[0], material: undefined, layer: 2 }, kit), null, 'faces without a material and off the walls: none');
   // an explicit material id on a face (if the compiler adds one) is used as is
   assert.equal(faceMaterial({ ...walls[0], material: 'chip2' }, kit), 'chip2');
 });
