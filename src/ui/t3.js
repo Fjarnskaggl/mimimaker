@@ -4,6 +4,8 @@ import { sheetFiles, machineSettingsLine, layerLegend } from '../export/machines
 import { trueShapeCore, workerSource } from '../export/trueshape.js';
 import { nestJobs, applyNestResults } from '../export/nestjobs.js';
 import { handCutPDF, handCutFileName, defaultPaper, PAPER_NAMES } from '../export/handcut.js';
+import { kitPrintCutFiles, printableParts } from '../export/printcut.js';
+import { makeZip } from '../zip.js';
 
 function el(tag, attrs = {}, ...children) {
   const e = document.createElement(tag);
@@ -115,4 +117,30 @@ export function handCutButton(get, download, icon = null) {
       download(handCutFileName(paper), handCutPDF(compiled.sheets, { paper, title: kit.name }), 'application/pdf');
     },
   }, ...(icon ? [icon] : []), 'Hand-cut PDF');
+}
+
+// ------------------------------------------------------- print then cut
+const slugName = (s) => String(s || 'kit').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'kit';
+
+/**
+ * Secondary "Print then cut" button for the Make page head: a zip of the
+ * print-area SVGs (Design Space), the PDF and a README. `get()` returns
+ * { kit, compiled } at click time. Call updatePrintCutButton() on render.
+ */
+export function printCutButton(get, download, icon = null) {
+  return el('button', {
+    id: 'btn-printcut', type: 'button', class: 'mm-btn',
+    title: 'Textured wallpaper and flooring to print on a home printer and cut on a Cricut (fits Design Space\'s 6.75 × 9.25 in print area)',
+    onclick: () => {
+      const { kit, compiled } = get();
+      const files = kitPrintCutFiles(compiled, kit);
+      if (files.length) download(`${slugName(kit.name)}-print-then-cut.zip`, makeZip(files), 'application/zip');
+    },
+  }, ...(icon ? [icon] : []), 'Print then cut');
+}
+
+/** Disable the button when no part of the kit is textured. */
+export function updatePrintCutButton(root, kit, compiled) {
+  const btn = root.querySelector('#btn-printcut');
+  if (btn) btn.disabled = !printableParts(compiled, kit).length;
 }

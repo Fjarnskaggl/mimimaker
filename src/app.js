@@ -30,11 +30,12 @@ import { drawStage, rendererToggle, texturePicker, attachPicking } from './ui/t6
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 // T3 wiring: per-machine cut files
-import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, handCutButton } from './ui/t3.js';
+import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, handCutButton, printCutButton, updatePrintCutButton } from './ui/t3.js';
 import { kitCutFiles, machineReadme } from './export/machines.js';
 import { kitHandCutFiles } from './export/handcut.js';
+import { kitPrintCutFiles } from './export/printcut.js';
 // T2 shells
-import { shellSection, applyRoomLocks, appendRoofControls } from './ui/t2.js';
+import { shellSection, applyRoomLocks, appendRoofControls, syncShellRoom, shellWiresLights } from './ui/t2.js';
 import { remixCredit, openedSharedText } from './ui/t7.js';
 // [T5] lighting UI
 import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
@@ -169,6 +170,7 @@ const slug = (s) => (s || 'kit').toLowerCase().replace(/[^a-z0-9]+/g, '-').repla
 
 // ------------------------------------------------------------- recompile
 function update({ sidebar = false } = {}) {
+  syncShellRoom(kit); // T2 shells: the room follows the shell after any edit (scale, board thickness, undo)
   try {
     compiled = compileKit(kit);
   } catch (err) {
@@ -446,6 +448,25 @@ function addLed(mount, { selectIt = true } = {}) {
 
 function lightingInspector() {
   const L = kit.lighting;
+  // >>> T2 shells: a shell that places its own LEDs (#16) lists them instead of the room's
+  if (shellWiresLights(kit)) {
+    const shellLeds = (compiled?.lighting?.leds || []).filter((l) => l.inside);
+    const powerFields = lightingInspectorPower(L);
+    const on = L.enabled && compiled?.lighting?.enabled;
+    return [
+      inspHead('Lighting', 'Circuit', `${shellLeds.length} light${shellLeds.length === 1 ? '' : 's'}`),
+      on ? renderCircuitSummary(compiled.lighting.circuit) : notice('info', 'Lights are off.', 'Turn them on under Power to wire the shell\'s LEDs.'),
+      section('Lights', [
+        h('p', { class: 'hint', 'data-shell-lights': '' }, 'The shell places these LEDs behind its lit windows. Change the windows in the shell panel to move them.'),
+        h('div', { class: 'insp-list' }, shellLeds.map((led) => h('div', { class: 'insp-row' },
+          h('span', { class: 'led-dot', style: `background:${LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex}` }),
+          h('span', { class: 'grow' }, `${led.label}${led.name ? ` · ${led.name}` : ''}`),
+          h('span', { class: 'k2' }, led.where)))),
+      ], { count: shellLeds.length }),
+      section('Power', powerFields, { open: false }),
+    ];
+  }
+  // <<< T2 shells
   if (!L.leds.length) {
     return [
       inspHead('Lighting', 'Lights', ''),
@@ -470,19 +491,23 @@ function lightingInspector() {
         h('button', { type: 'button', class: 'mm-btn mm-btn--sm', onclick: () => addLed('ceiling') }, ic('plus'), 'Ceiling'),
         h('button', { type: 'button', class: 'mm-btn mm-btn--sm', onclick: () => addLed('floor') }, ic('plus'), 'Floor')),
     ], { count: L.leds.length }),
-    section('Power', [
-      checkField('Lights on (cut the wire holes)', L.enabled, (v) => { L.enabled = v; restructured(); }),
-      h('div', { class: 'grid2' },
-        renderSupplyField(L.power, changed), // [T5] supply picker
-        numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
-      renderMountField(L.power, changed), // [T5] mount picker
-      renderCoverField(L, { checkField, restructured, range: compiled.lighting?.coverRange }), // [T5] cable cover
-      renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
-      h('div', { class: 'grid3' },
-        selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
-        numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
-        numberField('Height', L.power.elev, (v) => { L.power.elev = v; changed(); }, { min: 0, unit: 'cm' })),
-    ], { open: false }),
+    section('Power', lightingInspectorPower(L), { open: false }),
+  ];
+}
+
+function lightingInspectorPower(L) {
+  return [
+    checkField('Lights on (cut the wire holes)', L.enabled, (v) => { L.enabled = v; restructured(); }),
+    h('div', { class: 'grid2' },
+      renderSupplyField(L.power, changed), // [T5] supply picker
+      numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
+    renderMountField(L.power, changed), // [T5] mount picker
+    renderCoverField(L, { checkField, restructured, range: compiled.lighting?.coverRange }), // [T5] cable cover
+    renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
+    h('div', { class: 'grid3' },
+      selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
+      numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
+      numberField('Height', L.power.elev, (v) => { L.power.elev = v; changed(); }, { min: 0, unit: 'cm' })),
   ];
 }
 
@@ -824,7 +849,9 @@ function renderWiring(el) {
       h('td', { class: 'num' }, `${r.runCm.toFixed(1)} cm`), h('td', { class: 'num' }, h('b', {}, `≥ ${r.leadCm} cm`)))))));
   el.replaceChildren(
     h('div', { class: 'map-head' },
-      h('p', { class: 'hint' }, `Seen from behind the room, the side you wire on. ${compiled.lighting.holeDiameter.toFixed(1)} mm holes are pre-cut at each LED; run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`),
+      h('p', { class: 'hint' }, compiled.lighting.leds.some((l) => l.inside) // T2 shells: LEDs the shell places itself (#16)
+        ? `Seen from behind the shell, the side you wire on. Dashed lines run inside the shell, along the cavity floor to the small holes low in the back wall; from there run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`
+        : `Seen from behind the room, the side you wire on. ${compiled.lighting.holeDiameter.toFixed(1)} mm holes are pre-cut at each LED; run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`),
       h('button', { class: 'mm-btn mm-btn--sm', type: 'button', onclick: () => download(`${slug(kit.name)}-led-map.svg`, ledMapSVG(compiled, { standalone: true }), 'image/svg+xml') }, ic('download'), 'SVG')),
     h('div', { class: 'map-wrap', html: ledMapSVG(compiled) }),
     table);
@@ -883,6 +910,7 @@ function renderMake(el) {
         h('div', { class: 'mm-meter', id: 'make-meter' }),
         h('span', { class: 'grow' }),
         handCutButton(() => ({ kit, compiled }), download, ic('download')), // T3
+        printCutButton(() => ({ kit, compiled }), download, ic('download')), // T3
         h('button', { id: 'btn-zip', type: 'button', class: 'mm-btn mm-btn--primary', onclick: exportZip }, ic('download'), 'Download kit')),
       h('div', { class: 'make-setup' },
         selectField('Cutting machine', kit.machine, Object.entries(MACHINES).map(([k, m]) => [k, m.name]), (v) => { kit.machine = v; changed(); }),
@@ -903,6 +931,7 @@ function renderMake(el) {
     h('div', {}, h('span', {}, 'Parts'), h('b', {}, parts.length)),
     h('div', {}, h('span', {}, 'Sheets'), h('b', {}, sheets.length)),
     h('div', {}, h('span', {}, 'Cutting'), h('b', {}, `≈ ${formatMinutes(minutes)}`)));
+  updatePrintCutButton(el, kit, compiled); // T3
   const calib = renderCalibration();
   el.querySelector('#make-calib').replaceChildren(...(calib ? [calib] : []));
   el.querySelector('#make-legend').replaceChildren(sheetLegend(compiled.machine, 'Numbers match the assembly guide. Hover a part for details.', compiled.nesting)); // T3
@@ -936,6 +965,7 @@ function renderBuild(el) {
 function exportZip() {
   const files = kitCutFiles(compiled.sheets, compiled.machine, { drawLabels: kit.drawLabels, title: (s) => `${kit.name} – ${s.material.name} ${s.index}` }); // T3
   files.push(...kitHandCutFiles(compiled.sheets, { title: kit.name })); // T3
+  try { files.push(...kitPrintCutFiles(compiled, kit)); } catch (e) { console.warn('print-then-cut skipped:', e); } // T3: never block the kit
   files.push({ name: 'assembly-guide.html', data: guideHTML(kit, compiled) });
   if (compiled.lighting?.enabled && compiled.lighting.leds.length) files.push({ name: 'led-map.svg', data: ledMapSVG(compiled, { standalone: true }) });
   if (shoppingFile(compiled.lighting)) files.push(shoppingFile(compiled.lighting)); // [T5] shopping list
