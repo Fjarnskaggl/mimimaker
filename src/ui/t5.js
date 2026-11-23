@@ -185,16 +185,26 @@ export function renderShoppingButton(onDownload) {
 
 // ------------------------------------------------------------ cable cover
 
-/** Turn the back-wall cable cover on or off; off is stored as nothing. */
-export function setCover(lighting, on) {
-  if (on) lighting.cover = { ...(lighting.cover || {}), enabled: true };
-  else delete lighting.cover;
+/**
+ * Turn the back-wall cable cover on or off; off is stored as nothing. Turning
+ * it on moves a power box glued to the back wall into `range` (from
+ * compiled.lighting.coverRange) so the cover opens without a warning.
+ */
+export function setCover(lighting, on, range) {
+  if (!on) { delete lighting.cover; return lighting; }
+  lighting.cover = { ...(lighting.cover || {}), enabled: true };
+  const p = lighting.power;
+  if (range && p && (p.wall || 'back') === 'back' && p.mount !== 'flush') {
+    const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v ?? lo));
+    p.pos = clamp(p.pos, range.pos);
+    p.elev = clamp(p.elev, range.elev);
+  }
   return lighting;
 }
 
-/** "Hide wires behind a cover" checkbox, built with the app's checkField. ui: { checkField, restructured } */
+/** "Hide wires behind a cover" checkbox, built with the app's checkField. ui: { checkField, restructured, range } */
 export function renderCoverField(lighting, ui) {
-  const field = ui.checkField('Hide wires behind a cover (back wall)', !!lighting.cover?.enabled, (v) => { setCover(lighting, v); ui.restructured(); });
+  const field = ui.checkField('Hide wires behind a cover (back wall)', !!lighting.cover?.enabled, (v) => { setCover(lighting, v, ui.range); ui.restructured(); });
   field.querySelector('input')?.setAttribute('data-t5', 'cover');
   return field;
 }
