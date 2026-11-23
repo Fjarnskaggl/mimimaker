@@ -168,7 +168,16 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {}, materials, mat
   const groupOf = { left: 'Left facade', right: 'Right facade' };
   let skippedTotal = 0;
   const backHoles = [];
-  const wireHole = (x) => ellipsePoly(x, t + NOTCH_H / 2 + 0.5, 1.5, 1.5, 16);
+  const wireZ = t + NOTCH_H / 2 + 0.5;
+  const wireHole = (x) => ellipsePoly(x, wireZ, 1.5, 1.5, 16);
+  // an LED's wire: down to the floor channel, along it to the back wall, out
+  // of the hole at x (square runs, so the lead length is honest)
+  const wire = (p, x) => {
+    const path = [p, [p[0], p[1], wireZ]];
+    if (Math.abs(p[0] - x) > 1e-9) path.push([x, p[1], wireZ]);
+    path.push([x, Di, wireZ]);
+    return { path, exit: [x, wireZ] };
+  };
 
   for (const side of ['left', 'right']) {
     const blds = [];
@@ -282,7 +291,8 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {}, materials, mat
       const lit = b.windows.filter((w) => w.lit);
       if (!lit.length) continue;
       const mean = (f) => lit.reduce((s, w) => s + f(w), 0) / lit.length;
-      lights.push({ building: b.id, side, p: [cx, mean((w) => w.y), mean((w) => w.z)], color: 'warm' });
+      const p = [cx, mean((w) => w.y), mean((w) => w.z)];
+      lights.push({ building: b.id, side, p, color: 'warm', name: `${side === 'left' ? 'Left' : 'Right'} building ${b.index + 1}`, where: `${side === 'left' ? 'Left' : 'Right'} cavity`, wire: wire(p, cx) });
     }
   }
 
@@ -338,7 +348,8 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {}, materials, mat
     const lit = wins.filter((w) => w.lit);
     if (lit.length) {
       const mean = (f) => lit.reduce((sum, w) => sum + f(w), 0) / lit.length;
-      lights.push({ building: 'backdrop', side: 'back', p: [sx0 + mean((w) => w.u0 + w.w / 2), Di - cb / 2, t + mean((w) => w.v0 + w.h / 2)], color: 'warm' });
+      const p = [sx0 + mean((w) => w.u0 + w.w / 2), Di - cb / 2, t + mean((w) => w.v0 + w.h / 2)];
+      lights.push({ building: 'backdrop', side: 'back', p, color: 'warm', name: 'Backdrop', where: 'Backdrop cavity', wire: wire(p, W / 2) });
     }
     back = { blocks, y: y0, cavity: cb };
   }

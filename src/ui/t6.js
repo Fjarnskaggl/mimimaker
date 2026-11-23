@@ -156,7 +156,7 @@ function startViewer() {
       state.viewer = v;
     })
     .catch((err) => {
-      state.failed = /load/i.test(err?.message || '') ? 'the 3D library couldn’t be downloaded (offline?)' : 'WebGL couldn’t start';
+      state.failed = /load/i.test(err?.message || '') ? 'the 3D library couldn’t be downloaded (offline?) or didn’t match its checksum' : 'WebGL couldn’t start';
       console.warn('mimimaker: realistic 3D unavailable —', err);
     })
     .finally(() => { state.loading = false; redrawLast(); });
