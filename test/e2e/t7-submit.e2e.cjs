@@ -1,5 +1,9 @@
 // Browser tests for the T7 submit flow: File → Submit to the gallery builds a
 // kits/<id>.kit.json and explains how to open a pull request with it.
+//
+// The flow is on hold (the repo only takes pull requests from collaborators),
+// so its menu item is hidden. The dialog code stays; these tests un-hide the
+// item to keep it working for when it comes back.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
@@ -34,10 +38,23 @@ async function openSubmit(hash = '', viewport = { width: 1400, height: 900 }) {
   await page.goto(URL + hash);
   await page.waitForFunction(() => window.mimimaker?.kit, null, { timeout: 8000 });
   await page.click('#btn-file');
+  await page.evaluate(() => { document.getElementById('btn-submit').hidden = false; }); // on hold: hidden in the menu
   await page.click('#btn-submit');
   await page.locator('#submit').waitFor({ state: 'visible', timeout: 5000 });
   return { ctx, page };
 }
+
+test('submit: on hold, so the File menu does not offer "Submit to the gallery"', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(URL);
+  await page.waitForFunction(() => window.mimimaker?.kit, null, { timeout: 8000 });
+  await page.click('#btn-file');
+  await page.locator('#file-menu').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#file-menu [role=menuitem]', { hasText: /gallery/i }).filter({ visible: true }).count(), 0);
+  assert.equal(await page.locator('#btn-submit').isVisible(), false);
+  await ctx.close();
+});
 
 test('submit: a remix downloads a valid kit file, credited, with the pull-request steps', async () => {
   const { ctx, page } = await openSubmit(kitchenHash);
