@@ -1,4 +1,7 @@
-// Shelf packing of parts onto material sheets.
+// Packing parts onto material sheets: shelf packing (instant, by bounding
+// box) and true-shape nesting (src/export/trueshape.js).
+
+import { nestTrueShape } from './export/trueshape.js';
 
 export const SHEET_MARGIN = 6;
 export const PART_GAP = 3;
@@ -48,11 +51,32 @@ export function packParts(parts, sheetW, sheetH, { margin = SHEET_MARGIN, gap = 
   return { sheets: sheets.map((s) => ({ w: sheetW, h: sheetH, placements: s.placements })), oversize };
 }
 
-/** Map a point in part coordinates (y-up) to sheet coordinates (y-down). */
+/**
+ * Map a point in part coordinates (y-up) to sheet coordinates (y-down).
+ * Placements turn by `angle` (0/90/180/270); older ones only carry `rot`
+ * (true = 90°).
+ */
 export function placementTransform(pl) {
-  const pw = pl.part.w;
-  return ([px, py]) => {
-    const [x, y] = pl.rot ? [py, pw - px] : [px, py];
+  const { w: pw, h: ph } = pl.part;
+  const angle = pl.angle ?? (pl.rot ? 90 : 0);
+  const turn = angle === 90 ? ([px, py]) => [py, pw - px]
+    : angle === 180 ? ([px, py]) => [pw - px, ph - py]
+      : angle === 270 ? ([px, py]) => [ph - py, px]
+        : ([px, py]) => [px, py];
+  return (p) => {
+    const [x, y] = turn(p);
     return [pl.x + x, pl.y + (pl.h - y)];
   };
+}
+
+/**
+ * Best of shelf packing and true-shape nesting: the true-shape layout when it
+ * needs no more sheets, otherwise the shelf layout. `method` says which.
+ */
+export function nestParts(parts, sheetW, sheetH, { margin = SHEET_MARGIN, gap = PART_GAP, ...opts } = {}) {
+  const shelf = packParts(parts, sheetW, sheetH, { margin, gap });
+  const shaped = nestTrueShape(parts, sheetW, sheetH, { margin, gap, ...opts });
+  return shaped.sheets.length <= shelf.sheets.length && shaped.oversize.length <= shelf.oversize.length
+    ? { ...shaped, method: 'true-shape' }
+    : { ...shelf, method: 'shelf' };
 }
