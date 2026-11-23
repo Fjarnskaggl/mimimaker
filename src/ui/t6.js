@@ -5,7 +5,7 @@
 import { renderScene } from '../preview3d.js';
 import { loadThree, webglSupported } from '../render/three-loader.js';
 import { createViewer } from '../render/webgl.js';
-import { resolveLook, faceMaterial } from '../textures/look.js';
+import { resolveLook, faceMaterial, textureChoices, textureChoice, setTextureChoice } from '../textures/look.js';
 
 const PREF_KEY = 'mimimaker.t6.webgl';
 const state = { want: readPref(), viewer: null, loading: false, failed: null, last: null, button: null };
@@ -32,9 +32,51 @@ export function rendererToggle(redraw) {
     writePref(state.want);
     b.setAttribute('aria-pressed', String(state.want));
     redraw();
+    syncPicker();
   });
   state.button = b;
   return b;
+}
+
+// ------------------------------------------------------------ texture picker
+// One row per textured surface (wallpaper, floor): room palette, any surface
+// texture, or none. Shown while Realistic 3D is on, since that's where
+// textures appear. Changes go through setKit, i.e. the app's normal edit
+// path, so they are undoable and travel with share links.
+let picker = null;
+
+/** The texture picker. getKit() returns the current kit; setKit(next) applies an edit. */
+export function texturePicker(getKit, setKit) {
+  const el = document.createElement('div');
+  el.id = 'texture-picker';
+  el.className = 't6-picker';
+  el.setAttribute('role', 'group');
+  el.setAttribute('aria-label', 'Textures');
+  picker = { el, getKit, setKit, key: '' };
+  syncPicker();
+  return el;
+}
+
+function syncPicker(kit = picker?.getKit()) {
+  if (!picker || !kit) return;
+  const { el } = picker;
+  el.style.cssText = state.want ? 'display:inline-flex;gap:12px;align-items:center;flex-wrap:wrap' : 'display:none';
+  const rows = textureChoices(kit);
+  const key = JSON.stringify(rows.map((r) => [r.material, r.label, r.paletteName]));
+  if (key !== picker.key) {
+    picker.key = key;
+    el.replaceChildren(...rows.map((r) => {
+      const select = document.createElement('select');
+      select.dataset.material = r.material;
+      const opt = (value, text) => { const o = document.createElement('option'); o.value = value; o.textContent = text; return o; };
+      select.append(opt('', `Room palette (${r.paletteName})`), ...r.options.map((o) => opt(o.id, o.name)), opt('none', 'None (plain colour)'));
+      select.addEventListener('change', () => picker.setKit(setTextureChoice(picker.getKit(), r.material, select.value)));
+      const label = document.createElement('label');
+      label.append(`${r.label} `, select);
+      return label;
+    }));
+  }
+  for (const select of el.querySelectorAll('select')) select.value = textureChoice(kit, select.dataset.material);
 }
 
 function disposeViewer() {
@@ -81,6 +123,7 @@ function startViewer() {
  */
 export function drawStage(stage, faces, view, kit = null) {
   state.last = { stage, faces, view, kit };
+  if (kit) syncPicker(kit);
   if (state.want && state.viewer) {
     for (const child of [...stage.children]) if (child !== state.viewer.canvas) child.remove();
     state.viewer.mount(stage);

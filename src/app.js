@@ -14,7 +14,7 @@ import { shareHash, kitFromHash, decodeKit } from './share.js';
 import { itemSize } from './catalog.js';
 import { renderScene } from './preview3d.js';
 // T6: WebGL viewer + SVG fallback
-import { drawStage, rendererToggle } from './ui/t6.js';
+import { drawStage, rendererToggle, texturePicker } from './ui/t6.js';
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
@@ -471,7 +471,7 @@ function renderPreview(el) {
       onclick: () => { view.night = !view.night; night.setAttribute('aria-pressed', String(view.night)); night.lastChild.textContent = view.night ? 'Lights on' : 'Lights off'; drawScene(); },
     }, h('i'), view.night ? 'Lights on' : 'Lights off');
     el.replaceChildren(stage, h('div', { class: 'stage-tools' },
-      night, rendererToggle(drawScene), h('label', {}, 'Rotate ', yaw), h('label', {}, 'Tilt ', pitch),
+      night, rendererToggle(drawScene), texturePicker(() => kit, (next) => { kit = next; update(); }), h('label', {}, 'Rotate ', yaw), h('label', {}, 'Tilt ', pitch),
       h('span', {}, 'Drag the model to orbit.')));
     let drag = null;
     stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
