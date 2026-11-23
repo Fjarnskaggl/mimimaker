@@ -15,6 +15,7 @@ export const DEFAULT_MATERIALS = [
   { id: 'card110', name: 'Heavy cardstock 110 lb', thickness: 0.38, kind: 'card', tool: 'fine', sheet: [305, 305], color: '#f3efe4', cricut: 'Heavy Cardstock – 100 lb', passes: 1, speed: 50 },
   { id: 'card65', name: 'Cardstock 65 lb', thickness: 0.25, kind: 'card', tool: 'fine', sheet: [216, 279], color: '#c9d8e2', cricut: 'Medium Cardstock – 80 lb', passes: 1, speed: 50 },
   { id: 'paper', name: 'Patterned paper', thickness: 0.15, kind: 'card', tool: 'fine', sheet: [305, 305], color: '#e8c4bb', cricut: 'Patterned Paper', passes: 1, speed: 60 },
+  { id: 'acetate', name: 'Clear acetate 0.25 mm', thickness: 0.25, kind: 'card', tool: 'fine', sheet: [216, 279], color: '#dff3f7', cricut: 'Acetate', passes: 1, speed: 40 },
   { id: 'felt', name: 'Craft felt 1 mm', thickness: 1.0, kind: 'fabric', tool: 'rotary', sheet: [229, 305], color: '#9db592', cricut: 'Felt', passes: 1, speed: 35 },
 ];
 
