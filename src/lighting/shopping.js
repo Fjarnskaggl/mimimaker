@@ -4,13 +4,14 @@
 import { LED_COLORS } from '../lighting.js';
 import { SUPPLIES } from './circuit.js';
 import { CUTOUTS } from './cutouts.js';
+import { SWITCHES } from './base.js';
 
 export const PRICE_NOTE = 'Prices are rough estimates in US dollars from typical hobby and online shops — check your local shop. Buy one or two spare LEDs.';
 
 const PRICES = {
   led: [0.3, 1], candle: [0.5, 1.5], fairy: [2, 6], stripReel: [3, 8],
   'box-aa2': [1, 3], 'cells-aa': [0.5, 1.5], 'box-cr2032': [1, 2.5], 'cells-cr2032': [0.5, 1.5],
-  'usb-lead': [2, 5], 'usb-socket': [0.5, 2], 'push-switch': [0.3, 1],
+  'usb-lead': [2, 5], 'usb-socket': [0.5, 2], 'push-switch': [0.3, 1], 'touch-switch': [0.5, 2],
 };
 const STRIP_REEL_MM = 500;
 
@@ -72,7 +73,8 @@ export function shoppingList(lighting) {
   // power
   const supply = lighting.power?.supply || 'aa2';
   const flush = lighting.power?.mount === 'flush';
-  const boxNote = flush ? 'switch shows through the slot in the wall' : 'glued to the outside of the room';
+  const base = lighting.power?.mount === 'base';
+  const boxNote = base ? 'hidden in the base, behind the battery hatch' : flush ? 'switch shows through the slot in the wall' : 'glued to the outside of the room';
   if (supply === 'usb') {
     if (flush) {
       add('usb-socket', 1, 'USB-C panel-mount power socket (2-pin)', `fits a ${CUTOUTS.usb.w} × ${CUTOUTS.usb.h} mm slot`, 'usb-socket');
@@ -86,6 +88,13 @@ export function shoppingList(lighting) {
   } else {
     add('box-aa2', 1, SUPPLIES.aa2.name, boxNote, 'box-aa2');
     add('cells-aa', 2, 'AA alkaline battery', '1.5 V each, 3 V together', 'cells-aa');
+  }
+
+  // hidden base: its own switch, by the front corner
+  if (base) {
+    const kind = lighting.power.base?.switch?.kind === 'push' ? 'push' : 'touch';
+    if (kind === 'push') add('push-switch', 1, '6 mm latching push switch', `fits the ${SWITCHES.push.hole} mm hole in the base`, 'push-switch');
+    else add('touch-switch', 1, '3 V capacitive touch switch module (TTP223-style, latching)', 'about 15 × 11 mm; sits in the switch mount behind the round hole in the base', 'touch-switch');
   }
 
   const total = items.reduce((t, i) => ({ low: t.low + i.cost.low, high: t.high + i.cost.high }), { low: 0, high: 0 });

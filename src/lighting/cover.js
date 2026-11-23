@@ -46,6 +46,9 @@ export function planCover({ cover, leds, power, openings, W, H, s = 1, t = 0 }) 
     }
   }
 
+  // wires that go down into a hidden base leave the cover at the bottom, over its wire hole
+  if (power.face === 'base' && leds.some((l) => (l.route || []).length > 1)) gaps.bottom.push(power.p[0]);
+
   // frame strips, split at the crossings
   const strips = [
     { side: 'bottom', from: 0, to: W, rect: (s, e) => rectPoly(s, 0, e - s, fw) },

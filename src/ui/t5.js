@@ -155,18 +155,19 @@ export function renderEffectFields(led, ui) {
 export const MOUNT_OPTIONS = [
   ['outside', 'Glued on the outside'],
   ['flush', 'Flush behind the wall (cut-outs)'],
+  ['base', 'Hidden base under the room (hatch + switch)'],
 ];
 
 /** Set how the power box is mounted; 'outside' is the default and is stored as nothing. */
 export function setMount(power, id) {
-  if (id === 'flush') power.mount = 'flush';
+  if (id === 'flush' || id === 'base') power.mount = id;
   else delete power.mount;
   return power;
 }
 
 /** Mount <select> for the Power section. `onChange` runs after the kit is updated. */
 export function renderMountField(power, onChange) {
-  const current = power.mount === 'flush' ? 'flush' : 'outside';
+  const current = power.mount === 'flush' || power.mount === 'base' ? power.mount : 'outside';
   const sel = el('select', { 'data-t5': 'mount', onchange: (e) => { setMount(power, e.target.value); onChange(); } },
     MOUNT_OPTIONS.map(([v, text]) => {
       const o = el('option', { value: v }, text);
@@ -174,6 +175,31 @@ export function renderMountField(power, onChange) {
       return o;
     }));
   return el('label', { class: 'field' }, 'Mounting', sel);
+}
+
+// ------------------------------------------------------------ hidden base switch
+
+export const SWITCH_AT_OPTIONS = [['front', 'Front, by the left corner'], ['left', 'Left side, near the front'], ['right', 'Right side, near the front']];
+export const SWITCH_KIND_OPTIONS = [['touch', 'Touch switch'], ['push', 'Push switch (6 mm)']];
+
+const pick = (key, label, options, current, onPick) => el('label', { class: 'field' }, label,
+  el('select', { 'data-t5': key, onchange: (e) => onPick(e.target.value) }, options.map(([v, text]) => {
+    const o = el('option', { value: v }, text);
+    o.selected = v === current;
+    return o;
+  })));
+
+/**
+ * Switch fields for a hidden base (power.mount === 'base'): which panel the
+ * switch goes in and what kind it is. Defaults (front, touch) are stored as nothing.
+ * Returns null for other mounts.
+ */
+export function renderSwitchFields(power, onChange) {
+  if (power.mount !== 'base') return null;
+  const set = (key, v, dflt) => { if (v === dflt) delete power[key]; else power[key] = v; onChange(); };
+  return el('div', { class: 'grid2' },
+    pick('switch-at', 'Switch on', SWITCH_AT_OPTIONS, power.switchAt || 'front', (v) => set('switchAt', v, 'front')),
+    pick('switch-kind', 'Switch', SWITCH_KIND_OPTIONS, power.switch || 'touch', (v) => set('switch', v, 'touch')));
 }
 
 // ------------------------------------------------------------ shopping list
@@ -194,7 +220,7 @@ export function setCover(lighting, on, range) {
   if (!on) { delete lighting.cover; return lighting; }
   lighting.cover = { ...(lighting.cover || {}), enabled: true };
   const p = lighting.power;
-  if (range && p && (p.wall || 'back') === 'back' && p.mount !== 'flush') {
+  if (range && p && (p.wall || 'back') === 'back' && p.mount !== 'flush' && p.mount !== 'base') {
     const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v ?? lo));
     p.pos = clamp(p.pos, range.pos);
     p.elev = clamp(p.elev, range.elev);

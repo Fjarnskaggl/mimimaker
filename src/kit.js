@@ -11,6 +11,7 @@ import { planLighting, LED_COLORS, POWER_KINDS } from './lighting.js';
 import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometry.js';
 // T2 shells
 import { prepareShell, compileShell, compileRoof, shellLighting } from './shells/kit.js';
+import { buildBase } from './lighting/base.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
@@ -267,16 +268,43 @@ export function compileKit(kit) {
         lighting.leds.some((l) => l.inside) // T2 shells: the shell's own LEDs leave through its back-wall holes (#16)
           ? 'The shell already has small wire holes in its back wall. Fix each LED where the map shows it and run its wires along its dashed line inside the shell (in an alley: down the cavity to the floor channel) and out through its hole; LEDs in the same cavity share one. A dab of tacky glue holds each bulb, and a dot of glue holds the wire along a shelf or floor edge.'
           : `The ${lighting.holeDiameter.toFixed(1)} mm wire holes are already cut. Poke each LED's wires through its hole from the inside before gluing in furniture; a dab of hot glue or tacky glue holds the bulb.`,
-        lighting.power.mount === 'flush'
+        lighting.power.mount === 'base' // [T5] hidden base
+          ? 'Run each wire along its route on the outside of the room, down to the hidden base, and hold it down with thin tape or tiny staples. The Hidden base steps put in the battery box and switch.'
+          : lighting.power.mount === 'flush'
           ? `Fit the power box behind the ${lighting.power.face} wall so its switch shows through the cut-out, then run each wire along its route on the outside and hold it down with thin tape or tiny staples.`
           : `Glue the power box to the outside of the ${lighting.power.face} wall where the map shows it, then run each wire along its route on the outside and hold it down with thin tape or tiny staples.`,
-        'Wire all LEDs in parallel: twist every LED\'s + lead to the power box + lead (red) and every − to − (black), then insulate with heat-shrink or tape. Test before closing up.',
+        ...(lighting.power.mount === 'base' ? [] : ['Wire all LEDs in parallel: twist every LED\'s + lead to the power box + lead (red) and every − to − (black), then insulate with heat-shrink or tape. Test before closing up.']),
         ...(lighting.parts?.length ? [] : ['Optional: glue a cardstock panel over the back of the room to hide the wiring.']), // [T5] the cable cover replaces this
       ],
       parts: [],
     });
     for (const p of lighting.parts || []) addPart(lightGroup, p.name, getMat(p.material || (p.role === 'frame' ? room.material : room.trimMaterial), 'Lighting'), p.polys); // [T5] cable cover
     lightGroup.steps.push(...(lighting.steps || [])); // [T5] cable cover
+    // >>> [T5] hidden base under the room: battery hatch, wire hole and switch mount
+    if (lighting.power.base) {
+      const L = lighting.power.base;
+      const bm = rm.kind === 'board' ? rm : (kit.materials || []).find((m) => m.kind === 'board');
+      if (!bm) {
+        warn('The hidden base is cut from board, and this kit has no board material — add one in Materials.', 'error');
+      } else {
+        const b = buildBase({ ...L, t: bm.thickness }, { fingerWidth: jointWidth(bm), minFeature: minJointFeature(machine, bm) });
+        checkFingers(b.minFinger, bm, 'Hidden base');
+        const bg = newGroup('Hidden base', bm);
+        const under = { p: ([x, y, z]) => [x, y, z - L.H], n: (q) => q };
+        const ids = { base: [], stops: [], hatch: [], mount: [] };
+        for (const p of b.panels) {
+          ids.base.push(addPart(bg, p.name, bm, p.polys));
+          add3d(0, p.polys, faceFrame(p.face, L.W, L.D, L.H, bm.thickness, 'inner'), under, bm.color, { thickness: bm.thickness });
+        }
+        for (const p of b.parts) {
+          const id = addPart(bg, p.name, bm, p.polys);
+          ids[p.key === 'stop' ? 'stops' : p.key].push(id);
+          if (p.view) add3d(0.5, p.polys, faceFrame(p.view.face, L.W, L.D, L.H, bm.thickness, 'inner'), under, bm.color, { thickness: bm.thickness });
+        }
+        bg.steps.push(...b.steps.map((st) => st.replace(/\{(\w+)\}/g, (m, k) => (ids[k] ? fmtIds(ids[k]) : m))));
+      }
+    }
+    // <<< [T5] hidden base
   }
 
   // ---------------------------------------------------- furniture and decor

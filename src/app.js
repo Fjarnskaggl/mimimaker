@@ -39,7 +39,7 @@ import { shellSection, applyRoomLocks, appendRoofControls, syncShellRoom, shellW
 import { remixCredit, openedSharedText, openSubmitDialog, openBundleDialog } from './ui/t7.js';
 import { creatorBundle } from './share/bundle.js';
 // [T5] lighting UI
-import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
+import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField, renderSwitchFields } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
 
 const STORE_KEY = 'mimimaker.kit.v1';
@@ -502,7 +502,8 @@ function lightingInspectorPower(L) {
     h('div', { class: 'grid2' },
       renderSupplyField(L.power, changed), // [T5] supply picker
       numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
-    renderMountField(L.power, changed), // [T5] mount picker
+    renderMountField(L.power, restructured), // [T5] mount picker (restructured: the base adds switch fields)
+    renderSwitchFields(L.power, changed), // [T5] hidden base switch
     renderCoverField(L, { checkField, restructured, range: compiled.lighting?.coverRange }), // [T5] cable cover
     renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
     h('div', { class: 'grid3' },
