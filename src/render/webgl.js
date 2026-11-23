@@ -11,6 +11,7 @@ const SUN_DIR = [-0.15, -1, 1.4]; // key light from the open front, like a displ
 const DAY = { hemi: 0.7, sun: 0.65, sky: 0xfff6ea, ground: 0x9a8878, sunColor: 0xfff1dc };
 const NIGHT = { hemi: 0.1, sun: 0.06, sky: 0x8090c0, ground: 0x202028, sunColor: 0x9fb0e0 };
 const MOON = { light: 0xa9c4ff, glow: 0x7f97c8 }; // window light at night
+const SELECT_TINT = 0x0f3a44; // emissive tint on the selected piece
 
 /**
  * BufferGeometry for one compiler face: board panels become solids with real
@@ -68,6 +69,8 @@ export function createViewer(THREE) {
 
   let faces = null, bounds = sceneBounds([]), view = {}, entries = [], ledData = [];
   let lookKey = '';
+  let selectedItem = null;
+  const raycaster = new THREE.Raycaster();
   const textures = new Map(); // spec key -> { id, texture, ready }
 
   // One texture image per spec, big enough to cover any face without repeating,
@@ -195,6 +198,8 @@ export function createViewer(THREE) {
       const opacity = ghost ? (face.layer === 0 ? 0.12 : 0.06) : face.opacity;
       m.transparent = opacity < 1;
       m.opacity = opacity;
+      // the selected piece glows softly so you can see what the inspector shows
+      if (m.emissive) m.emissive.setHex(selectedItem != null && face.item === selectedItem ? SELECT_TINT : 0x000000);
       m.depthWrite = opacity >= 1;
       mesh.visible = opacity > 0;
       m.needsUpdate = true;
@@ -228,12 +233,42 @@ export function createViewer(THREE) {
       const key = opts.lookKey || '';
       if (nextFaces !== faces || key !== lookKey) { lookKey = key; build(nextFaces, opts); }
       view = { ...nextView };
+      selectedItem = view.sel?.kind === 'item' ? view.sel.index : null;
       render();
     },
     mount(parent) {
       if (canvas.parentElement !== parent) parent.appendChild(canvas);
       resize?.disconnect();
       resize?.observe(parent);
+    },
+    /**
+     * The piece under a screen point (client px): its item index, or null when
+     * the first thing hit is the room shell, an overlay or nothing. Ghosted
+     * walls are see-through, so they don't block a pick.
+     */
+    pick(clientX, clientY) {
+      const r = canvas.getBoundingClientRect();
+      if (!r.width || !r.height) return null;
+      const ndc = new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+      raycaster.setFromCamera(ndc, camera);
+      const solid = entries.filter((e) => e.mesh.visible && !e.face.glow && e.mesh.material.opacity >= 1).map((e) => e.mesh);
+      const hit = raycaster.intersectObjects(solid, false)[0];
+      if (!hit) return null;
+      return entries.find((e) => e.mesh === hit.object)?.face.item ?? null;
+    },
+    /** A client point where `item` is the front-most thing (for tests and tours), or null. */
+    pointFor(item) {
+      const r = canvas.getBoundingClientRect();
+      const v = new THREE.Vector3();
+      for (const { face, mesh } of entries) {
+        if (face.item !== item || !mesh.visible) continue;
+        const pts = face.polys[0];
+        const c = pts.reduce((s, p) => s.map((x, i) => x + p[i] / pts.length), [0, 0, 0]);
+        v.set(...c).project(camera);
+        const x = r.left + ((v.x + 1) / 2) * r.width, y = r.top + ((1 - v.y) / 2) * r.height;
+        if (this.pick(x, y) === item) return { x, y };
+      }
+      return null;
     },
     /** Render now and read back the pixels — for tests and thumbnails. */
     sample() {
@@ -257,6 +292,7 @@ export function createViewer(THREE) {
         texturesReady: [...textures.values()].every((t) => t.ready),
         meshes: entries.length, solids: entries.filter((e) => e.solid).length, flat: entries.filter((e) => !e.solid).length, pointLights: leds.visible ? leds.children.length : 0,
         shadows: renderer.shadowMap.enabled && sun.castShadow,
+        selected: selectedItem,
         windowLights: windows.visible ? windows.children.filter((o) => o.isSpotLight).length : 0,
         windowShadows: windows.children.filter((o) => o.isSpotLight).every((o) => o.castShadow),
       };

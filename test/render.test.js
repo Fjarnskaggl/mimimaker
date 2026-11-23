@@ -239,3 +239,35 @@ test('windowLights: none without windows, and capped', () => {
   const faces = compileKit({ ...kit, room: { ...kit.room, width: 600 }, openings: many }).faces3d;
   assert.equal(windowLights(faces).length, MAX_WINDOW_LIGHTS);
 });
+
+// ------------------------------------------------------- click a piece to select it
+import { renderScene } from '../src/preview3d.js';
+
+test('SVG preview tags each piece’s faces with its item index; the shell is untagged', () => {
+  const faces = compileKit(defaultKit()).faces3d;
+  const svg = renderScene(faces);
+  const tagged = [...svg.matchAll(/<path[^>]*data-item="(\d+)"/g)].map((m) => Number(m[1]));
+  const items = new Set(faces.filter((f) => f.item != null && !f.glow).map((f) => f.item));
+  assert.deepEqual([...new Set(tagged)].sort(), [...items].sort());
+  const untagged = (svg.match(/<path(?![^>]*data-item)[^>]*>/g) || []).length;
+  assert.ok(untagged >= faces.filter((f) => f.item == null).length, 'shell, overlays and lights stay untagged');
+});
+
+test('SVG preview outlines the selected piece', () => {
+  const faces = compileKit(defaultKit()).faces3d;
+  assert.ok(!renderScene(faces).includes('class="sel"'));
+  const svg = renderScene(faces, { selected: 1 });
+  const sel = [...svg.matchAll(/<path[^>]*class="sel"[^>]*>/g)].map((m) => m[0]);
+  assert.ok(sel.length > 0);
+  for (const p of sel) assert.match(p, /data-item="1"/);
+});
+
+test('ghosted walls and light halos let clicks through to the pieces behind them', () => {
+  const svg = renderScene(compileKit(defaultKit()).faces3d, { yaw: -32, pitch: 26, night: true });
+  const ghosts = [...svg.matchAll(/<path[^>]*fill-opacity="0\.(?:12|06)"[^>]*>/g)].map((m) => m[0]);
+  assert.ok(ghosts.length > 0, 'the default view ghosts the left wall');
+  for (const g of ghosts) assert.match(g, /pointer-events="none"/);
+  const halos = [...svg.matchAll(/<path class="halo"[^>]*>/g)].map((m) => m[0]);
+  assert.ok(halos.length > 0);
+  for (const h of halos) assert.match(h, /pointer-events="none"/);
+});

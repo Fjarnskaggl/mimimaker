@@ -26,7 +26,7 @@ import { makeZip } from './zip.js';
 import { icon, MIMI, MARK } from './ui/art.js';
 import { checksSummary } from './ui/checks.js';
 // T6: WebGL viewer + SVG fallback
-import { drawStage, rendererToggle, texturePicker } from './ui/t6.js';
+import { drawStage, rendererToggle, texturePicker, attachPicking } from './ui/t6.js';
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 // T3 wiring: per-machine cut files
@@ -654,6 +654,7 @@ function build3d(bar) {
   const end = () => { drag = null; };
   stage.addEventListener('pointerup', end);
   stage.addEventListener('pointercancel', end);
+  attachPicking(stage, (index) => select({ kind: 'item', index })); // T6: click a piece to select it
   return h('div', { class: 'stage-wrap' }, stage, bar, foot);
 }
 function drawScene() {
