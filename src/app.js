@@ -491,7 +491,7 @@ function drawScene() {
   const stage = document.querySelector('.stage');
   if (!stage || !compiled) return;
   stage.classList.toggle('night', view.night);
-  drawStage(stage, compiled.faces3d, view); // T6
+  drawStage(stage, compiled.faces3d, view, kit); // T6
 }
 
 function renderCalibration() {

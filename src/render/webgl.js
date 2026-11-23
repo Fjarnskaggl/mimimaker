@@ -3,6 +3,8 @@
 // animation loop), so an idle preview costs nothing.
 
 import { cameraDirection, cameraPose, sceneBounds, ledLights, layerOffset, faceThickness, extrudeFace } from './scene.js';
+import { textureSVG } from '../textures/index.js';
+import { textureFrame } from '../textures/look.js';
 
 const FOV = 35;
 const SUN_DIR = [-0.15, -1, 1.4]; // key light from the open front, like a display lamp
@@ -14,7 +16,7 @@ const NIGHT = { hemi: 0.1, sun: 0.06, sky: 0x8090c0, ground: 0x202028, sunColor:
  * thickness (outline and holes extruded behind the face); overlays stay flat,
  * lifted a hair off their wall.
  */
-function faceGeometry(THREE, face) {
+function faceGeometry(THREE, face, texSize = 0) {
   const triangulate = (contour, holes) => THREE.ShapeUtils.triangulateShape(
     contour.map(([u, v]) => new THREE.Vector2(u, v)),
     holes.map((h) => h.map(([u, v]) => new THREE.Vector2(u, v))),
@@ -23,6 +25,16 @@ function faceGeometry(THREE, face) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  if (texSize > 0) {
+    // sheet mm along the face's texture axes; canvas y runs down, texture v up
+    const { uv } = textureFrame(face);
+    const uvs = [];
+    for (let i = 0; i < positions.length; i += 3) {
+      const [x, y] = uv([positions[i], positions[i + 1], positions[i + 2]]);
+      uvs.push(x / texSize, 1 - y / texSize);
+    }
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  }
   return g;
 }
 
@@ -53,30 +65,68 @@ export function createViewer(THREE) {
   scene.add(model, leds);
 
   let faces = null, bounds = sceneBounds([]), view = {}, entries = [], ledData = [];
+  let lookKey = '';
+  const textures = new Map(); // spec key -> { id, texture, ready }
+
+  // One texture image per spec, big enough to cover any face without repeating,
+  // rasterised from the same SVG that would be printed.
+  function textureFor(spec, scale, sizeMm, fallback) {
+    const key = JSON.stringify([spec.id, spec.params, spec.seed, scale, sizeMm]);
+    if (textures.has(key)) return textures.get(key);
+    const px = Math.min(2048, Math.max(512, Math.round(sizeMm * 8)));
+    const cnv = document.createElement('canvas');
+    cnv.width = cnv.height = px;
+    const ctx = cnv.getContext('2d');
+    ctx.fillStyle = fallback;
+    ctx.fillRect(0, 0, px, px);
+    const texture = new THREE.CanvasTexture(cnv);
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const entry = { id: spec.id, texture, ready: false };
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, px, px);
+      texture.needsUpdate = true;
+      entry.ready = true;
+      if (faces) render();
+    };
+    img.onerror = () => { entry.ready = true; entry.failed = true; };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(textureSVG(spec.id, { width: sizeMm, height: sizeMm, scale, seed: spec.seed, params: spec.params }));
+    textures.set(key, entry);
+    return entry;
+  }
   let size = [0, 0];
 
   function clear() {
     for (const e of entries) { e.mesh.geometry.dispose(); e.mesh.material.dispose(); }
+    for (const t of textures.values()) t.texture.dispose();
+    textures.clear();
     model.clear();
     leds.clear();
     entries = [];
   }
 
-  function build(next) {
+  function build(next, opts) {
     clear();
     faces = next;
     bounds = sceneBounds(faces);
+    const texSize = Math.ceil(Math.max(...bounds.max.map((v, i) => v - bounds.min[i]), 10));
     for (const face of faces) {
       if (!face.polys.length || face.polys[0].length < 3) continue;
       const glow = face.glow;
+      const spec = !glow && opts.textureOf ? opts.textureOf(face) : null;
+      const tex = spec ? textureFor(spec, opts.scale || 12, texSize, face.color) : null;
       const material = glow
         ? new THREE.MeshBasicMaterial({ color: face.color, transparent: face.opacity < 1, opacity: face.opacity, depthWrite: face.opacity >= 1 })
-        : new THREE.MeshStandardMaterial({ color: face.color, roughness: 0.88, metalness: 0, side: face.cull || faceThickness(face) > 0 ? THREE.FrontSide : THREE.DoubleSide });
-      const mesh = new THREE.Mesh(faceGeometry(THREE, face), material);
+        : new THREE.MeshStandardMaterial({
+          color: tex ? 0xffffff : face.color, map: tex ? tex.texture : null, roughness: 0.88, metalness: 0,
+          side: face.cull || faceThickness(face) > 0 ? THREE.FrontSide : THREE.DoubleSide,
+        });
+      const mesh = new THREE.Mesh(faceGeometry(THREE, face, tex ? texSize : 0), material);
       mesh.castShadow = !glow;
       mesh.receiveShadow = !glow;
       model.add(mesh);
-      entries.push({ face, mesh, solid: faceThickness(face) > 0 });
+      entries.push({ face, mesh, solid: faceThickness(face) > 0, texture: tex });
     }
     ledData = ledLights(faces);
     // several LEDs share the room: keep the total roughly constant so it doesn't blow out
@@ -139,9 +189,14 @@ export function createViewer(THREE) {
 
   return {
     canvas,
-    /** Show `faces` from `view` ({yaw, pitch, zoom, night}); rebuilds only when faces change. */
-    update(nextFaces, nextView) {
-      if (nextFaces !== faces) build(nextFaces);
+    /**
+     * Show `faces` from `view` ({yaw, pitch, zoom, night}). opts.textureOf(face)
+     * returns a texture spec or null; opts.lookKey changes when the look does.
+     * Rebuilds only when the faces or the look change.
+     */
+    update(nextFaces, nextView, opts = {}) {
+      const key = opts.lookKey || '';
+      if (nextFaces !== faces || key !== lookKey) { lookKey = key; build(nextFaces, opts); }
       view = { ...nextView };
       render();
     },
@@ -167,6 +222,9 @@ export function createViewer(THREE) {
       }
       return {
         lit: lit / (W * H), mean: lit ? sum / lit : 0, max, hash,
+        textured: entries.filter((e) => e.texture).length,
+        textures: [...new Set(entries.filter((e) => e.texture).map((e) => e.texture.id))].sort(),
+        texturesReady: [...textures.values()].every((t) => t.ready),
         meshes: entries.length, solids: entries.filter((e) => e.solid).length, flat: entries.filter((e) => !e.solid).length, pointLights: leds.visible ? leds.children.length : 0,
         shadows: renderer.shadowMap.enabled && sun.castShadow,
       };

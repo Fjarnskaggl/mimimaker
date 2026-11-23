@@ -5,6 +5,7 @@
 import { renderScene } from '../preview3d.js';
 import { loadThree, webglSupported } from '../render/three-loader.js';
 import { createViewer } from '../render/webgl.js';
+import { resolveLook, faceMaterial } from '../textures/look.js';
 
 const PREF_KEY = 'mimimaker.t6.webgl';
 const state = { want: readPref(), viewer: null, loading: false, failed: null, last: null, button: null };
@@ -43,7 +44,7 @@ function disposeViewer() {
 
 function redrawLast() {
   const l = state.last;
-  if (l && l.stage.isConnected) drawStage(l.stage, l.faces, l.view);
+  if (l && l.stage.isConnected) drawStage(l.stage, l.faces, l.view, l.kit);
 }
 
 function startViewer() {
@@ -78,12 +79,17 @@ function startViewer() {
  * "svg"; while the viewer is wanted but not running, stage.dataset.webgl is
  * "loading" or "unavailable".
  */
-export function drawStage(stage, faces, view) {
-  state.last = { stage, faces, view };
+export function drawStage(stage, faces, view, kit = null) {
+  state.last = { stage, faces, view, kit };
   if (state.want && state.viewer) {
     for (const child of [...stage.children]) if (child !== state.viewer.canvas) child.remove();
     state.viewer.mount(stage);
-    state.viewer.update(faces, view);
+    const look = kit ? resolveLook(kit) : {};
+    state.viewer.update(faces, view, {
+      textureOf: (face) => look[faceMaterial(face, kit)] || null,
+      lookKey: JSON.stringify([look, kit?.scale]),
+      scale: kit?.scale,
+    });
     stage.dataset.renderer = 'webgl';
     stage.dataset.webgl = 'on';
     stage.t6viewer = state.viewer;
