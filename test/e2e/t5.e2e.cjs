@@ -102,7 +102,12 @@ test('the power box can be mounted flush behind its wall', async () => {
 
 test('a light can become a ceiling fan with a blade-span field, and the kit cuts its blades', async () => {
   const page = await open();
-  await page.evaluate(() => { window.mimimaker.kit.room.ceiling = true; window.mimimaker.refresh(); });
+  await page.evaluate(() => {
+    const k = window.mimimaker.kit;
+    k.room.ceiling = true;
+    k.lighting.leds[0] = { mount: 'ceiling', x: 150, y: 100, color: 'warm' }; // a fan belongs on the ceiling
+    window.mimimaker.refresh();
+  });
   await page.click('[data-step=light]');
   await page.click('[data-select-led="0"]');
   await page.selectOption('select[data-t5=effect]', 'fan');
