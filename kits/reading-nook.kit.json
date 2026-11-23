@@ -1,0 +1,304 @@
+{
+  "format": "mimimaker-kit",
+  "formatVersion": 1,
+  "meta": {
+    "id": "reading-nook",
+    "title": "Cozy Reading Nook",
+    "author": "mimimaker",
+    "licence": "CC0",
+    "remixedFrom": null,
+    "description": "Bookshelf, armchair and a glowing floor lamp under an arched window.",
+    "tags": [
+      "starter"
+    ]
+  },
+  "kit": {
+    "version": 1,
+    "scale": 24,
+    "machine": "maker",
+    "fingerWidth": 0,
+    "tabWidth": 5,
+    "drawLabels": false,
+    "materials": [
+      {
+        "id": "chip2",
+        "name": "Chipboard 2.0 mm",
+        "thickness": 2,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#b8956a",
+        "cricut": "Heavy Chipboard – 2.0 mm",
+        "passes": 16,
+        "speed": 12
+      },
+      {
+        "id": "chip15",
+        "name": "Chipboard 1.5 mm",
+        "thickness": 1.5,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#c9a77d",
+        "cricut": "Chipboard – 1.5 mm",
+        "passes": 13,
+        "speed": 12
+      },
+      {
+        "id": "bass16",
+        "name": "Basswood 1/16\" (1.6 mm)",
+        "thickness": 1.6,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#e6d2a6",
+        "cricut": "Basswood – 1/16\"",
+        "passes": 11,
+        "speed": 12
+      },
+      {
+        "id": "bass08",
+        "name": "Basswood 1/32\" (0.8 mm)",
+        "thickness": 0.8,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#eedfbf",
+        "cricut": "Basswood – 1/32\"",
+        "passes": 6,
+        "speed": 12
+      },
+      {
+        "id": "card110",
+        "name": "Heavy cardstock 110 lb",
+        "thickness": 0.38,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#f3efe4",
+        "cricut": "Heavy Cardstock – 100 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "card65",
+        "name": "Cardstock 65 lb",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#c9d8e2",
+        "cricut": "Medium Cardstock – 80 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "paper",
+        "name": "Patterned paper",
+        "thickness": 0.15,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#e8c4bb",
+        "cricut": "Patterned Paper",
+        "passes": 1,
+        "speed": 60
+      },
+      {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
+        "id": "felt",
+        "name": "Craft felt 1 mm",
+        "thickness": 1,
+        "kind": "fabric",
+        "tool": "rotary",
+        "sheet": [
+          229,
+          305
+        ],
+        "color": "#9db592",
+        "cricut": "Felt",
+        "passes": 1,
+        "speed": 35
+      }
+    ],
+    "name": "Cozy Reading Nook",
+    "room": {
+      "width": 300,
+      "depth": 220,
+      "height": 260,
+      "ceiling": false,
+      "material": "chip2",
+      "wallpaper": {
+        "enabled": true,
+        "material": "paper"
+      },
+      "floor": {
+        "enabled": true,
+        "material": "card65"
+      },
+      "trimMaterial": "card110"
+    },
+    "openings": [
+      {
+        "wall": "back",
+        "kind": "arch",
+        "pos": 175,
+        "sill": 90,
+        "width": 80,
+        "height": 120,
+        "trim": true
+      },
+      {
+        "wall": "right",
+        "kind": "archdoor",
+        "pos": 130,
+        "sill": 0,
+        "width": 85,
+        "height": 210,
+        "trim": true
+      }
+    ],
+    "items": [
+      {
+        "type": "bookshelf",
+        "material": "bass16",
+        "x": 15,
+        "y": 0,
+        "rot": 0,
+        "params": {
+          "w": 80,
+          "d": 30,
+          "h": 180,
+          "shelves": 3
+        }
+      },
+      {
+        "type": "armchair",
+        "params": {
+          "w": 70,
+          "d": 65,
+          "seat": 40,
+          "back": 85,
+          "arm": 12,
+          "armh": 55
+        },
+        "material": "chip15",
+        "x": 135,
+        "y": 70,
+        "rot": 0
+      },
+      {
+        "type": "nightstand",
+        "material": "card110",
+        "x": 245,
+        "y": 10,
+        "rot": 0,
+        "params": {
+          "w": 45,
+          "d": 40,
+          "h": 55,
+          "count": 2
+        }
+      },
+      {
+        "type": "floorlamp",
+        "material": "card110",
+        "x": 210,
+        "y": 75,
+        "rot": 0,
+        "params": {
+          "w": 35,
+          "h": 160,
+          "shade": 28
+        }
+      },
+      {
+        "type": "rug",
+        "params": {
+          "w": 150,
+          "d": 100,
+          "shape": "oval"
+        },
+        "material": "felt",
+        "x": 100,
+        "y": 60,
+        "rot": 0
+      },
+      {
+        "type": "frame",
+        "params": {
+          "w": 40,
+          "h": 55,
+          "border": 5
+        },
+        "material": "card110",
+        "wall": "back",
+        "pos": 262,
+        "elev": 160
+      }
+    ],
+    "lighting": {
+      "enabled": true,
+      "holeDiameter": 3,
+      "power": {
+        "wall": "back",
+        "pos": 280,
+        "elev": 25,
+        "kind": "battery"
+      },
+      "leds": [
+        {
+          "name": "Wall sconce",
+          "mount": "wall",
+          "wall": "back",
+          "pos": 115,
+          "elev": 200,
+          "color": "warm"
+        },
+        {
+          "name": "Floor lamp",
+          "mount": "floor",
+          "x": 227,
+          "y": 92,
+          "color": "warm"
+        }
+      ]
+    },
+    "roomType": "reading-nook"
+  }
+}

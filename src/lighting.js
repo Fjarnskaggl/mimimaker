@@ -18,6 +18,7 @@ import { planCircuit, supplyFor } from './lighting/circuit.js';
 import { effectOf, effectLoad, effectWarnings } from './lighting/effects.js';
 import { planCutouts } from './lighting/cutouts.js';
 import { planCover, coverRange } from './lighting/cover.js';
+import { wiredLights, planShellLed } from './lighting/shell.js';
 
 export const LED_COLORS = {
   warm: { name: 'Warm white', hex: '#ffc767' },
@@ -98,7 +99,8 @@ export function routeWire(a, b, dims, obstacles = []) {
 
 /**
  * @param lighting kit.lighting
- * @param ctx { s, t, W, D, H, Wi, Di, Hi, ceiling, wallInfo, openings }
+ * @param ctx { s, t, W, D, H, Wi, Di, Hi, ceiling, wallInfo, openings, shellLights? }
+ *   shellLights: LEDs a shell places itself, with wire paths to its own back-wall holes (lighting/shell.js)
  */
 export function planLighting(lighting, ctx) {
   const warnings = [];
@@ -157,6 +159,12 @@ export function planLighting(lighting, ctx) {
       effect: effectOf(led), load: effectLoad(led),
     });
   });
+  // LEDs the shell places itself: its own holes, wired from there (#16)
+  for (const light of wiredLights(ctx.shellLights)) {
+    const led = planShellLed(light, leds.length, { power, t, route: (a, b) => routeWire(a, b, ctx, obstacles) });
+    if (led.crossesOpening) warnings.push(`${led.label}'s wire would cross a window or door on the outside — tape it around the opening by hand.`);
+    leds.push(led);
+  }
   if (leds.some((l) => l.face === 'bottom')) {
     warnings.push({ level: 'info', msg: 'Floor lights feed their wires underneath the room — glue 3–4 mm feet (or felt pads) under the floor so the wires aren\'t pinched.' });
   }

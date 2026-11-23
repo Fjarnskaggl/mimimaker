@@ -48,6 +48,11 @@ export function ledMapSVG(compiled, { standalone = false } = {}) {
     const c = WIRE_COLORS[i % WIRE_COLORS.length];
     const pts = led.route.map((p) => P(p).map(f).join(' ')).join(' ');
     out.push(`<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="${f(fs * 0.22)}" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`);
+    // a shell LED's run inside the shell (seen through the back wall), dashed
+    if (led.inside?.length > 1) {
+      const ins = led.inside.map((p) => P(p).map(f).join(' ')).join(' ');
+      out.push(`<polyline class="inside" points="${ins}" fill="none" stroke="${c}" stroke-width="${f(fs * 0.16)}" stroke-dasharray="${f(fs * 0.5)} ${f(fs * 0.3)}" stroke-linejoin="round" opacity="0.8"/>`);
+    }
   });
   // power box
   const [px, py] = P(lighting.power.p);
@@ -109,7 +114,7 @@ export function ledRows(compiled) {
   if (!lighting?.enabled) return [];
   const where = { back: 'Back wall', left: 'Left wall', right: 'Right wall', top: 'Ceiling', bottom: 'Floor' };
   return lighting.leds.map((l, i) => ({
-    label: l.label, name: l.name, where: where[l.face], color: LED_COLORS[l.color]?.name || l.color,
+    label: l.label, name: l.name, where: l.where || where[l.face], color: LED_COLORS[l.color]?.name || l.color,
     wireColor: WIRE_COLORS[i % WIRE_COLORS.length], runCm: l.length / 10, leadCm: l.leadCm,
     effect: (EFFECTS[l.effect] || EFFECTS.steady).name,
   }));

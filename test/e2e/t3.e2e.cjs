@@ -105,6 +105,33 @@ test('hand-cut PDF: a secondary button on Make, and both papers in the zip', asy
   await page.close();
 });
 
+test('print-then-cut: a Make button downloads the print sheets, and the kit zip carries them', async () => {
+  const page = await open();
+  await page.click('[data-step=make]');
+  const btn = page.locator('.page-head #btn-printcut');
+  assert.match(await btn.textContent(), /Print then cut/);
+  assert.doesNotMatch(await btn.getAttribute('class'), /mm-btn--primary/);
+  assert.equal(await btn.isDisabled(), false, 'the default room has wallpaper and flooring textures');
+  const [dl] = await Promise.all([page.waitForEvent('download'), btn.click()]);
+  assert.match(dl.suggestedFilename(), /-print-then-cut\.zip$/);
+  const text = fs.readFileSync(await dl.path()).toString('latin1');
+  assert.ok(/print-then-cut\/print-sheet-[\w-]+-1\.svg/.test(text) && text.includes('print-then-cut/print-then-cut.pdf'));
+  const [zip] = await Promise.all([page.waitForEvent('download'), page.click('#btn-zip')]);
+  assert.ok(fs.readFileSync(await zip.path()).toString('latin1').includes('print-then-cut/README.txt'));
+  await shot(page, 'printcut-button');
+
+  // no textures, nothing to print: the button is disabled
+  await page.evaluate(() => {
+    const m = window.mimimaker;
+    m.kit.look = { textures: { [m.kit.room.wallpaper.material]: null, [m.kit.room.floor.material]: null } };
+    m.refresh();
+  });
+  await page.click('[data-step=make]');
+  await page.waitForFunction(() => document.querySelector('#btn-printcut')?.disabled === true);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 // ------------------------------------------------------- material library
 async function openLibrary(page) {
   await page.click('[data-step=make]');
