@@ -1,0 +1,300 @@
+{
+  "format": "mimimaker-kit",
+  "formatVersion": 1,
+  "meta": {
+    "id": "living-room",
+    "title": "Fireside Living Room",
+    "author": "mimimaker",
+    "licence": "CC0",
+    "remixedFrom": null,
+    "description": "Sofa, fireplace with a flickering glow, media unit and TV, floor lamp and rug.",
+    "tags": [
+      "starter"
+    ]
+  },
+  "kit": {
+    "version": 1,
+    "scale": 24,
+    "machine": "maker",
+    "fingerWidth": 0,
+    "tabWidth": 5,
+    "drawLabels": false,
+    "materials": [
+      {
+        "id": "chip2",
+        "name": "Chipboard 2.0 mm",
+        "thickness": 2,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#b8956a",
+        "cricut": "Heavy Chipboard – 2.0 mm",
+        "passes": 16,
+        "speed": 12
+      },
+      {
+        "id": "chip15",
+        "name": "Chipboard 1.5 mm",
+        "thickness": 1.5,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#c9a77d",
+        "cricut": "Chipboard – 1.5 mm",
+        "passes": 13,
+        "speed": 12
+      },
+      {
+        "id": "bass16",
+        "name": "Basswood 1/16\" (1.6 mm)",
+        "thickness": 1.6,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#e6d2a6",
+        "cricut": "Basswood – 1/16\"",
+        "passes": 11,
+        "speed": 12
+      },
+      {
+        "id": "bass08",
+        "name": "Basswood 1/32\" (0.8 mm)",
+        "thickness": 0.8,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#eedfbf",
+        "cricut": "Basswood – 1/32\"",
+        "passes": 6,
+        "speed": 12
+      },
+      {
+        "id": "card110",
+        "name": "Heavy cardstock 110 lb",
+        "thickness": 0.38,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#26262b",
+        "cricut": "Heavy Cardstock – 100 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "card65",
+        "name": "Cardstock 65 lb",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#b9c8b3",
+        "cricut": "Medium Cardstock – 80 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "paper",
+        "name": "Patterned paper",
+        "thickness": 0.15,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#e6d9c3",
+        "cricut": "Patterned Paper",
+        "passes": 1,
+        "speed": 60
+      },
+      {
+        "id": "felt",
+        "name": "Craft felt 1 mm",
+        "thickness": 1,
+        "kind": "fabric",
+        "tool": "rotary",
+        "sheet": [
+          229,
+          305
+        ],
+        "color": "#9db592",
+        "cricut": "Felt",
+        "passes": 1,
+        "speed": 35
+      }
+    ],
+    "name": "Fireside Living Room",
+    "room": {
+      "width": 360,
+      "depth": 260,
+      "height": 260,
+      "ceiling": false,
+      "material": "chip2",
+      "wallpaper": {
+        "enabled": true,
+        "material": "paper"
+      },
+      "floor": {
+        "enabled": true,
+        "material": "card65"
+      },
+      "trimMaterial": "card110"
+    },
+    "openings": [
+      {
+        "wall": "back",
+        "kind": "window",
+        "pos": 42,
+        "sill": 100,
+        "width": 50,
+        "height": 100,
+        "trim": true
+      }
+    ],
+    "items": [
+      {
+        "type": "sofa",
+        "params": {
+          "w": 200,
+          "d": 85,
+          "seat": 42,
+          "back": 82,
+          "arm": 18,
+          "armh": 60
+        },
+        "material": "chip15",
+        "x": 80,
+        "y": 0,
+        "rot": 0
+      },
+      {
+        "type": "bench",
+        "params": {
+          "w": 100,
+          "d": 50,
+          "h": 42
+        },
+        "material": "bass16",
+        "x": 130,
+        "y": 120,
+        "rot": 0
+      },
+      {
+        "type": "fireplace",
+        "params": {
+          "w": 120,
+          "d": 35,
+          "h": 105
+        },
+        "material": "chip15",
+        "x": 0,
+        "y": 70,
+        "rot": 90
+      },
+      {
+        "type": "tvstand",
+        "params": {
+          "w": 150,
+          "d": 40,
+          "h": 50,
+          "shelves": 1
+        },
+        "material": "bass16",
+        "x": 320,
+        "y": 60,
+        "rot": 270
+      },
+      {
+        "type": "tv",
+        "params": {
+          "w": 100,
+          "h": 60
+        },
+        "material": "card110",
+        "wall": "right",
+        "pos": 125,
+        "elev": 110
+      },
+      {
+        "type": "floorlamp",
+        "params": {
+          "w": 35,
+          "h": 160,
+          "shade": 28
+        },
+        "material": "card65",
+        "x": 290,
+        "y": 5,
+        "rot": 0
+      },
+      {
+        "type": "rug",
+        "params": {
+          "w": 220,
+          "d": 120,
+          "shape": "rect"
+        },
+        "material": "felt",
+        "x": 70,
+        "y": 110,
+        "rot": 0
+      },
+      {
+        "type": "frame",
+        "params": {
+          "w": 60,
+          "h": 40,
+          "border": 4
+        },
+        "material": "card110",
+        "wall": "back",
+        "pos": 180,
+        "elev": 170
+      }
+    ],
+    "lighting": {
+      "enabled": true,
+      "holeDiameter": 3,
+      "power": {
+        "wall": "back",
+        "pos": 340,
+        "elev": 25,
+        "kind": "battery"
+      },
+      "leds": [
+        {
+          "name": "Fire glow",
+          "mount": "floor",
+          "x": 17,
+          "y": 130,
+          "color": "amber"
+        },
+        {
+          "name": "Floor lamp",
+          "mount": "floor",
+          "x": 307,
+          "y": 22,
+          "color": "warm"
+        }
+      ]
+    }
+  }
+}

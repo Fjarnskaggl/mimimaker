@@ -1,0 +1,312 @@
+{
+  "format": "mimimaker-kit",
+  "formatVersion": 1,
+  "meta": {
+    "id": "studio",
+    "title": "Attic Studio",
+    "author": "mimimaker",
+    "licence": "CC0",
+    "remixedFrom": null,
+    "description": "Daybed under fairy lights, writing desk, dresser and a wall shelf for plants.",
+    "tags": [
+      "starter"
+    ]
+  },
+  "kit": {
+    "version": 1,
+    "scale": 24,
+    "machine": "maker",
+    "fingerWidth": 0,
+    "tabWidth": 5,
+    "drawLabels": false,
+    "materials": [
+      {
+        "id": "chip2",
+        "name": "Chipboard 2.0 mm",
+        "thickness": 2,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#b8956a",
+        "cricut": "Heavy Chipboard – 2.0 mm",
+        "passes": 16,
+        "speed": 12
+      },
+      {
+        "id": "chip15",
+        "name": "Chipboard 1.5 mm",
+        "thickness": 1.5,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#c9a77d",
+        "cricut": "Chipboard – 1.5 mm",
+        "passes": 13,
+        "speed": 12
+      },
+      {
+        "id": "bass16",
+        "name": "Basswood 1/16\" (1.6 mm)",
+        "thickness": 1.6,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#e6d2a6",
+        "cricut": "Basswood – 1/16\"",
+        "passes": 11,
+        "speed": 12
+      },
+      {
+        "id": "bass08",
+        "name": "Basswood 1/32\" (0.8 mm)",
+        "thickness": 0.8,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#eedfbf",
+        "cricut": "Basswood – 1/32\"",
+        "passes": 6,
+        "speed": 12
+      },
+      {
+        "id": "card110",
+        "name": "Heavy cardstock 110 lb",
+        "thickness": 0.38,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#fffaf0",
+        "cricut": "Heavy Cardstock – 100 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "card65",
+        "name": "Cardstock 65 lb",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#d6c09d",
+        "cricut": "Medium Cardstock – 80 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "paper",
+        "name": "Patterned paper",
+        "thickness": 0.15,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#f2e2b6",
+        "cricut": "Patterned Paper",
+        "passes": 1,
+        "speed": 60
+      },
+      {
+        "id": "felt",
+        "name": "Craft felt 1 mm",
+        "thickness": 1,
+        "kind": "fabric",
+        "tool": "rotary",
+        "sheet": [
+          229,
+          305
+        ],
+        "color": "#9db592",
+        "cricut": "Felt",
+        "passes": 1,
+        "speed": 35
+      }
+    ],
+    "name": "Attic Studio",
+    "room": {
+      "width": 300,
+      "depth": 240,
+      "height": 250,
+      "ceiling": false,
+      "material": "chip2",
+      "wallpaper": {
+        "enabled": true,
+        "material": "paper"
+      },
+      "floor": {
+        "enabled": true,
+        "material": "card65"
+      },
+      "trimMaterial": "card110"
+    },
+    "openings": [
+      {
+        "wall": "back",
+        "kind": "window",
+        "pos": 240,
+        "sill": 100,
+        "width": 60,
+        "height": 80,
+        "trim": true
+      },
+      {
+        "wall": "right",
+        "kind": "door",
+        "pos": 50,
+        "sill": 0,
+        "width": 80,
+        "height": 200,
+        "trim": true
+      }
+    ],
+    "items": [
+      {
+        "type": "bed",
+        "params": {
+          "w": 90,
+          "d": 200,
+          "h": 40,
+          "head": 80
+        },
+        "material": "chip15",
+        "x": 0,
+        "y": 150,
+        "rot": 90
+      },
+      {
+        "type": "dresser",
+        "params": {
+          "w": 90,
+          "d": 45,
+          "h": 95,
+          "count": 4
+        },
+        "material": "bass16",
+        "x": 60,
+        "y": 0,
+        "rot": 0
+      },
+      {
+        "type": "desk",
+        "params": {
+          "w": 100,
+          "d": 55,
+          "h": 75
+        },
+        "material": "bass16",
+        "x": 190,
+        "y": 0,
+        "rot": 0
+      },
+      {
+        "type": "chair",
+        "params": {
+          "w": 45,
+          "d": 45,
+          "seat": 45,
+          "back": 90
+        },
+        "material": "bass16",
+        "x": 217,
+        "y": 60,
+        "rot": 180
+      },
+      {
+        "type": "wallshelf",
+        "params": {
+          "w": 80,
+          "d": 30,
+          "h": 60,
+          "shelves": 1
+        },
+        "material": "bass16",
+        "wall": "back",
+        "pos": 105,
+        "elev": 165
+      },
+      {
+        "type": "plant",
+        "params": {
+          "w": 30,
+          "h": 30,
+          "leaf": 70
+        },
+        "material": "card65",
+        "x": 10,
+        "y": 0,
+        "rot": 0
+      },
+      {
+        "type": "rug",
+        "params": {
+          "w": 120,
+          "d": 80,
+          "shape": "round"
+        },
+        "material": "felt",
+        "x": 70,
+        "y": 55,
+        "rot": 0
+      },
+      {
+        "type": "frame",
+        "params": {
+          "w": 40,
+          "h": 50,
+          "border": 4
+        },
+        "material": "card110",
+        "wall": "right",
+        "pos": 170,
+        "elev": 150
+      }
+    ],
+    "lighting": {
+      "enabled": true,
+      "holeDiameter": 3,
+      "power": {
+        "wall": "back",
+        "pos": 20,
+        "elev": 25,
+        "kind": "battery"
+      },
+      "leds": [
+        {
+          "name": "Desk lamp",
+          "mount": "wall",
+          "wall": "back",
+          "pos": 195,
+          "elev": 110,
+          "color": "warm"
+        },
+        {
+          "name": "Fairy lights",
+          "mount": "wall",
+          "wall": "left",
+          "pos": 45,
+          "elev": 120,
+          "color": "warm"
+        }
+      ]
+    }
+  }
+}
