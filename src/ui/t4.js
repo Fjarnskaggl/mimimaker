@@ -13,7 +13,7 @@ import {
   progressKey, emptyProgress, loadProgress, saveProgress,
   toggleStep, togglePart, goTo, summary, startTimer, timerLeft, formatClock,
 } from '../build/progress.js';
-import { billOfMaterials } from '../build/bom.js';
+import { billOfMaterials, costText, totalText } from '../build/bom.js';
 import { explodedViewSVG, faceParts } from '../build/exploded.js';
 import { jointGraph } from '../build/joints.js';
 import { formatMinutes } from '../make.js';
@@ -96,7 +96,6 @@ const writeMode = (m) => { try { store()?.setItem(MODE_KEY, m); } catch { /* pri
 /** Glue clock; tests speed it up with window.__t4Speed. */
 const clock = () => Date.now() * (Number(window.__t4Speed) || 1);
 
-const money = (c) => `$${c.low.toFixed(2)}–${c.high.toFixed(2)}`;
 
 /** The step's exploded view (trusted SVG from our own renderer). */
 function exploded(svg) {
@@ -112,10 +111,10 @@ function bomDetails(kit, compiled, steps) {
   let bom;
   try { bom = billOfMaterials(kit, compiled, steps); } catch (err) { console.error('bill of materials', err); return null; }
   const list = (title, items) => (items.length ? [el('h4', {}, title), el('ul', {}, items.map((i) => el('li', {},
-    el('span', {}, `${i.qty}×`), el('span', {}, i.name), el('span', { class: 'cost' }, money(i.cost)), el('small', {}, i.note))))] : []);
+    el('span', {}, `${i.qty}×`), el('span', {}, i.name), el('span', { class: 'cost' }, costText(i.cost)), el('small', {}, i.note))))] : []);
   const t = bom.time;
   return el('details', { class: 't4-bom' },
-    el('summary', {}, `What you'll need · about ${money(bom.total)} · ${bom.difficulty.level} · about ${formatMinutes(t.totalMin)}`),
+    el('summary', {}, `What you'll need · about ${totalText(bom)} · ${bom.difficulty.level} · about ${formatMinutes(t.totalMin)}`),
     ...list('Sheets', bom.sheets),
     ...list('Glue and supplies', bom.supplies),
     ...list('Lights', bom.lights),

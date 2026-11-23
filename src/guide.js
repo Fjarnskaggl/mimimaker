@@ -6,7 +6,7 @@ import { shoppingList } from './lighting/shopping.js';
 import { renderScene } from './preview3d.js';
 import { ledMapSVG, ledRows, powerName } from './ledmap.js';
 import { buildSteps, stepJointKinds } from './build/steps.js';
-import { billOfMaterials } from './build/bom.js';
+import { billOfMaterials, costText, totalText } from './build/bom.js';
 import { explodedViewSVG, faceParts } from './build/exploded.js';
 import { jointGraph } from './build/joints.js';
 import { formatMinutes } from './make.js';
@@ -121,8 +121,7 @@ export function guideHTML(kit, compiled) {
   // extras never block the guide: without a bill it reads as before
   let bom = null;
   try { bom = billOfMaterials(kit, compiled, stepList); } catch (e) { console.warn('bill of materials skipped:', e); }
-  const range = (c) => `$${money(c.low)}–${money(c.high)}`;
-  const bomRow = (i) => `<tr><td>${i.qty}</td><td>${esc(i.name)}</td><td>${esc(i.note)}</td><td>${range(i.cost)}</td></tr>`;
+  const bomRow = (i) => `<tr><td>${i.qty}</td><td>${esc(i.name)}</td><td>${esc(i.note)}</td><td>${esc(costText(i.cost))}</td></tr>`;
   const lightCost = (bom?.lights || []).reduce((t, i) => ({ low: t.low + i.cost.low, high: t.high + i.cost.high }), { low: 0, high: 0 });
   // glue to have on hand, from the bill when there is one
   const glueNames = { pva: 'PVA / tacky glue', stick: 'a glue stick', clear: 'clear-drying glue' };
@@ -130,8 +129,8 @@ export function guideHTML(kit, compiled) {
   const bomSection = !bom ? '' : `
   <h2>Bill of materials</h2>
   <table class="buying bom"><tr><th>Qty</th><th>Item</th><th>Note</th><th>Est. cost</th></tr>${[...bom.sheets, ...bom.supplies].map(bomRow).join('')}${
-  list ? `<tr><td></td><td>Lights</td><td>see “What to buy for the lights”</td><td>${range(lightCost)}</td></tr>` : bom.lights.map(bomRow).join('')
-}<tr class="total"><td></td><td><b>Estimated total, everything</b></td><td></td><td><b>${range(bom.total)}</b></td></tr></table>
+  list ? `<tr><td></td><td>Lights</td><td>see “What to buy for the lights”</td><td>${esc(costText(lightCost))}</td></tr>` : bom.lights.map(bomRow).join('')
+}<tr class="total"><td></td><td><b>Estimated total, everything</b></td><td></td><td><b>${esc(totalText(bom))}</b></td></tr></table>
   <p><b>${esc(bom.difficulty.level)}:</b> ${esc(bom.difficulty.reasons.join(', '))}.</p>
   <p>About ${formatMinutes(bom.time.totalMin)} in all: cutting ${formatMinutes(bom.time.cutMin)}, assembly ${formatMinutes(bom.time.assemblyMin)}, waiting for glue ${formatMinutes(bom.time.glueMin)}.</p>
   <p class="buying-note">${esc(bom.note)}</p>`;
@@ -190,7 +189,7 @@ export function guideHTML(kit, compiled) {
   <div class="hero">
     <div>
       <h1>${esc(kit.name)}</h1>
-      <p class="sub">1:${kit.scale} miniature room kit · finished size ${dims.W.toFixed(0)} × ${dims.D.toFixed(0)} × ${dims.H.toFixed(0)} mm · ${parts.length} parts on ${sheets.length} sheet${sheets.length === 1 ? '' : 's'}${bom ? ` · ${esc(bom.difficulty.level)} · about ${formatMinutes(bom.time.totalMin)} to make · about ${range(bom.total)}` : ''}</p>
+      <p class="sub">1:${kit.scale} miniature room kit · finished size ${dims.W.toFixed(0)} × ${dims.D.toFixed(0)} × ${dims.H.toFixed(0)} mm · ${parts.length} parts on ${sheets.length} sheet${sheets.length === 1 ? '' : 's'}${bom ? ` · ${esc(bom.difficulty.level)} · about ${formatMinutes(bom.time.totalMin)} to make · about ${esc(totalText(bom))}` : ''}</p>
       <table><tr><th>Material</th><th>Thick</th><th>Sheets</th>${laser ? '' : '<th>Blade</th>'}</tr>${materialRows}</table>
     </div>
     ${renderScene(compiled.faces3d)}

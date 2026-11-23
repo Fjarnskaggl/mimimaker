@@ -5,13 +5,13 @@ import assert from 'node:assert/strict';
 import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
 import { guideHTML } from '../src/guide.js';
-import { billOfMaterials } from '../src/build/bom.js';
+import { billOfMaterials, costText, totalText } from '../src/build/bom.js';
 import { buildSteps } from '../src/build/steps.js';
 import { explodedViewSVG } from '../src/build/exploded.js';
 import { formatMinutes } from '../src/make.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-const money = (c) => `$${c.low.toFixed(2)}–${c.high.toFixed(2)}`;
+const money = (c) => esc(costText(c));
 const section = (html, title) => {
   const i = html.indexOf(`<h2>${title}</h2>`);
   if (i < 0) return null;
@@ -32,7 +32,7 @@ test('guide: a bill of materials with every sheet and supply, the lights subtota
   const lights = bom.lights.reduce((t, i) => ({ low: t.low + i.cost.low, high: t.high + i.cost.high }), { low: 0, high: 0 });
   assert.ok(sec.includes(money(lights)), 'lights subtotal');
   assert.ok(!bom.lights.some((i) => sec.includes(esc(i.name))), 'light items not repeated');
-  assert.ok(sec.includes(money(bom.total)), 'grand total');
+  assert.ok(sec.includes(esc(totalText(bom))), 'grand total');
   assert.match(sec, /estimate/i);
   assert.ok(html.indexOf('<h2>Bill of materials</h2>') < html.indexOf('<h2>Assembly</h2>'));
 });
@@ -42,7 +42,7 @@ test('guide: an unlit kit lists everything in the bill itself', () => {
   kit.lighting.enabled = false;
   const { html, bom } = setup(kit);
   assert.equal(section(html, 'What to buy for the lights'), null);
-  assert.ok(section(html, 'Bill of materials').includes(money(bom.total)));
+  assert.ok(section(html, 'Bill of materials').includes(esc(totalText(bom))));
 });
 
 test('guide: difficulty and build time up front', () => {
