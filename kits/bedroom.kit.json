@@ -126,6 +126,21 @@
         "speed": 60
       },
       {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
         "id": "felt",
         "name": "Craft felt 1 mm",
         "thickness": 1,
@@ -181,55 +196,55 @@
     "items": [
       {
         "type": "bed",
+        "material": "chip15",
+        "x": 90,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 140,
           "d": 200,
           "h": 45,
           "head": 100
-        },
-        "material": "chip15",
-        "x": 90,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "nightstand",
-        "params": {
-          "w": 45,
-          "d": 40,
-          "h": 55,
-          "count": 2
-        },
         "material": "chip15",
         "x": 40,
         "y": 0,
-        "rot": 0
-      },
-      {
-        "type": "nightstand",
+        "rot": 0,
         "params": {
           "w": 45,
           "d": 40,
           "h": 55,
           "count": 2
-        },
+        }
+      },
+      {
+        "type": "nightstand",
         "material": "chip15",
         "x": 235,
         "y": 0,
-        "rot": 0
+        "rot": 0,
+        "params": {
+          "w": 45,
+          "d": 40,
+          "h": 55,
+          "count": 2
+        }
       },
       {
         "type": "wardrobe",
+        "material": "bass16",
+        "x": 0,
+        "y": 150,
+        "rot": 90,
         "params": {
           "w": 100,
           "d": 60,
           "h": 200,
           "count": 2
-        },
-        "material": "bass16",
-        "x": 0,
-        "y": 150,
-        "rot": 90
+        }
       },
       {
         "type": "rug",
@@ -294,6 +309,7 @@
           "color": "warm"
         }
       ]
-    }
+    },
+    "roomType": "bedroom"
   }
 }

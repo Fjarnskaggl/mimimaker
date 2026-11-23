@@ -126,6 +126,21 @@
         "speed": 60
       },
       {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
         "id": "felt",
         "name": "Craft felt 1 mm",
         "thickness": 1,
@@ -181,27 +196,27 @@
     "items": [
       {
         "type": "bathtub",
+        "material": "card110",
+        "x": 0,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 170,
           "d": 75,
           "h": 55
-        },
-        "material": "card110",
-        "x": 0,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "vanity",
+        "material": "chip15",
+        "x": 195,
+        "y": 100,
+        "rot": 270,
         "params": {
           "w": 80,
           "d": 45,
           "h": 85
-        },
-        "material": "chip15",
-        "x": 195,
-        "y": 100,
-        "rot": 270
+        }
       },
       {
         "type": "mirror",
@@ -216,15 +231,15 @@
       },
       {
         "type": "toilet",
+        "material": "card110",
+        "x": 0,
+        "y": 110,
+        "rot": 90,
         "params": {
           "w": 40,
           "d": 68,
           "h": 78
-        },
-        "material": "card110",
-        "x": 0,
-        "y": 110,
-        "rot": 90
+        }
       },
       {
         "type": "rug",
@@ -270,6 +285,7 @@
           "color": "cool"
         }
       ]
-    }
+    },
+    "roomType": "bathroom"
   }
 }

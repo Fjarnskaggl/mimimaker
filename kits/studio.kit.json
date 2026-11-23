@@ -126,6 +126,21 @@
         "speed": 60
       },
       {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
         "id": "felt",
         "name": "Craft felt 1 mm",
         "thickness": 1,
@@ -219,41 +234,41 @@
       },
       {
         "type": "chair",
+        "material": "bass16",
+        "x": 217,
+        "y": 60,
+        "rot": 180,
         "params": {
           "w": 45,
           "d": 45,
           "seat": 45,
           "back": 90
-        },
-        "material": "bass16",
-        "x": 217,
-        "y": 60,
-        "rot": 180
+        }
       },
       {
         "type": "wallshelf",
+        "material": "bass16",
+        "wall": "back",
+        "pos": 105,
+        "elev": 165,
         "params": {
           "w": 80,
           "d": 30,
           "h": 60,
           "shelves": 1
-        },
-        "material": "bass16",
-        "wall": "back",
-        "pos": 105,
-        "elev": 165
+        }
       },
       {
         "type": "plant",
+        "material": "card65",
+        "x": 10,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 30,
           "h": 30,
           "leaf": 70
-        },
-        "material": "card65",
-        "x": 10,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "rug",
@@ -307,6 +322,7 @@
           "color": "warm"
         }
       ]
-    }
+    },
+    "roomType": "studio"
   }
 }

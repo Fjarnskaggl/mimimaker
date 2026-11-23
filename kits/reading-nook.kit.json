@@ -126,6 +126,21 @@
         "speed": 60
       },
       {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
         "id": "felt",
         "name": "Craft felt 1 mm",
         "thickness": 1,
@@ -181,16 +196,16 @@
     "items": [
       {
         "type": "bookshelf",
+        "material": "bass16",
+        "x": 15,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 80,
           "d": 30,
           "h": 180,
           "shelves": 3
-        },
-        "material": "bass16",
-        "x": 15,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "armchair",
@@ -209,28 +224,28 @@
       },
       {
         "type": "nightstand",
+        "material": "card110",
+        "x": 245,
+        "y": 10,
+        "rot": 0,
         "params": {
           "w": 45,
           "d": 40,
           "h": 55,
           "count": 2
-        },
-        "material": "card110",
-        "x": 245,
-        "y": 10,
-        "rot": 0
+        }
       },
       {
         "type": "floorlamp",
+        "material": "card110",
+        "x": 210,
+        "y": 75,
+        "rot": 0,
         "params": {
           "w": 35,
           "h": 160,
           "shade": 28
-        },
-        "material": "card110",
-        "x": 210,
-        "y": 75,
-        "rot": 0
+        }
       },
       {
         "type": "rug",
@@ -283,6 +298,7 @@
           "color": "warm"
         }
       ]
-    }
+    },
+    "roomType": "reading-nook"
   }
 }

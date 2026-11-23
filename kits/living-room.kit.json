@@ -126,6 +126,21 @@
         "speed": 60
       },
       {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
         "id": "felt",
         "name": "Craft felt 1 mm",
         "thickness": 1,
@@ -172,6 +187,10 @@
     "items": [
       {
         "type": "sofa",
+        "material": "chip15",
+        "x": 80,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 200,
           "d": 85,
@@ -179,11 +198,7 @@
           "back": 82,
           "arm": 18,
           "armh": 60
-        },
-        "material": "chip15",
-        "x": 80,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "bench",
@@ -199,51 +214,51 @@
       },
       {
         "type": "fireplace",
+        "material": "chip15",
+        "x": 0,
+        "y": 70,
+        "rot": 90,
         "params": {
           "w": 120,
           "d": 35,
           "h": 105
-        },
-        "material": "chip15",
-        "x": 0,
-        "y": 70,
-        "rot": 90
+        }
       },
       {
         "type": "tvstand",
+        "material": "bass16",
+        "x": 320,
+        "y": 60,
+        "rot": 270,
         "params": {
           "w": 150,
           "d": 40,
           "h": 50,
           "shelves": 1
-        },
-        "material": "bass16",
-        "x": 320,
-        "y": 60,
-        "rot": 270
+        }
       },
       {
         "type": "tv",
-        "params": {
-          "w": 100,
-          "h": 60
-        },
         "material": "card110",
         "wall": "right",
         "pos": 125,
-        "elev": 110
+        "elev": 110,
+        "params": {
+          "w": 100,
+          "h": 60
+        }
       },
       {
         "type": "floorlamp",
+        "material": "card65",
+        "x": 290,
+        "y": 5,
+        "rot": 0,
         "params": {
           "w": 35,
           "h": 160,
           "shade": 28
-        },
-        "material": "card65",
-        "x": 290,
-        "y": 5,
-        "rot": 0
+        }
       },
       {
         "type": "rug",
@@ -295,6 +310,7 @@
           "color": "warm"
         }
       ]
-    }
+    },
+    "roomType": "living-room"
   }
 }

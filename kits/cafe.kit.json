@@ -126,6 +126,21 @@
         "speed": 60
       },
       {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
         "id": "felt",
         "name": "Craft felt 1 mm",
         "thickness": 1,
@@ -181,29 +196,29 @@
     "items": [
       {
         "type": "displayshelf",
+        "material": "bass16",
+        "x": 10,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 80,
           "d": 35,
           "h": 200,
           "shelves": 4
-        },
-        "material": "bass16",
-        "x": 10,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "cafecounter",
+        "material": "chip15",
+        "x": 150,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 180,
           "d": 60,
           "h": 100,
           "count": 4
-        },
-        "material": "chip15",
-        "x": 150,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "chalkboard",
@@ -219,77 +234,77 @@
       },
       {
         "type": "stool",
-        "params": {
-          "w": 35,
-          "d": 35,
-          "h": 75
-        },
         "material": "chip15",
         "x": 180,
         "y": 75,
-        "rot": 0
-      },
-      {
-        "type": "stool",
+        "rot": 0,
         "params": {
           "w": 35,
           "d": 35,
           "h": 75
-        },
+        }
+      },
+      {
+        "type": "stool",
         "material": "chip15",
         "x": 245,
         "y": 75,
-        "rot": 0
+        "rot": 0,
+        "params": {
+          "w": 35,
+          "d": 35,
+          "h": 75
+        }
       },
       {
         "type": "cafetable",
-        "params": {
-          "w": 60,
-          "d": 60,
-          "h": 75
-        },
         "material": "bass16",
         "x": 55,
         "y": 150,
-        "rot": 0
-      },
-      {
-        "type": "chair",
-        "params": {
-          "w": 45,
-          "d": 45,
-          "seat": 45,
-          "back": 90
-        },
-        "material": "bass16",
-        "x": 5,
-        "y": 157,
-        "rot": 90
-      },
-      {
-        "type": "cafetable",
+        "rot": 0,
         "params": {
           "w": 60,
           "d": 60,
           "h": 75
-        },
-        "material": "bass16",
-        "x": 200,
-        "y": 150,
-        "rot": 0
+        }
       },
       {
         "type": "chair",
+        "material": "bass16",
+        "x": 5,
+        "y": 157,
+        "rot": 90,
         "params": {
           "w": 45,
           "d": 45,
           "seat": 45,
           "back": 90
-        },
+        }
+      },
+      {
+        "type": "cafetable",
+        "material": "bass16",
+        "x": 200,
+        "y": 150,
+        "rot": 0,
+        "params": {
+          "w": 60,
+          "d": 60,
+          "h": 75
+        }
+      },
+      {
+        "type": "chair",
         "material": "bass16",
         "x": 262,
         "y": 157,
-        "rot": 270
+        "rot": 270,
+        "params": {
+          "w": 45,
+          "d": 45,
+          "seat": 45,
+          "back": 90
+        }
       },
       {
         "type": "plant",
@@ -336,6 +351,7 @@
           "color": "amber"
         }
       ]
-    }
+    },
+    "roomType": "cafe"
   }
 }

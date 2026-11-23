@@ -126,6 +126,21 @@
         "speed": 60
       },
       {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
         "id": "felt",
         "name": "Craft felt 1 mm",
         "thickness": 1,
@@ -198,15 +213,15 @@
       },
       {
         "type": "ladder",
+        "material": "bass16",
+        "x": 55,
+        "y": 31,
+        "rot": 0,
         "params": {
           "w": 45,
           "h": 200,
           "rungs": 7
-        },
-        "material": "bass16",
-        "x": 55,
-        "y": 31,
-        "rot": 0
+        }
       },
       {
         "type": "desk",
@@ -222,19 +237,23 @@
       },
       {
         "type": "chair",
+        "material": "bass16",
+        "x": 210,
+        "y": 65,
+        "rot": 180,
         "params": {
           "w": 45,
           "d": 45,
           "seat": 45,
           "back": 90
-        },
-        "material": "bass16",
-        "x": 210,
-        "y": 65,
-        "rot": 180
+        }
       },
       {
         "type": "armchair",
+        "material": "chip15",
+        "x": 15,
+        "y": 140,
+        "rot": 0,
         "params": {
           "w": 90,
           "d": 85,
@@ -242,11 +261,7 @@
           "back": 90,
           "arm": 16,
           "armh": 62
-        },
-        "material": "chip15",
-        "x": 15,
-        "y": 140,
-        "rot": 0
+        }
       },
       {
         "type": "rug",
@@ -313,6 +328,7 @@
           "color": "warm"
         }
       ]
-    }
+    },
+    "roomType": "library"
   }
 }

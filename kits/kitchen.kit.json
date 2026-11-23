@@ -126,6 +126,21 @@
         "speed": 60
       },
       {
+        "id": "acetate",
+        "name": "Clear acetate 0.25 mm",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#dff3f7",
+        "cricut": "Acetate",
+        "passes": 1,
+        "speed": 40
+      },
+      {
         "id": "felt",
         "name": "Craft felt 1 mm",
         "thickness": 1,
@@ -181,65 +196,65 @@
     "items": [
       {
         "type": "fridge",
+        "material": "chip15",
+        "x": 0,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 70,
           "d": 65,
           "h": 180
-        },
-        "material": "chip15",
-        "x": 0,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "counter",
+        "material": "chip15",
+        "x": 70,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 100,
           "d": 60,
           "h": 90,
           "count": 2
-        },
-        "material": "chip15",
-        "x": 70,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "sink",
+        "material": "chip15",
+        "x": 170,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 80,
           "d": 60,
           "h": 90
-        },
-        "material": "chip15",
-        "x": 170,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "stove",
+        "material": "chip15",
+        "x": 250,
+        "y": 0,
+        "rot": 0,
         "params": {
           "w": 60,
           "d": 60,
           "h": 90
-        },
-        "material": "chip15",
-        "x": 250,
-        "y": 0,
-        "rot": 0
+        }
       },
       {
         "type": "uppercabinet",
+        "material": "chip15",
+        "wall": "back",
+        "pos": 120,
+        "elev": 190,
         "params": {
           "w": 80,
           "d": 35,
           "h": 70,
           "count": 2
-        },
-        "material": "chip15",
-        "wall": "back",
-        "pos": 120,
-        "elev": 190
+        }
       },
       {
         "type": "wallshelf",
@@ -268,41 +283,41 @@
       },
       {
         "type": "chair",
-        "params": {
-          "w": 45,
-          "d": 45,
-          "seat": 45,
-          "back": 90
-        },
         "material": "bass16",
         "x": 50,
         "y": 150,
-        "rot": 90
-      },
-      {
-        "type": "chair",
+        "rot": 90,
         "params": {
           "w": 45,
           "d": 45,
           "seat": 45,
           "back": 90
-        },
+        }
+      },
+      {
+        "type": "chair",
         "material": "bass16",
         "x": 225,
         "y": 150,
-        "rot": 270
+        "rot": 270,
+        "params": {
+          "w": 45,
+          "d": 45,
+          "seat": 45,
+          "back": 90
+        }
       },
       {
         "type": "plant",
+        "material": "card110",
+        "x": 10,
+        "y": 195,
+        "rot": 0,
         "params": {
           "w": 30,
           "h": 30,
           "leaf": 70
-        },
-        "material": "card110",
-        "x": 10,
-        "y": 195,
-        "rot": 0
+        }
       }
     ],
     "lighting": {
@@ -332,6 +347,7 @@
           "color": "warm"
         }
       ]
-    }
+    },
+    "roomType": "kitchen"
   }
 }
