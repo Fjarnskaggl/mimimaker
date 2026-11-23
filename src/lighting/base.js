@@ -24,7 +24,7 @@ import { CUTOUTS } from './cutouts.js';
 
 export const BASE = {
   // battery box (or USB socket board) bodies lying flat: length, width, height
-  box: { aa2: { l: 64, w: 36, h: 18 }, cr2032: { l: 32, w: 26, h: 10 }, usb: { l: 24, w: 14, h: 10 } }, // usb: the lead's inline switch
+  box: { aa2: { l: 64, w: 36, h: 18 }, aaa2: { l: 63, w: 26, h: 16 }, cr2032: { l: 32, w: 26, h: 10 }, usb: { l: 24, w: 14, h: 10 } }, // usb: the lead's inline switch
   hatchExtra: 10, // mm the hatch opening is wider than the box (the stops take 3 mm each side)
   stopWidth: 6, // mm, a hatch stop strip
   stopOverlap: 3, // mm of each stop showing through the opening
@@ -41,6 +41,8 @@ export const BASE = {
 export const SWITCHES = {
   // capacitive touch module (TTP223-style, about 15 × 11 mm) behind a round window
   touch: { name: 'touch switch', hole: 10, pocket: [15.6, 11.6], plate: [22, 18] },
+  // capacitive touch toggle breakout (AT42QT1012, e.g. Adafruit 1375: 20 × 29.35 mm) on its side
+  board: { name: 'touch breakout', hole: 13, pocket: [29.95, 20.6], plate: [36, 27] },
   // 6 mm latching push switch through a round hole, with a collar to thicken the panel
   push: { name: 'push switch', hole: CUTOUTS.button.d, pocket: null, plate: [16, 16] },
 };
@@ -148,8 +150,8 @@ export function buildBase(L, { fingerWidth, minFeature = 0 } = {}) {
   const steps = [
     `Hidden base: glue the base box together ({base}). It has no lid — the room's floor closes it. Leave the hatch out.`,
     'Glue the hatch stops ({stops}) inside the base back, one at each side of the hatch opening, so half of each shows through the opening. The hatch rests against them.',
-    L.switch.kind === 'touch'
-      ? `Glue the switch mount {mount} inside the base ${where}, over the round switch hole, and press the touch switch module into its pocket with its touch pad facing out through the hole.`
+    L.switch.kind !== 'push'
+      ? `Glue the switch mount {mount} inside the base ${where}, over the round switch hole, and press the ${sw.name} ${L.switch.kind === 'board' ? 'board' : 'module'} into its pocket with its touch pad facing out through the hole.`
       : `Glue the switch mount {mount} inside the base ${where}, over the switch hole, and fit the push switch through both.`,
     'Glue the room onto the base, edges flush all round.',
     `Run every LED wire down the back to the base and in through the wire hole beside the hatch. Inside, join them: ${power} + (red) to one switch lead, the other switch lead to every LED +, and every LED − to the ${power} − (black). Insulate the joins. A battery box's own switch stays on: the ${sw.name} turns the lights on and off.`,

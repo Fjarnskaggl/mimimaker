@@ -29,7 +29,7 @@ export const LED_COLORS = {
   green: { name: 'Green', hex: '#8ef0a0' },
 };
 export const POWER_KINDS = {
-  battery: 'Battery box with switch (2×AA or CR2032)',
+  battery: 'Battery box with switch (2×AA, 2×AAA or CR2032)',
   usb: 'USB cable with inline switch',
 };
 export const WIRE_COLORS = ['#e0582f', '#2f7fe0', '#2aa36b', '#b04fd6', '#d1a20f', '#14a3b8', '#d6336c', '#6b7a1f'];

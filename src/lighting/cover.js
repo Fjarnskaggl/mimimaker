@@ -17,7 +17,7 @@ export const COVER = {
   frameWidth: 5, // mm, strip width
   gap: 4, // mm, channel left in a strip where a wire crosses
   // power box footprints (real sizes plus clearance)
-  box: { aa2: { w: 64, h: 36 }, cr2032: { w: 32, h: 26 }, usb: { w: 10, h: 10 } },
+  box: { aa2: { w: 64, h: 36 }, aaa2: { w: 64, h: 27 }, cr2032: { w: 32, h: 26 }, usb: { w: 10, h: 10 } },
 };
 const EPS = 1e-6;
 const MIN_STRIP = COVER.frameWidth;

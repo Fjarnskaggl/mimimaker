@@ -3,7 +3,7 @@
 import { netFaces, netPoint, LED_COLORS, WIRE_COLORS, POWER_KINDS } from './lighting.js';
 import { EFFECTS } from './lighting/effects.js';
 
-const SUPPLY_LABEL = { aa2: '2×AA', cr2032: 'CR2032', usb: 'USB' };
+const SUPPLY_LABEL = { aa2: '2×AA', aaa2: '2×AAA', cr2032: 'CR2032', usb: 'USB' };
 
 const f = (v) => (Math.round(v * 100) / 100).toString();
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
