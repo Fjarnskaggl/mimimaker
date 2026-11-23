@@ -324,6 +324,41 @@ test('wheel zoom: line-mode wheels zoom a useful step, the page scrolls past the
   await page.waitForFunction(() => document.querySelector('.stage path.hover'), null, { timeout: 10000 });
   await wheel({ deltaY: -600 });
   assert.equal(await page.evaluate(() => document.querySelector('.stage').t6hover ?? null), null);
+const ledRing = (page) => page.evaluate(() => [...new Set([...document.querySelectorAll('.stage path.sel-led')].map((p) => Number(p.dataset.led)))]);
+const kindNow = (page) => page.locator('#sidebar .insp-kind').first().textContent();
+
+test('Light step: the selected light is ringed in the room view, and a click on a bulb selects it', async () => {
+  const page = await open();
+  await page.click('[data-step=light]');
+  assert.deepEqual(await ledRing(page), []);
+  await page.click('[data-select-led="1"]');
+  assert.deepEqual(await ledRing(page), [1], 'ringed at once');
+  await shot(page, 'led-ring');
+  await page.click('[data-action=back]');
+  assert.deepEqual(await ledRing(page), []);
+  const p = await page.evaluate(() => document.querySelector('.stage').t6pickPoint({ kind: 'led', index: 0 }));
+  assert.ok(p, 'bulb 0 is visible');
+  await page.mouse.move(p.x, p.y);
+  await page.waitForFunction(() => document.querySelector('.stage').classList.contains('t6-over-piece'), null, { timeout: 10000 });
+  await page.mouse.click(p.x, p.y);
+  assert.equal(await kindNow(page), 'Light', 'the inspector opens on the light');
+  assert.deepEqual(await ledRing(page), [0]);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('Light step in Realistic 3D: the selected light is marked, and a click on a bulb selects it', async () => {
+  const page = await open({ webgl: true });
+  await page.click('[data-step=light]');
+  await page.click('[data-select-led="1"]');
+  assert.equal((await shown(page)).selectedLed, 1);
+  await page.click('[data-action=back]');
+  assert.equal((await shown(page)).selectedLed, null);
+  const p = await page.evaluate(() => document.querySelector('.stage').t6pickPoint({ kind: 'led', index: 0 }));
+  assert.ok(p, 'bulb 0 is visible');
+  await page.mouse.click(p.x, p.y);
+  assert.equal(await kindNow(page), 'Light');
+  assert.equal((await shown(page)).selectedLed, 0);
   assert.deepEqual(page.errors, []);
   await page.close();
 });
