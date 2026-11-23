@@ -1,6 +1,7 @@
 // Shared assertions for the shell tests (not a test file itself).
 import assert from 'node:assert/strict';
 import { partBox } from '../src/shells/fit.js';
+import { JOINT_KINDS } from '../src/build/joints.js';
 
 // Two parts touch when their solids share a face (closed boxes meet, no gap).
 const touches = (a, b, t) => {
@@ -14,7 +15,7 @@ export function checkJoints(sh, t) {
   assert.ok(Array.isArray(sh.joints) && sh.joints.length);
   for (const j of sh.joints) {
     assert.ok(keys.has(j.a) && keys.has(j.b), `joint ${j.a}–${j.b} names real parts`);
-    assert.ok(['finger', 'slot', 'glue-tab', 'glue-flat'].includes(j.kind), j.kind);
+    assert.ok(j.kind in JOINT_KINDS, `joint kind "${j.kind}" is one T4's build steps know`);
     assert.ok(touches(byKey.get(j.a), byKey.get(j.b), t), `${j.a} and ${j.b} actually meet`);
   }
   // every part is joined, and the whole kit is one connected piece
