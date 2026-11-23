@@ -1,22 +1,23 @@
 // Browser tests for the T5 lighting UI. Run with: npm run test:e2e
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { spawn } = require('node:child_process');
-const path = require('node:path');
 const { chromium } = require('playwright');
+const { startServer } = require('./helpers.cjs');
+const path = require('node:path');
 
-const PORT = 5205;
-const URL = `http://localhost:${PORT}/`;
-let server, browser;
+// Set SHOT_DIR to save screenshots of the circuit card for review.
+async function shot(page, name) {
+  if (process.env.SHOT_DIR) await page.locator('.t5-circuit').screenshot({ path: path.join(process.env.SHOT_DIR, `t5-${name}.png`) });
+}
+
+let server, browser, URL;
 
 before(async () => {
-  server = spawn(process.execPath, [path.join(__dirname, '../../scripts/serve.js')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
-  for (let i = 0; i < 50; i++) {
-    try { await fetch(URL); break; } catch { await new Promise((r) => setTimeout(r, 100)); }
-  }
+  server = await startServer();
+  URL = server.url;
   browser = await chromium.launch();
 });
-after(async () => { await browser?.close(); server?.kill(); });
+after(async () => { await browser?.close(); server?.close(); });
 
 async function open() {
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
@@ -45,6 +46,7 @@ test('LED map tab shows the circuit summary', async () => {
   assert.match(text, /about 32 hours/);
   assert.match(text, /estimate/i);
   assert.equal(await card.getAttribute('data-status'), 'ok');
+  await shot(page, 'circuit-2xaa');
   assert.deepEqual(page.errors, []);
   await page.close();
 });
@@ -60,6 +62,7 @@ test('choosing a coin cell updates the kit and flags the overload', async () => 
   const card = page.locator('.t5-circuit');
   assert.equal(await card.getAttribute('data-status'), 'warn');
   assert.match(await card.innerText(), /CR2032/);
+  await shot(page, 'circuit-cr2032');
   assert.deepEqual(page.errors, []);
   await page.close();
 });

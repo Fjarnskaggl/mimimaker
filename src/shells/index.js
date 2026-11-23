@@ -22,15 +22,17 @@ export function shellSize(spec) {
 }
 
 export const SHELLS = {
-  nook: { label: 'Book nook (open box)', params: [], defaults: {}, build: buildNook },
-  alley: { label: 'Alley with lit facades', params: ALLEY_PARAMS, defaults: ALLEY_DEFAULTS, build: buildAlley },
+  // furnishable: furniture, openings, overlays and LEDs go inside it like a room box
+  nook: { label: 'Book nook (open box)', params: [], defaults: {}, build: buildNook, furnishable: true },
+  alley: { label: 'Alley with lit facades', params: ALLEY_PARAMS, defaults: ALLEY_DEFAULTS, build: buildAlley, furnishable: false },
 };
 
-export function buildShell(spec, { t, fingerWidth = 0 }) {
+/** `holes`: face → polygons (wall panel coords) to cut through the shell walls. */
+export function buildShell(spec, { t, fingerWidth = 0, holes = {} }) {
   const def = SHELLS[spec.type];
   if (!def) throw new Error(`Unknown shell type "${spec.type}".`);
   const { W, H, D } = sizeFromGap(spec);
-  const res = def.build({ W, D, H, t, fingerWidth }, { ...def.defaults, ...(spec.params || {}) });
+  const res = def.build({ W, D, H, t, fingerWidth, holes }, { ...def.defaults, ...(spec.params || {}) });
   const warnings = [...res.warnings];
   if (res.minFinger < 3) {
     warnings.push({ level: 'warn', msg: `Shell finger joints are only ${res.minFinger.toFixed(1)} mm wide — the Knife Blade is cleaner above 3 mm.` });

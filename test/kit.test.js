@@ -214,3 +214,19 @@ test('3D preview draws a chair seat in front of its backrest', async () => {
     assert.ok(svg.indexOf('fill-opacity="0.92"') < svg.indexOf('fill-opacity="0.91"'), `backrest drawn before seat at ${JSON.stringify(view)}`);
   }
 });
+
+test('3D faces carry their material thickness for the WebGL viewer (#24)', () => {
+  const kit = defaultKit();
+  const r = compileKit(kit);
+  const mat = (id) => kit.materials.find((m) => m.id === id);
+  const room = r.faces3d.filter((f) => f.layer === 0);
+  assert.ok(room.length && room.every((f) => f.thickness === mat(kit.room.material).thickness), 'room shell');
+  kit.items.forEach((it, i) => {
+    const solid = r.faces3d.filter((f) => f.item === i && f.layer === 2);
+    for (const f of solid) assert.equal(f.thickness, mat(it.material).thickness, `${it.type} in ${it.material}`);
+  });
+  const flat = r.faces3d.filter((f) => f.layer === 1 || f.layer === 1.5 || f.glow);
+  assert.ok(flat.length && flat.every((f) => f.thickness === undefined), 'overlays and lights stay flat');
+  const card = compileKit({ ...kit, room: { ...kit.room, material: 'card110' } });
+  assert.ok(card.faces3d.filter((f) => f.layer === 0).every((f) => f.thickness === mat('card110').thickness), 'card room');
+});

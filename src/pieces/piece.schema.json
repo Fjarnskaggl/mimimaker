@@ -18,8 +18,8 @@
     "let": { "$ref": "#/$defs/lets" },
     "components": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/componentEntry" } },
     "note": { "type": "string" },
-    "tags": { "type": "array", "items": { "type": "string" } },
-    "difficulty": { "enum": [1, 2, 3] }
+    "tags": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }, "description": "Library search words, e.g. storage, seating, wall-mounted." },
+    "difficulty": { "enum": [1, 2, 3], "description": "1 Easy, 2 Medium, 3 Tricky." }
   },
   "$defs": {
     "expr": { "type": ["number", "string"], "description": "A number or an expression such as \"d - t\" or \"min(w * 0.08, back * 0.3)\"." },

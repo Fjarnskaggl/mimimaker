@@ -3,6 +3,7 @@ import { num, sel } from './params.js';
 export const DECOR = [
   {
     id: 'rug', label: 'Rug', theme: 'Decor', placement: 'floor', mat: 'fabric',
+    tags: ['textile', 'floor'], difficulty: 1,
     params: [num('w', 'Width', 10, 400), num('d', 'Depth', 10, 400), sel('shape', 'Shape', ['oval', 'rect', 'round'])],
     defaults: { w: 140, d: 90, shape: 'oval' },
     size: ['w', "shape == 'round' ? w : d", 0],
@@ -17,6 +18,7 @@ export const DECOR = [
   },
   {
     id: 'plant', label: 'Potted plant', theme: 'Decor', placement: 'floor', mat: 'card',
+    tags: ['plant', 'green'], difficulty: 2,
     params: [num('w', 'Pot width', 10, 60), num('h', 'Pot height', 10, 60), num('leaf', 'Plant height', 20, 150)],
     defaults: { w: 30, h: 30, leaf: 70 },
     size: ['w', 'w', 'h + leaf * 0.9'],
@@ -29,6 +31,7 @@ export const DECOR = [
   },
   {
     id: 'frame', label: 'Picture frame', theme: 'Decor', placement: 'wall', mat: 'card',
+    tags: ['art', 'wall-mounted'], difficulty: 1,
     params: [num('w', 'Width', 5, 200), num('h', 'Height', 5, 200), num('border', 'Border', 1, 30)],
     defaults: { w: 40, h: 50, border: 5 },
     size: ['w', 0, 'h'],
@@ -38,6 +41,7 @@ export const DECOR = [
   },
   {
     id: 'mirror', label: 'Round mirror / clock', theme: 'Decor', placement: 'wall', mat: 'card',
+    tags: ['clock', 'wall-mounted'], difficulty: 1,
     params: [num('w', 'Diameter', 5, 150), num('border', 'Rim', 1, 20)],
     defaults: { w: 45, border: 4 },
     size: ['w', 0, 'w'],
@@ -47,6 +51,7 @@ export const DECOR = [
   },
   {
     id: 'tv', label: 'Wall TV', theme: 'Decor', placement: 'wall', mat: 'card',
+    tags: ['media', 'wall-mounted'], difficulty: 1,
     params: [num('w', 'Width', 40, 200), num('h', 'Height', 25, 120)],
     defaults: { w: 100, h: 60 },
     size: ['w', 0, 'h'],
@@ -56,6 +61,7 @@ export const DECOR = [
   },
   {
     id: 'curtains', label: 'Curtains', theme: 'Decor', placement: 'wall', mat: 'card',
+    tags: ['textile', 'window'], difficulty: 1,
     params: [num('w', 'Window width', 30, 250), num('h', 'Drop', 40, 250)],
     defaults: { w: 110, h: 150 },
     size: ['w', 0, 'h'],
