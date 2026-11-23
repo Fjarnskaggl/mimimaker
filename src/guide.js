@@ -2,10 +2,10 @@
 
 import { sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { TOOL_NAMES } from './materials.js';
+import { shoppingList } from './lighting/shopping.js';
 import { renderScene } from './preview3d.js';
 import { ledMapSVG, ledRows, powerName } from './ledmap.js';
 import { buildSteps, stepJointKinds } from './build/steps.js';
-import { shoppingList } from './lighting/shopping.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
