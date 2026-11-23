@@ -46,7 +46,7 @@ export function guideHTML(kit, compiled) {
   const buying = list ? `
   <h2>What to buy for the lights</h2>
   <table class="buying"><tr><th>Qty</th><th>Item</th><th>Note</th><th>Est. cost</th></tr>${list.items.map((i) => `<tr class="buy"><td>${i.qty}</td><td>${esc(i.name)}</td><td>${esc(i.note)}</td><td>$${money(i.cost.low)}–${money(i.cost.high)}</td></tr>`).join('')}<tr class="total"><td></td><td><b>Estimated total</b></td><td></td><td><b>$${money(list.total.low)}–${money(list.total.high)}</b></td></tr></table>
-  <p class="note">${esc(list.note)} The same list is in <code>shopping-list.csv</code> in the kit zip.</p>` : '';
+  <p class="buying-note">${esc(list.note)} The kit zip also includes this list as <code>shopping-list.csv</code>.</p>` : '';
 
   const sheetBlocks = sheets.map((s) => `
     <figure class="sheet">
@@ -92,7 +92,7 @@ export function guideHTML(kit, compiled) {
   .ledmap svg { width: 100%; height: auto; display: block; }
   .buying td:nth-child(2), .buying td:nth-child(3) { white-space: normal; }
   .buying td:nth-child(3) { color: var(--muted); }
-  .note { color: var(--muted); font-size: 13px; }
+  .buying-note { color: var(--muted); font-size: 13px; }
   .chip { display:inline-block; padding: 0 6px; border-radius: 4px; color:#fff; font-size: 12px; font-weight: 600; }
   @media (max-width: 640px) { .hero { grid-template-columns: 1fr; } }
   @media print { body { padding: 0; } h2 { break-after: avoid; } }
