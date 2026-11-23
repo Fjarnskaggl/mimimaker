@@ -78,3 +78,33 @@ test('every raised material is named in the finger width warning', () => {
   assert.match(msgs, /Chipboard 2\.0 mm/);
   assert.match(msgs, /Basswood/);
 });
+
+// T2 shells use the cutter's own minimum (#87), like the room box, not a fixed 3 mm Knife Blade limit
+const SHELL_TYPES = ['nook', 'alley', 'bookshop', 'staircase', 'greenhouse', 'twostorey'];
+const shellSpec = (type) => ({ type, gap: { w: 90, h: 230, d: 180 }, clearance: 2, params: {} });
+
+test('shell joints never go narrower than the cutter manages', async () => {
+  const { buildShell } = await import('../src/shells/index.js');
+  for (const type of SHELL_TYPES) {
+    for (const min of [MIN_FEATURE.knife, MIN_FEATURE.rotary]) {
+      const sh = buildShell(shellSpec(type), { t: 1.5, fingerWidth: 0.5, minFeature: min });
+      assert.ok(sh.minFinger >= min - 1e-9, `${type}, ${min} mm cutter: narrowest ${sh.minFinger}`);
+      assert.ok(!sh.warnings.some((w) => /finger joints/.test(w.msg)), `${type}: ${sh.warnings.map((w) => w.msg).join('\n')}`);
+    }
+  }
+});
+
+test('a shell on a laser gets no Knife Blade warning for fine joints', async () => {
+  const { buildShell } = await import('../src/shells/index.js');
+  for (const type of SHELL_TYPES) {
+    const sh = buildShell(shellSpec(type), { t: 1.5, fingerWidth: 0.5, minFeature: MIN_FEATURE.laser, cutter: 'the laser' });
+    assert.ok(!sh.warnings.some((w) => /Knife Blade/.test(w.msg)), `${type}: ${sh.warnings.map((w) => w.msg).join('\n')}`);
+  }
+});
+
+test('a laser shell kit keeps fine joints without a thin-joint warning', () => {
+  for (const type of SHELL_TYPES) {
+    const r = compileKit({ ...defaultKit(), machine: 'laser', fingerWidth: 1, shell: shellSpec(type) });
+    assert.ok(!r.warnings.some((w) => /finger joints are only|Knife Blade/.test(w.msg)), `${type}: ${r.warnings.map((w) => w.msg).join('\n')}`);
+  }
+});
