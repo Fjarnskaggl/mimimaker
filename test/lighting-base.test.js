@@ -182,3 +182,48 @@ test('UI helpers: the base is a mount option, and the cover leaves its battery p
   setCover(L, true, { pos: [10, 20], elev: [10, 20] });
   assert.equal(L.power.pos, 999);
 });
+
+// ---- review follow-ups
+import { ledMapSVG } from '../src/ledmap.js';
+import { planSVG } from '../src/planview.js';
+
+test('kit: a card room cuts its base from board, laid out for that board\'s thickness', () => {
+  const kit = kitWith([backLed]);
+  const card = kit.materials.find((m) => m.kind === 'card');
+  kit.room.material = card.id;
+  const r = compileKit(kit);
+  const L = r.lighting.power.base;
+  const bm = r.usedMats.find((m) => m.id === baseParts(r)[0].material);
+  assert.equal(bm.kind, 'board');
+  assert.equal(L.t, bm.thickness);
+  assert.ok(L.hatch.z0 >= bm.thickness + 1, 'hatch clear of the bottom joint');
+});
+
+test('USB in the base: the lead comes in through the hatch, and its inline switch stays on', () => {
+  const r = compileKit(kitWith([backLed], { supply: 'usb', kind: 'usb' }));
+  const steps = r.groups.find((g) => g.title === 'Hidden base').steps.join('\n');
+  assert.doesNotMatch(steps, /socket board/);
+  assert.match(steps, /USB lead/);
+  assert.match(steps, /inline switch/);
+  const list = shoppingList(r.lighting);
+  assert.ok(list.items.some((i) => i.id === 'usb-lead'));
+});
+
+test('a power box on another wall: the base says the battery sits under the back', () => {
+  const r = compileKit(kitWith([backLed], { wall: 'left', pos: 10 }));
+  assert.ok(r.warnings.some((w) => /hidden base/i.test(w.msg || w) && /back/.test(w.msg || w)));
+});
+
+test('floor light leads are measured from where they drop in, not from the back wire hole', () => {
+  const near = compileKit(kitWith([{ mount: 'floor', x: 5, y: 5, color: 'warm' }])).lighting;
+  const far = compileKit(kitWith([{ mount: 'floor', x: 280, y: 200, color: 'warm' }])).lighting;
+  assert.ok(near.leds[0].length < far.leds[0].length);
+});
+
+test('plan and LED map: no power box outside a wall when it is in the base', () => {
+  const kit = kitWith([backLed]);
+  assert.doesNotMatch(planSVG(kit), /plan-power/);
+  const svg = ledMapSVG(compileKit(kit));
+  assert.match(svg, /BASE/);
+  assert.doesNotMatch(svg, />2×AA</);
+});
