@@ -7,6 +7,7 @@
 // baluster gaps guards the landing edge beside the stair.
 
 import { nookWalls } from './nook.js';
+import { wiredLight } from './wire.js';
 import { buildStairs } from './stairs.js';
 import { panelOutline, profilePlain, profileTabs, rectPoly } from '../geometry.js';
 
@@ -126,9 +127,11 @@ export function buildStaircase({ W, D, H, t, fingerWidth, holes = {} }, params) 
     link('rail', 'landing', 'flat');
   }
 
+  // each straight back to the back wall: under the landing, and over it
+  const xu = t + sw + (Wi - sw) / 2, zu = zUnder - 2, zo = Math.min(H - t - 3, t + zTop + 25);
   lights.push(
-    { p: [t + sw + (Wi - sw) / 2, yL + dL / 2, zUnder - 2], color: 'warm' },
-    { p: [W / 2, yL + dL / 2, Math.min(H - t - 3, t + zTop + 25)], color: 'warm' },
+    wiredLight({ p: [xu, yL + dL / 2, zu], name: 'Under the landing', where: 'Under the landing', backHoles: wallHoles.back, via: [[xu, Di, zu]] }),
+    wiredLight({ p: [W / 2, yL + dL / 2, zo], name: 'Over the landing', where: 'Landing', backHoles: wallHoles.back, via: [[W / 2, Di, zo]] }),
   );
 
   // ----------------------------------------------------------------- shell

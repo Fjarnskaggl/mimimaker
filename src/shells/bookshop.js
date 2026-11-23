@@ -10,6 +10,7 @@
 // y = 0), z up; a part's material runs t along −n from its plane.
 
 import { nookWalls } from './nook.js';
+import { wiredLight } from './wire.js';
 import { buildBox, faceFrame, FACES } from '../box.js';
 import { panelOutline, profilePlain, profileTabs, rectPoly } from '../geometry.js';
 
@@ -119,9 +120,21 @@ export function buildBookshop({ W, D, H, t, fingerWidth, holes = {} }, params) {
     for (const f of ['front', 'back', 'left', 'right']) link(`counter-${f}`, 'shell-bottom', 'flat');
     link('counter-right', 'shell-right', 'flat');
     counterBox = { x0: origin[0], y0: cy0, w: cw, d: cd, h: ch };
-    lights.push({ p: [origin[0] + cw / 2, cy0 + cd / 2, Math.min(H - t - 3, t + ch + 30)], color: 'warm' });
+    // over the counter: back at its height to the shelves' front, down onto the shelf below, then back
+    const cx = origin[0] + cw / 2, zc = Math.min(H - t - 3, t + ch + 30);
+    const below = zs.filter((z) => z + t <= zc).at(-1);
+    const zw = below === undefined ? zc : Math.min(zc, below + t + 2);
+    lights.push(wiredLight({
+      p: [cx, cy0 + cd / 2, zc], name: 'Over the counter', where: 'Counter', backHoles: wallHoles.back,
+      via: [[cx, yB - 1, zc], ...(zw < zc ? [[cx, yB - 1, zw]] : []), [cx, Di, zw]],
+    }));
   }
-  lights.unshift({ p: [W / 2, yB + sdB / 2, zs[n - 1] - 2], color: 'warm' });
+  // under the top shelf, straight back
+  const zTopLight = zs[n - 1] - 2;
+  lights.unshift(wiredLight({
+    p: [W / 2, yB + sdB / 2, zTopLight], name: 'Under the top shelf', where: 'Bookshelves', backHoles: wallHoles.back,
+    via: [[W / 2, Di, zTopLight]],
+  }));
 
   // ----------------------------------------------------------------- shell
   const shell = nookWalls({ W, D, H, t, fingerWidth, holes: wallHoles });

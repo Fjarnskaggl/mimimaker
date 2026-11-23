@@ -11,6 +11,7 @@
 // goes in first), the upstairs wall into the upper floor and the roof.
 
 import { nookWalls } from './nook.js';
+import { wiredLight } from './wire.js';
 import { buildStairs } from './stairs.js';
 import { pickSteps } from './staircase.js';
 import { buildSpiralStairs, spiralMinRadius } from './spiral.js';
@@ -209,8 +210,14 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
   // ------------------------------------------------------------------ lights
   // upstairs, the left room starts beyond the stairwell
   const roomsAcross = (wall, x0) => (xp != null && wall ? [[x0, xp - t], [xp, W - t]] : [[x0, W - t]]);
-  for (const [x0, x1] of roomsAcross(P.groundWall, t)) lights.push({ p: [(x0 + x1) / 2, Di / 2, zF - 2], color: 'warm' });
-  for (const [x0, x1] of roomsAcross(P.upperWall, xa)) lights.push({ p: [(x0 + x1) / 2, Di / 2, H - t - 3], color: 'warm' });
+  // each straight back to the back wall, under the upper floor or the roof
+  const light = (x, z, storey, i, n) => {
+    const side = n > 1 ? (i ? ', right room' : ', left room') : '';
+    return wiredLight({ p: [x, Di / 2, z], name: `${storey}${side}`, where: storey, backHoles: wallHoles.back, via: [[x, Di, z]] });
+  };
+  const downRooms = roomsAcross(P.groundWall, t), up = roomsAcross(P.upperWall, xa);
+  downRooms.forEach(([x0, x1], i) => lights.push(light((x0 + x1) / 2, zF - 2, 'Ground floor', i, downRooms.length)));
+  up.forEach(([x0, x1], i) => lights.push(light((x0 + x1) / 2, H - t - 3, 'Upstairs', i, up.length)));
 
   // ------------------------------------------------------------------- shell
   const shell = nookWalls({ W, D, H, t, fingerWidth, holes: wallHoles });

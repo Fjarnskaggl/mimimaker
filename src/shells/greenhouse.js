@@ -8,6 +8,7 @@
 // slotted into both side walls and the back, just under the glazing.
 
 import { nookWalls } from './nook.js';
+import { wiredLight, wireHole } from './wire.js';
 import { panelOutline, profilePlain, profileTabs, rectPoly } from '../geometry.js';
 
 export const GREENHOUSE_DEFAULTS = {
@@ -94,7 +95,7 @@ export function buildGreenhouse({ W, D, H, t, fingerWidth, holes = {}, materials
       for (const s of tabsOf(side)) { wallHoles.left.push(slot(yB + s.a0, yB + s.a1)); wallHoles.right.push(slot(yB + s.a0, yB + s.a1)); }
       for (const s of tabsOf(back)) wallHoles.back.push(slot(t + s.a0, t + s.a1));
       for (const w of ['left', 'right', 'back']) link('bench', `shell-${w}`, 'slot');
-      lights.push({ p: [W / 2, yB + bd / 2, zUnder - 2], color: 'warm' });
+      lights.push(wiredLight({ p: [W / 2, yB + bd / 2, zUnder - 2], name: 'Under the bench', where: 'Under the bench', backHoles: wallHoles.back, via: [[W / 2, Di, zUnder - 2]] }));
     } else {
       benchTop = null;
       warnings.push({ level: 'info', msg: 'The knee wall is too low for a potting bench, so it was left out — raise the knee wall to fit one.' });
@@ -131,7 +132,19 @@ export function buildGreenhouse({ W, D, H, t, fingerWidth, holes = {}, materials
   } else if (panes.length) {
     warnings.push({ level: 'info', msg: `There's no clear acetate in this kit's materials, so the greenhouse panes aren't on the cut sheets — the assembly guide lists their sizes to cut by hand.` });
   }
-  lights.unshift({ p: [W / 2, D / 2, H - t - 3], color: 'warm' });
+  // the roof light's wire runs back under the roof, then down the back-left
+  // corner, clear of the panes (they start a frame's width in), through a hole
+  // in the bench if there is one, and out low in the solid knee wall
+  {
+    const zr = H - t - 3, xc = t + 2, yc = Di - 2;
+    const bench = parts.find((p) => p.key === 'bench');
+    const zx = bench ? benchTop - t - 2 : kneeZ - 4;
+    if (bench) bench.polys.push(wireHole(xc - t, yc - bench.plane.o[1]));
+    lights.unshift(wiredLight({
+      p: [W / 2, D / 2, zr], name: 'Under the roof', where: 'Roof', backHoles: wallHoles.back,
+      via: [[W / 2, yc, zr], [xc, yc, zr], [xc, yc, zx], [xc, Di, zx]],
+    }));
+  }
 
   // --------------------------------------------------------------- shell
   const shell = nookWalls({ W, D, H, t, fingerWidth, holes: wallHoles });
