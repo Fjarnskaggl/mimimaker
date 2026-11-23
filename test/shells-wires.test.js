@@ -108,7 +108,7 @@ test('shell wires: the default power box sits clear of windows and of boards slo
 
 test('shell wires: outside routes that cross a greenhouse window are flagged', () => {
   const kit = { ...defaultKit(), shell: { type: 'greenhouse', gap, clearance: 2, params: {} } };
-  kit.lighting = { ...kit.lighting, power: { ...kit.lighting.power, wall: 'back', pos: 4, elev: 20 } };
+  kit.lighting = { ...kit.lighting, power: { ...kit.lighting.power, wall: 'back', pos: 100, elev: 170 } }; // in the glazing
   const r = compileKit(kit);
   assert.ok(r.warnings.some((w) => /power box/i.test(w.msg ?? w) && /window/i.test(w.msg ?? w)), JSON.stringify(r.warnings));
 });
