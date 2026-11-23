@@ -112,3 +112,17 @@ test('compileKit carries the circuit summary and its warnings', () => {
   assert.equal(r.lighting.circuit.totalMA, 6 * ledSpec('warm').mA);
   assert.ok(r.warnings.some((w) => /CR2032/.test(w.msg) && w.level !== 'info'));
 });
+
+test('the circuit counts only LEDs that are actually placed', () => {
+  const kit = defaultKit();
+  kit.room.ceiling = false;
+  kit.lighting.enabled = true;
+  kit.lighting.leds = [
+    { mount: 'wall', wall: 'back', pos: 50, elev: 150, color: 'warm' },
+    { mount: 'ceiling', x: 100, y: 100, color: 'warm' }, // skipped: no ceiling
+  ];
+  const r = compileKit(kit);
+  assert.equal(r.lighting.leds.length, 1);
+  assert.equal(r.lighting.circuit.count, 1);
+  assert.equal(r.lighting.circuit.totalMA, ledSpec('warm').mA);
+});

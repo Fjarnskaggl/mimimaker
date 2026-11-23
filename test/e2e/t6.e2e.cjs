@@ -6,24 +6,20 @@
 // (three@0.128.0 build/three.min.js) and the tests serve it in its place.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { spawn } = require('node:child_process');
 const fs = require('node:fs');
-const path = require('node:path');
 const { chromium } = require('playwright');
 
-const PORT = 5198;
-const URL = `http://localhost:${PORT}/`;
+// Each e2e file runs its own server on a free port (helpers.cjs): files run in parallel.
+const { startServer } = require('./helpers.cjs');
+let URL, server, browser;
 const CDN = /three(\.js\/r128|@0\.128\.0)\/.*three\.min\.js$/;
-let server, browser;
 
 before(async () => {
-  server = spawn(process.execPath, [path.join(__dirname, '../../scripts/serve.js')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
-  for (let i = 0; i < 50; i++) {
-    try { await fetch(URL); break; } catch { await new Promise((r) => setTimeout(r, 100)); }
-  }
+  server = await startServer();
+  URL = server.url;
   browser = await chromium.launch();
 });
-after(async () => { await browser?.close(); server?.kill(); });
+after(async () => { await browser?.close(); server?.close(); });
 
 async function open({ blockThree = false, noWebGL = false } = {}) {
   const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
