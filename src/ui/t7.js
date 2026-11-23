@@ -96,3 +96,50 @@ const FRIENDLY = [
   [/^meta\.remixedFrom cannot point/, 'Change the title a little: it names the file, and the kit you remixed already uses that name.'],
 ];
 const friendly = (e) => FRIENDLY.find(([re]) => re.test(e))?.[1] || e.replace(/^meta\.licence: /, '').replace(/^a /, 'A ');
+
+// --------------------------------------------------------- creator bundle
+/**
+ * Fill <dialog id="bundle"> with the creator-bundle form: a handle and a
+ * licence, then a zip of box art, cut files per machine, guide and licence.
+ * `bundle(kit, opts)` builds the files; `zip(files)` packs them.
+ */
+export function openBundleDialog(dlg, kit, { h, download, ic, bundle, zip }) {
+  const origin = kitOrigin(kit);
+  const choices = licenceChoices(origin?.licence);
+  const form = { author: '', licence: choices[0] };
+  const field = (label, control, hint) => h('label', { class: 'field submit-field' }, h('span', {}, label), control, hint ? h('span', { class: 'hint' }, hint) : null);
+  const author = h('input', { name: 'author', maxlength: 39, autocomplete: 'off', spellcheck: 'false', placeholder: 'e.g. tiny_rooms', oninput: (e) => { form.author = e.target.value; refresh(); } });
+  const licence = h('select', { name: 'licence', onchange: (e) => { form.licence = e.target.value; refresh(); } },
+    choices.map((k) => h('option', { value: k }, LICENCES[k].name)));
+  const problems = h('ul', { class: 'submit-problems' });
+  const sale = h('p', { class: 'hint bundle-sale' });
+  const dl = h('button', { id: 'bundle-download', type: 'button', class: 'mm-btn mm-btn--primary' }, ic('download'), 'Download creator bundle');
+  let result;
+  function refresh() {
+    result = bundle(kit, { author: form.author.trim().replace(/^@/, ''), licence: form.licence, dryRun: true });
+    problems.replaceChildren(...result.problems.map((p) => h('li', {}, p)));
+    dl.disabled = result.problems.length > 0;
+    sale.textContent = form.licence === 'CC-BY-NC-4.0'
+      ? 'CC BY-NC: others may share and remix it with credit, but nobody (including buyers) may sell it.'
+      : 'You may sell this kit. Others may use it under the licence you pick.';
+  }
+  dl.addEventListener('click', () => {
+    if (dl.disabled) return;
+    const full = bundle(kit, { author: form.author.trim().replace(/^@/, ''), licence: form.licence });
+    if (full.problems.length) return;
+    download(full.zipName, zip(full.files), 'application/zip');
+  });
+  dlg.replaceChildren(h('div', { class: 'submit-inner' },
+    h('div', { class: 'submit-head' },
+      h('h2', {}, 'Creator bundle'),
+      h('button', { type: 'button', class: 'mm-btn mm-btn--quiet mm-btn--icon', 'aria-label': 'Close', onclick: () => dlg.close() }, ic('close'))),
+    h('p', { class: 'hint' }, 'Everything you need to sell or give away this kit: box-art renders, cut files for Cricut, Silhouette and laser cutters, the assembly guide with your name on it, a licence file and the design. No watermark.'),
+    origin ? h('p', { class: 'submit-remix' }, `Remix of ${origin.title}${origin.author ? ` by ${origin.author}` : ''}. The bundle credits it.`) : null,
+    field('Your handle', author, 'Shown as the designer. Letters, digits, _ . - (not your email).'),
+    field('Licence', licence, origin?.licence && choices.length < 4 ? `The kit you remixed is ${LICENCES[origin.licence].name.split(' (')[0]}, so these are the licences it allows.` : 'How others may use your design.'),
+    sale, problems,
+    h('div', { class: 'submit-actions' }, dl)));
+  licence.value = form.licence;
+  refresh();
+  dlg.showModal();
+}

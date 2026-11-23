@@ -36,7 +36,8 @@ import { kitHandCutFiles } from './export/handcut.js';
 import { kitPrintCutFiles } from './export/printcut.js';
 // T2 shells
 import { shellSection, applyRoomLocks, appendRoofControls, syncShellRoom, shellWiresLights } from './ui/t2.js';
-import { remixCredit, openedSharedText, openSubmitDialog } from './ui/t7.js';
+import { remixCredit, openedSharedText, openSubmitDialog, openBundleDialog } from './ui/t7.js';
+import { creatorBundle } from './share/bundle.js';
 // [T5] lighting UI
 import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
@@ -911,6 +912,7 @@ function renderMake(el) {
         h('span', { class: 'grow' }),
         handCutButton(() => ({ kit, compiled }), download, ic('download')), // T3
         printCutButton(() => ({ kit, compiled }), download, ic('download')), // T3
+        h('button', { id: 'btn-bundle', type: 'button', class: 'mm-btn', onclick: () => openBundleDialog($('#bundle'), kit, { h, download, ic, bundle: creatorBundle, zip: makeZip }) }, ic('download'), 'Creator bundle'), // T7
         h('button', { id: 'btn-zip', type: 'button', class: 'mm-btn mm-btn--primary', onclick: exportZip }, ic('download'), 'Download kit')),
       h('div', { class: 'make-setup' },
         selectField('Cutting machine', kit.machine, Object.entries(MACHINES).map(([k, m]) => [k, m.name]), (v) => { kit.machine = v; changed(); }),
