@@ -150,3 +150,15 @@ test('setTextureChoice: "" follows the palette, "none" switches off, an id overr
   assert.deepEqual(resolveLook(c), defaultLook(kit));
   assert.throws(() => setTextureChoice(kit, floor, 'nope'), /unknown texture/i);
 });
+
+test('palettes are ready for upcoming room types (bakery, music-room; #67), before T1 adds them', () => {
+  for (const id of ['bakery', 'music-room']) {
+    const p = ROOM_PALETTES[id];
+    assert.ok(p, `palette for ${id}`);
+    for (const role of ['wall', 'floor']) {
+      assert.ok(ids.has(p[role].id), `${id} ${role}: ${p[role].id}`);
+      assert.ok(p[role].params.colors.every((c) => /^#[0-9a-f]{6}$/i.test(c)), `${id} ${role} colours`);
+    }
+  }
+  assert.notDeepEqual(ROOM_PALETTES.bakery, ROOM_PALETTES['music-room']);
+});
