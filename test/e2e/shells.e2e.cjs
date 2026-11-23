@@ -86,3 +86,31 @@ test('shell panel: a nook keeps furniture and survives undo', async () => {
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('room box section: a shell locks the size fields, an alley also the overlays', async () => {
+  const page = await open();
+  const room = page.locator('details.section', { has: page.locator('summary', { hasText: 'Room box' }) });
+  const field = (label) => room.locator('label', { hasText: label }).locator('input');
+  const state = async () => ({
+    width: await field('Width').isDisabled(),
+    height: await field('Height').isDisabled(),
+    ceiling: await field('Ceiling').isDisabled(),
+    wallpaper: await field('Wallpaper').isDisabled(),
+    floor: await field('Floor covering').isDisabled(),
+    note: await room.locator('[data-room-lock]').count(),
+  });
+  assert.deepEqual(await state(), { width: false, height: false, ceiling: false, wallpaper: false, floor: false, note: 0 });
+
+  await panel(page).locator('select[data-shell=type]').selectOption('nook');
+  assert.deepEqual(await state(), { width: true, height: true, ceiling: true, wallpaper: false, floor: false, note: 1 });
+  assert.match(await room.locator('[data-room-lock]').innerText(), /Sized by the shell — change the shelf gap/);
+
+  await panel(page).locator('select[data-shell=type]').selectOption('alley');
+  assert.deepEqual(await state(), { width: true, height: true, ceiling: true, wallpaper: true, floor: true, note: 1 });
+  if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'shell-room-locks.png') });
+
+  await panel(page).locator('select[data-shell=type]').selectOption('');
+  assert.deepEqual(await state(), { width: false, height: false, ceiling: false, wallpaper: false, floor: false, note: 0 });
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
