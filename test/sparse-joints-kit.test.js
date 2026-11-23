@@ -60,3 +60,21 @@ test('the default room box has only a few notches per wall', () => {
     assert.ok(p.polys[0].length <= 4 + 4 * 3 * 4, `${p.name}: ${p.polys[0].length} corners`);
   }
 });
+
+test('a laser kit keeps fine joints without a Knife Blade warning', () => {
+  const kit = defaultKit();
+  kit.machine = 'laser';
+  kit.fingerWidth = 1.5;
+  const r = compileKit(kit);
+  assert.ok(!r.warnings.some((w) => /finger joints are only|narrower than/.test(w.msg)), r.warnings.map((w) => w.msg).join('\n'));
+});
+
+test('every raised material is named in the finger width warning', () => {
+  const kit = defaultKit();
+  kit.fingerWidth = 2;
+  kit.items = [{ type: 'bookshelf', params: {}, material: 'bass16', x: 10, y: 10, rot: 0, wall: 'back', pos: 150, elev: 0 }];
+  const r = compileKit(kit);
+  const msgs = r.warnings.filter((w) => /^Finger width 2 mm/.test(w.msg)).map((w) => w.msg).join('\n');
+  assert.match(msgs, /Chipboard 2\.0 mm/);
+  assert.match(msgs, /Basswood/);
+});
