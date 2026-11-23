@@ -31,6 +31,8 @@ jobs:
           node scripts/build-single.js _site/index.html
           cp _site/index.html _site/mimimaker.html
           cp -r docs _site/
+          # Community gallery: kits/*.kit.json rendered to a static page.
+          node gallery/build.js _site/gallery
           echo "${GITHUB_SHA}" > _site/version.txt
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
