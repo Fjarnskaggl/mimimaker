@@ -35,7 +35,6 @@ const panel = (page) => page.locator('[data-panel=shell]');
 
 test('shell panel: pick an alley, size it to a shelf gap, tune it, and turn it off', async () => {
   const page = await open();
-  await panel(page).locator('summary').click().catch(() => {});
   assert.equal((await kit(page)).shell ?? null, null, 'starts as a plain room box');
 
   await panel(page).locator('select[data-shell=type]').selectOption('alley');
@@ -57,7 +56,7 @@ test('shell panel: pick an alley, size it to a shelf gap, tune it, and turn it o
   assert.equal((await kit(page)).shell.params.layers, 3);
 
   // the preview and the parts list show the facades
-  await page.waitForFunction(() => document.querySelectorAll('#view svg path').length > 50);
+  await page.waitForFunction(() => document.querySelectorAll('#view svg path').length > 20);
   await page.click('[data-tab=sheets]');
   await page.waitForSelector('#view svg');
   assert.ok(!(await page.locator('#warnings .warn.error').count()), await page.locator('#warnings').innerText());

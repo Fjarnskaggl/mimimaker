@@ -16,6 +16,8 @@ import { renderScene } from './preview3d.js';
 import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { guideHTML } from './guide.js';
 import { makeZip } from './zip.js';
+// T2 shells
+import { shellSection } from './ui/t2.js';
 
 const STORE_KEY = 'mimimaker.kit.v1';
 const $ = (sel) => document.querySelector(sel);
@@ -176,7 +178,9 @@ function renderSidebar() {
   const sb = $('#sidebar');
   const scroll = sb.scrollTop;
   const openState = [...sb.querySelectorAll('details.section')].map((d) => d.open);
-  sb.replaceChildren(roomTypesSection(), kitSection(), roomSection(), openingsSection(), itemsSection(), lightingSection(), materialsSection());
+  sb.replaceChildren(roomTypesSection(), kitSection(), roomSection(),
+    shellSection(kit, { h, section, numberField, selectField, checkField, changed, restructured }), // T2 shells
+    openingsSection(), itemsSection(), lightingSection(), materialsSection());
   sb.querySelectorAll('details.section').forEach((d, i) => { if (openState[i] != null) d.open = openState[i]; });
   sb.scrollTop = scroll;
 }
