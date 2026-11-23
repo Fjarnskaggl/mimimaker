@@ -1,6 +1,7 @@
 // Two-storey shell: the open-front nook split into two storeys by an upper
 // floor slotted into both side walls and the back wall, with an optional
-// straight stair (src/shells/stairs.js) up the left wall through a stairwell,
+// stair up through a stairwell in the front-left corner (straight up the left
+// wall, src/shells/stairs.js, or spiral round a dowel post, src/shells/spiral.js),
 // and internal walls (each with a doorway) that split a storey into two rooms.
 //
 // With a stair the upper floor is two boards: the main floor beside the
@@ -12,17 +13,19 @@
 import { nookWalls } from './nook.js';
 import { buildStairs } from './stairs.js';
 import { pickSteps } from './staircase.js';
+import { buildSpiralStairs } from './spiral.js';
 import { panelOutline, profilePlain, profileTabs, rectPoly } from '../geometry.js';
 
 export const TWOSTOREY_DEFAULTS = {
-  floorHeight: 0.5, stairs: 'straight', stairWidth: 0, steps: 0, risers: true, rail: true,
+  floorHeight: 0.5, stairs: 'straight', stairWidth: 0, spiralRadius: 0, steps: 0, risers: true, rail: true,
   groundWall: true, upperWall: true, wallPos: 0.65,
 };
 
 export const TWOSTOREY_PARAMS = [
   { key: 'floorHeight', label: 'Upper floor height (share of the inside)', type: 'num', min: 0.3, max: 0.7, step: 0.05 },
-  { key: 'stairs', label: 'Stairs', type: 'choice', options: [['none', 'None'], ['straight', 'Straight']] },
+  { key: 'stairs', label: 'Stairs', type: 'choice', options: [['none', 'None'], ['straight', 'Straight'], ['spiral', 'Spiral']] },
   { key: 'stairWidth', label: 'Stair width (0 = auto)', type: 'num', min: 0, max: 80, step: 1, unit: 'mm' },
+  { key: 'spiralRadius', label: 'Spiral radius (0 = auto)', type: 'num', min: 0, max: 50, step: 1, unit: 'mm' },
   { key: 'steps', label: 'Steps (0 = auto)', type: 'int', min: 0, max: 40 },
   { key: 'risers', label: 'Closed risers', type: 'bool' },
   { key: 'rail', label: 'Stairwell rail', type: 'bool' },
@@ -65,9 +68,25 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
   }
 
   // ---------------------------------------------------------------- stairs
-  const withStair = P.stairs === 'straight';
+  const withStair = P.stairs === 'straight' || P.stairs === 'spiral';
   let sw = 0, run = 0, stair = null;
-  if (withStair) {
+  if (P.stairs === 'spiral') {
+    // a square stairwell in the front-left corner, the post 1 mm in from each side
+    const R = P.spiralRadius > 0 ? clamp(P.spiralRadius, 15, Math.min(Wi, Di) * 0.4) : clamp(Math.min(Wi, Di) * 0.22, 15, Math.min(Wi, Di) * 0.4);
+    sw = 2 * R + 2;
+    run = sw;
+    const n = P.steps > 0 ? Math.round(clamp(P.steps, 3, 40)) : Math.max(3, Math.round(zF / clamp(R * 0.6, 8, 20)));
+    const rise = zF / n;
+    const turn = Math.min(30, 330 / (n - 1));
+    const sp = buildSpiralStairs({ steps: n, rise, radius: R, t, center: [t + 1 + R, 1 + R], z0: t, turn, endAngle: 90, key: 'stair', baseKey: 'shell-bottom' });
+    parts.push(...sp.parts);
+    joints.push(...sp.joints);
+    stair = { kind: 'spiral', steps: n, rise, turn, radius: R, center: sp.center, run, width: sw, post: sp.post };
+    stairSteps.push(
+      { group: 'Stairs', text: `Cut a ${sp.post.diameter} mm dowel (or a bamboo skewer) ${Math.ceil(sp.post.length)} mm long for the post and glue it upright into the floor where the first baluster's tread points.` },
+      { group: 'Stairs', text: `Thread the ${n - 1} treads onto the post in order, each with its baluster glued under its outer end, standing on the tread below — every tread turns ${turn.toFixed(0)}° on from the last. The top tread points at the landing strip.` },
+    );
+  } else if (withStair) {
     sw = P.stairWidth > 0 ? clamp(P.stairWidth, 15, Wi * 0.5) : clamp(Wi * 0.28, 18, Wi * 0.45);
     // the run that gives a comfortable pitch, leaving a landing strip of 25 mm or more
     run = clamp(zF / PITCH, Math.min(Di * 0.4, Di - 25), Di - 25);
@@ -82,7 +101,7 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
     link('stair-stringer-left', 'floor-landing', 'flat');
     link('stair-stringer-right', 'floor-landing', 'flat');
     if (P.risers) link(`stair-riser-${n - 1}`, 'floor-landing', 'flat');
-    stair = { steps: n, rise, going, run, width: sw };
+    stair = { kind: 'straight', steps: n, rise, going, run, width: sw };
     stairSteps.push(
       { group: 'Stairs', text: `Build the stair on the bench: slot the ${n - 1} treads into one stringer, add the other stringer${P.risers ? ', then glue the risers in behind each step' : ''}. Keep it square.` },
       { group: 'Stairs', text: 'Glue the stair against the left wall, its foot at the open front and its top step against the landing strip.' },
