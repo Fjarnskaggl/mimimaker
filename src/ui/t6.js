@@ -44,39 +44,76 @@ export function rendererToggle(redraw) {
 // textures appear. Changes go through setKit, i.e. the app's normal edit
 // path, so they are undoable and travel with share links.
 let picker = null;
+let pickerListening = false;
 
-/** The texture picker. getKit() returns the current kit; setKit(next) applies an edit. */
+/**
+ * The texture picker: a "Textures" button for the stage bar that opens a
+ * popover with one select per surface. getKit() returns the current kit;
+ * setKit(next) applies an edit.
+ */
 export function texturePicker(getKit, setKit) {
-  const el = document.createElement('div');
+  const el = document.createElement('span');
   el.id = 'texture-picker';
-  el.className = 't6-picker';
-  el.setAttribute('role', 'group');
-  el.setAttribute('aria-label', 'Textures');
-  picker = { el, getKit, setKit, key: '' };
+  const btn = document.createElement('button');
+  btn.id = 'texture-btn';
+  btn.type = 'button';
+  btn.className = 'mm-btn';
+  btn.textContent = 'Textures';
+  btn.style.cssText = 'height:36px;font-size:13px;border-color:var(--line);background:color-mix(in srgb, var(--surface) 92%, transparent)';
+  btn.setAttribute('aria-haspopup', 'true');
+  btn.setAttribute('aria-expanded', 'false');
+  const pop = document.createElement('div');
+  pop.id = 'texture-pop';
+  pop.className = 'mm-popover';
+  pop.setAttribute('role', 'group');
+  pop.setAttribute('aria-label', 'Textures');
+  pop.style.cssText = 'width:min(320px, calc(100vw - 32px));padding:var(--space-3);gap:var(--space-3)';
+  pop.hidden = true;
+  const open = (on) => {
+    pop.hidden = !on;
+    btn.setAttribute('aria-expanded', String(on));
+    if (!on) return;
+    // right-align with the button, then keep it inside the screen (16 px margin)
+    const r = btn.getBoundingClientRect(), W = window.innerWidth || 0, w = pop.offsetWidth;
+    const left = Math.max(16, Math.min(r.right - w, W - 16 - w));
+    pop.style.right = 'auto';
+    pop.style.left = `${left - r.left}px`;
+  };
+  btn.addEventListener('click', () => open(pop.hidden));
+  el.append(btn, pop);
+  picker = { el, pop, open, getKit, setKit, key: '' };
+  if (!pickerListening) { // once, for whichever picker is current (the stage is rebuilt per step)
+    pickerListening = true;
+    document.addEventListener('pointerdown', (e) => { if (picker && !picker.pop.hidden && !picker.el.contains(e.target)) picker.open(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && picker && !picker.pop.hidden) picker.open(false); });
+  }
   syncPicker();
   return el;
 }
 
 function syncPicker(kit = picker?.getKit()) {
   if (!picker || !kit) return;
-  const { el } = picker;
-  el.style.cssText = state.want ? 'display:inline-flex;gap:12px;align-items:center;flex-wrap:wrap' : 'display:none';
+  const { el, pop } = picker;
+  el.style.cssText = state.want ? 'position:relative;display:inline-block' : 'display:none';
   const rows = textureChoices(kit);
   const key = JSON.stringify(rows.map((r) => [r.material, r.label, r.paletteName]));
   if (key !== picker.key) {
     picker.key = key;
-    el.replaceChildren(...rows.map((r) => {
+    pop.replaceChildren(...rows.map((r) => {
       const select = document.createElement('select');
       select.dataset.material = r.material;
+      select.style.cssText = 'width:100%;height:var(--control-h-sm, 32px);border:1px solid var(--line-control);border-radius:var(--radius-sm);background:var(--surface);padding:0 var(--space-2);font-size:13px';
       const opt = (value, text) => { const o = document.createElement('option'); o.value = value; o.textContent = text; return o; };
       select.append(opt('', `Room palette (${r.paletteName})`), ...r.options.map((o) => opt(o.id, o.name)), opt('none', 'None (plain colour)'));
       select.addEventListener('change', () => picker.setKit(setTextureChoice(picker.getKit(), r.material, select.value)));
       const label = document.createElement('label');
-      label.append(`${r.label} `, select);
+      label.style.cssText = 'display:grid;gap:4px;font:600 12px/16px var(--font-sans);color:var(--ink-muted)';
+      label.append(r.label, select);
       return label;
     }));
+    if (!rows.length) pop.append('This room has no wallpaper or flooring to texture.');
   }
-  for (const select of el.querySelectorAll('select')) select.value = textureChoice(kit, select.dataset.material);
+  for (const select of pop.querySelectorAll('select')) select.value = textureChoice(kit, select.dataset.material);
 }
 
 function disposeViewer() {
