@@ -1,5 +1,5 @@
-// The single-file build (Pages deploys it) must bundle modules from
-// subfolders too, e.g. src/ui/t6.js → src/render/webgl.js → ../preview3d.js.
+// T6 modules (src/ui/t6.js → src/render/*.js → ../preview3d.js) must end up in
+// the single-file build that Pages deploys, each exactly once.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
