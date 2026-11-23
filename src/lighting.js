@@ -14,6 +14,7 @@
 // mirrored (seen from behind), which is the side you work on when wiring.
 
 import { ellipsePoly, pointInPolygon, bbox } from './geometry.js';
+import { planCircuit, supplyFor } from './lighting/circuit.js';
 
 export const LED_COLORS = {
   warm: { name: 'Warm white', hex: '#ffc767' },
@@ -151,5 +152,8 @@ export function planLighting(lighting, ctx) {
   if (leds.some((l) => l.face === 'bottom')) {
     warnings.push({ level: 'info', msg: 'Floor lights feed their wires underneath the room — glue 3–4 mm feet (or felt pads) under the floor so the wires aren\'t pinched.' });
   }
-  return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings };
+  const circuit = planCircuit((lighting.leds || []).map((l) => ({ color: l.color || 'warm', duty: l.duty })), supplyFor(pw));
+  power.supply = circuit.supply.id;
+  warnings.push(...circuit.warnings);
+  return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit };
 }
