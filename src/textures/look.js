@@ -23,8 +23,12 @@ export const ROOM_PALETTES = {
   default: { wall: wall('wallpaper-stripes', ['#efe3cf', '#d8b9a0']), floor: floor('wood-planks', ['#a5764a', '#b6875a', '#93653d', '#aa7b4c']) },
 };
 
-/** The room type a kit was started from (matched by name), or null. */
+/**
+ * The room type a kit was started from: kit.roomType (set by applyRoomType),
+ * else matched by name for kits saved before it existed; null for custom rooms.
+ */
 export function roomTypeOf(kit) {
+  if (kit?.roomType && ROOM_TYPES.some((rt) => rt.id === kit.roomType)) return kit.roomType;
   return ROOM_TYPES.find((rt) => rt.kit?.name === kit?.name)?.id ?? null;
 }
 
