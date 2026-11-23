@@ -282,6 +282,10 @@ export function createViewer(THREE) {
       }
       return null;
     },
+    /** What the viewer last drew with, without rendering (cheap, for tests). */
+    shown() {
+      return { selected: selectedItem, hovered: hoverItem, zoom: view.zoom || 1 };
+    },
     /** Render now and read back the pixels — for tests and thumbnails. */
     sample() {
       render();

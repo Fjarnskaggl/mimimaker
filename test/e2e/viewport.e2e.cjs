@@ -42,8 +42,10 @@ async function open({ webgl = false } = {}) {
 
 /** Item indexes outlined in the SVG preview right now. */
 const outlined = (page) => page.evaluate(() => [...new Set([...document.querySelectorAll('.stage path.sel')].map((p) => Number(p.dataset.item)))]);
-/** The piece the WebGL viewer was last drawn with as selected (sample() re-renders but doesn't re-read app state). */
-const glSelected = async (page) => (await page.evaluate(() => document.querySelector('.stage').t6viewer.sample())).selected;
+// What the WebGL viewer last drew with. shown() doesn't render: a night frame
+// with shadows can take a second on CI's software GL, so never poll sample().
+const shown = (page) => page.evaluate(() => document.querySelector('.stage').t6viewer.shown());
+const glSelected = async (page) => (await shown(page)).selected;
 
 test('selection is live in the SVG preview: picking from the list outlines the piece at once', async () => {
   const page = await open();
@@ -122,10 +124,10 @@ test('hover feedback in Realistic 3D: the piece under the pointer is tinted, and
   const p = await pointFor(page, 2);
   assert.ok(p, 'piece 2 is visible');
   await page.mouse.move(p.x, p.y);
-  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().hovered === 2, null, { timeout: 2000 });
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.shown().hovered === 2, null, { timeout: 10000 });
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.stage canvas')).cursor), 'pointer');
   await page.mouse.move(2, 2); // leave the stage
-  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().hovered === null, null, { timeout: 2000 });
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.shown().hovered === null, null, { timeout: 10000 });
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.stage canvas')).cursor), 'grab');
   assert.deepEqual(page.errors, []);
   await page.close();
@@ -197,8 +199,8 @@ test('Realistic 3D: zoom holds through redraws in the Light step', async () => {
   const box = await page.locator('.stage canvas').boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.wheel(0, -400);
-  const zoom = () => page.evaluate(() => document.querySelector('.stage').t6viewer.sample().zoom);
-  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().zoom > 1.2, null, { timeout: 2000 });
+  const zoom = async () => (await shown(page)).zoom;
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.shown().zoom > 1.2, null, { timeout: 10000 });
   const z = await zoom();
   await page.click('[data-select-led="0"]'); // redraws the room
   assert.equal(await zoom(), z, 'zoom kept after selecting a light');
