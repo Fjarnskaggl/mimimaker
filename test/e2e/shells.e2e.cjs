@@ -198,3 +198,30 @@ test('room box: a gable roof from the Room section', async () => {
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('shell panel: the room keeps the shell size when the scale changes', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await panel(page).locator('select[data-shell=type]').selectOption('nook');
+  const roomWidth = (k) => {
+    const t = k.materials.find((m) => m.id === k.room.material).thickness;
+    return ((k.shell.gap.w - k.shell.clearance - 2 * t) * k.scale) / 10;
+  };
+  let k = await kit(page);
+  assert.ok(Math.abs(k.room.width - roomWidth(k)) < 1e-6);
+
+  await page.click('[data-step=make]');
+  const scale = page.locator('label.field', { hasText: 'Scale' }).locator('select');
+  const other = await scale.evaluate((s) => [...s.options].map((o) => o.value).find((v) => v !== s.value));
+  await scale.selectOption(other);
+  k = await kit(page);
+  assert.equal(k.scale, Number(other));
+  // the room follows straight away, not at the next shell edit
+  assert.ok(Math.abs(k.room.width - roomWidth(k)) < 1e-6, `room width ${k.room.width} vs ${roomWidth(k)} at 1:${k.scale}`);
+
+  await page.click('[data-step=design]');
+  const insp = await page.locator('body').innerText();
+  assert.match(insp, new RegExp(`1:${k.scale}`));
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
