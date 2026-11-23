@@ -261,3 +261,13 @@ test('SVG preview outlines the selected piece', () => {
   assert.ok(sel.length > 0);
   for (const p of sel) assert.match(p, /data-item="1"/);
 });
+
+test('ghosted walls and light halos let clicks through to the pieces behind them', () => {
+  const svg = renderScene(compileKit(defaultKit()).faces3d, { yaw: -32, pitch: 26, night: true });
+  const ghosts = [...svg.matchAll(/<path[^>]*fill-opacity="0\.(?:12|06)"[^>]*>/g)].map((m) => m[0]);
+  assert.ok(ghosts.length > 0, 'the default view ghosts the left wall');
+  for (const g of ghosts) assert.match(g, /pointer-events="none"/);
+  const halos = [...svg.matchAll(/<path class="halo"[^>]*>/g)].map((m) => m[0]);
+  assert.ok(halos.length > 0);
+  for (const h of halos) assert.match(h, /pointer-events="none"/);
+});
