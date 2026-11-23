@@ -10,7 +10,7 @@ import { labelAnchor } from './labels.js';
 import { planLighting, LED_COLORS, POWER_KINDS } from './lighting.js';
 import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometry.js';
 // T2 shells
-import { prepareShell, compileShell, compileRoof } from './shells/kit.js';
+import { prepareShell, compileShell, compileRoof, shellLights } from './shells/kit.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
@@ -129,7 +129,8 @@ export function compileKit(kit) {
   });
 
   // LED wire holes go through the structure (and the overlays below)
-  const lighting = planLighting(kit.lighting, { s, t, W, D, H, Wi, Di, Hi, ceiling: room.ceiling, wallInfo, openings });
+  const lighting = planLighting(kit.lighting, { s, t, W, D, H, Wi, Di, Hi, ceiling: room.ceiling, wallInfo, openings,
+    shellLights: shellLights(shellPrep, { t }) }); // T2 shells: LEDs the shell places itself (#16)
   for (const [f, list] of Object.entries(lighting.holes)) (holes[f] ||= []).push(...list);
   for (const w of lighting.warnings) typeof w === 'string' ? warn(w) : warn(w.msg, w.level);
 

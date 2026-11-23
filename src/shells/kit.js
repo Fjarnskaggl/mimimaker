@@ -42,7 +42,14 @@ export function shellRoom(kit) {
     if (kit.lighting?.enabled && kit.lighting.leds?.length) setAside.push('the room LEDs');
     out.items = [];
     out.openings = [];
-    out.lighting = { ...kit.lighting, enabled: false, leds: [] };
+    if (def.wiredLights) {
+      // the shell's own LEDs replace the room's; keep the power box on the back wall
+      const pw = kit.lighting?.power || {};
+      const onWall = (pw.wall || 'back') === 'back' && pw.pos >= 0 && pw.pos <= room.width && pw.elev >= 0 && pw.elev <= room.height;
+      out.lighting = { ...kit.lighting, leds: [], power: { ...pw, wall: 'back', ...(onWall ? {} : { pos: room.width / 2, elev: room.height / 2 }) } };
+    } else {
+      out.lighting = { ...kit.lighting, enabled: false, leds: [] };
+    }
     room.wallpaper = { ...room.wallpaper, enabled: false };
     room.floor = { ...room.floor, enabled: false };
     if (setAside.length) {
@@ -51,6 +58,19 @@ export function shellRoom(kit) {
     }
   }
   return { kit: out, room, spec: { ...spec, material: mat.id }, def, notes };
+}
+
+/**
+ * The LED spots the shell wires itself (#16), for the LED planner. Empty
+ * unless the shell type has wired lights and the kit's lighting is on.
+ */
+export function shellLights(prep, { t }) {
+  if (!prep?.def.wiredLights || !prep.kit.lighting?.enabled) return [];
+  try {
+    return buildShell(prep.spec, { t, materials: prep.kit.materials }).lights.filter((l) => l.wire);
+  } catch {
+    return []; // compileShell reports the problem
+  }
 }
 
 /** shellRoom for the compiler: reports problems as warnings instead of throwing. */
@@ -87,7 +107,7 @@ export function compileShell(prep, { t, fingerWidth, holes, getMat, newGroup, ad
     add3d(0, p.polys, p.plane, xf, mat.color, { thickness: mat.thickness }); // solid: material runs along −n
   }
   for (const s of sh.steps) groups.get(s.group)?.steps.push(s.text);
-  // suggested LED spots glow in the preview until T5 plans their wiring (#16)
+  // LED spots glow in the preview; wired ones are on the LED map too (#16)
   for (const l of sh.lights) {
     const hex = LED_COLORS[l.color]?.hex || LED_COLORS.warm.hex;
     const plane = { o: l.p, U: [1, 0, 0], V: [0, 0, 1], n: [0, -1, 0] };

@@ -445,6 +445,24 @@ function addLed(mount, { selectIt = true } = {}) {
 
 function lightingInspector() {
   const L = kit.lighting;
+  // >>> T2 shells: a shell that places its own LEDs (#16) lists them instead of the room's
+  const shellLeds = (compiled?.lighting?.leds || []).filter((l) => l.inside);
+  if (shellLeds.length) {
+    const powerFields = lightingInspectorPower(L);
+    return [
+      inspHead('Lighting', 'Circuit', `${shellLeds.length} light${shellLeds.length === 1 ? '' : 's'}`),
+      renderCircuitSummary(compiled.lighting.circuit),
+      section('Lights', [
+        h('p', { class: 'hint', 'data-shell-lights': '' }, 'The shell places these LEDs behind its lit windows. Change the windows in the shell panel to move them.'),
+        h('div', { class: 'insp-list' }, shellLeds.map((led) => h('div', { class: 'insp-row' },
+          h('span', { class: 'led-dot', style: `background:${LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex}` }),
+          h('span', { class: 'grow' }, `${led.label}${led.name ? ` · ${led.name}` : ''}`),
+          h('span', { class: 'k2' }, led.where)))),
+      ], { count: shellLeds.length }),
+      section('Power', powerFields, { open: false }),
+    ];
+  }
+  // <<< T2 shells
   if (!L.leds.length) {
     return [
       inspHead('Lighting', 'Lights', ''),
@@ -469,19 +487,23 @@ function lightingInspector() {
         h('button', { type: 'button', class: 'mm-btn mm-btn--sm', onclick: () => addLed('ceiling') }, ic('plus'), 'Ceiling'),
         h('button', { type: 'button', class: 'mm-btn mm-btn--sm', onclick: () => addLed('floor') }, ic('plus'), 'Floor')),
     ], { count: L.leds.length }),
-    section('Power', [
-      checkField('Lights on (cut the wire holes)', L.enabled, (v) => { L.enabled = v; restructured(); }),
-      h('div', { class: 'grid2' },
-        renderSupplyField(L.power, changed), // [T5] supply picker
-        numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
-      renderMountField(L.power, changed), // [T5] mount picker
-      renderCoverField(L, { checkField, restructured, range: compiled.lighting?.coverRange }), // [T5] cable cover
-      renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
-      h('div', { class: 'grid3' },
-        selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
-        numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
-        numberField('Height', L.power.elev, (v) => { L.power.elev = v; changed(); }, { min: 0, unit: 'cm' })),
-    ], { open: false }),
+    section('Power', lightingInspectorPower(L), { open: false }),
+  ];
+}
+
+function lightingInspectorPower(L) {
+  return [
+    checkField('Lights on (cut the wire holes)', L.enabled, (v) => { L.enabled = v; restructured(); }),
+    h('div', { class: 'grid2' },
+      renderSupplyField(L.power, changed), // [T5] supply picker
+      numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
+    renderMountField(L.power, changed), // [T5] mount picker
+    renderCoverField(L, { checkField, restructured, range: compiled.lighting?.coverRange }), // [T5] cable cover
+    renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
+    h('div', { class: 'grid3' },
+      selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
+      numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
+      numberField('Height', L.power.elev, (v) => { L.power.elev = v; changed(); }, { min: 0, unit: 'cm' })),
   ];
 }
 
@@ -823,7 +845,9 @@ function renderWiring(el) {
       h('td', { class: 'num' }, `${r.runCm.toFixed(1)} cm`), h('td', { class: 'num' }, h('b', {}, `≥ ${r.leadCm} cm`)))))));
   el.replaceChildren(
     h('div', { class: 'map-head' },
-      h('p', { class: 'hint' }, `Seen from behind the room, the side you wire on. ${compiled.lighting.holeDiameter.toFixed(1)} mm holes are pre-cut at each LED; run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`),
+      h('p', { class: 'hint' }, compiled.lighting.leds.some((l) => l.inside) // T2 shells: LEDs the shell places itself (#16)
+        ? `Seen from behind the shell, the side you wire on. Dashed lines run inside the shell, along the cavity floor to the small holes low in the back wall; from there run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`
+        : `Seen from behind the room, the side you wire on. ${compiled.lighting.holeDiameter.toFixed(1)} mm holes are pre-cut at each LED; run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`),
       h('button', { class: 'mm-btn mm-btn--sm', type: 'button', onclick: () => download(`${slug(kit.name)}-led-map.svg`, ledMapSVG(compiled, { standalone: true }), 'image/svg+xml') }, ic('download'), 'SVG')),
     h('div', { class: 'map-wrap', html: ledMapSVG(compiled) }),
     table);

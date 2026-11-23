@@ -5,7 +5,8 @@
 //   type, dims: { W, D, H, t, inner: { x0, y0, z0, W, D, H } },
 //   parts: [{ key, name, group, role, material?, polys: [outline, ...holes], scores, plane: { o, U, V, n } }],
 //   joints: [{ a: partKey, b: partKey, kind: 'finger' | 'slot' | 'glue-tab' | 'flat' (see build/joints.js JOINT_KINDS) }],
-//   lights: [{ p: [x, y, z], color, … }],  // suggested LED spots
+//   lights: [{ p: [x, y, z], color, name?, where?, wire?: { path: [[x, y, z], …], exit: [x, z] } }],
+//     // suggested LED spots; with `wire`, a path inside the shell to a hole it cuts in its back wall
 //   steps: [{ group, text }], warnings: [{ level, msg }], minFinger, …type-specific data
 // }
 // All sizes are physical mm (book nooks are sized to a real shelf). Axes as in
@@ -28,7 +29,8 @@ export const SHELLS = {
   // furnishable: furniture, openings, overlays and LEDs go inside it like a room box
   // boxHeight: height of the box under any roof (the room is inside it)
   nook: { label: 'Book nook (open box)', params: NOOK_PARAMS, defaults: NOOK_DEFAULTS, build: buildNook, boxHeight: nookBoxHeight, furnishable: true },
-  alley: { label: 'Alley with lit facades', params: ALLEY_PARAMS, defaults: ALLEY_DEFAULTS, build: buildAlley, furnishable: false },
+  // wiredLights: its LED spots come with wire paths, so the LED planner wires them (#16)
+  alley: { label: 'Alley with lit facades', params: ALLEY_PARAMS, defaults: ALLEY_DEFAULTS, build: buildAlley, furnishable: false, wiredLights: true },
   bookshop: { label: 'Bookshop corner', params: BOOKSHOP_PARAMS, defaults: BOOKSHOP_DEFAULTS, build: buildBookshop, furnishable: false },
   staircase: { label: 'Staircase to a landing', params: STAIRCASE_PARAMS, defaults: STAIRCASE_DEFAULTS, build: buildStaircase, furnishable: false },
   greenhouse: { label: 'Greenhouse', params: GREENHOUSE_PARAMS, defaults: GREENHOUSE_DEFAULTS, build: buildGreenhouse, furnishable: false },
