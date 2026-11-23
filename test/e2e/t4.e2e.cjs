@@ -12,14 +12,18 @@ before(async () => {
 });
 after(async () => { await browser?.close(); server?.close(); });
 
-async function openBuild(context) {
+// Wide screens open the Build step on the printable guide; `steps: true`
+// switches to step-by-step first. Phones open on step-by-step by default.
+async function openBuild(context, { steps = true } = {}) {
   const page = await context.newPage();
   page.errors = [];
   page.on('pageerror', (e) => page.errors.push(e.message));
   await page.goto(URL);
   await page.waitForFunction(() => window.mimimaker?.kit, null, { timeout: 8000 });
   await page.click('[data-step=build]');
-  await page.waitForSelector('.t4-build');
+  await page.waitForSelector('.t4-mode');
+  if (steps && !(await page.locator('.t4-build').isVisible())) await page.click('.t4-mode [data-mode=steps]');
+  if (steps) await page.waitForSelector('.t4-build');
   return page;
 }
 
@@ -80,21 +84,30 @@ test('build mode: glue timer counts down', async () => {
   await context.close();
 });
 
-test('build mode: switch to the printable guide and back', async () => {
+test('build mode: wide screens open on the printable guide; the choice is remembered', async () => {
   const context = await browser.newContext({ viewport: { width: 1200, height: 900 } });
-  const page = await openBuild(context);
-  assert.equal(await page.locator('.guide-frame').isVisible(), false);
-  await page.click('.t4-mode [data-mode=guide]');
-  assert.equal(await page.locator('.guide-frame').isVisible(), true);
+  const page = await openBuild(context, { steps: false });
+  assert.equal(await page.locator('.guide-frame').isVisible(), true, 'guide first on a wide screen');
   assert.equal(await page.locator('.t4-build').isVisible(), false);
   await page.click('.t4-mode [data-mode=steps]');
   assert.equal(await page.locator('.t4-build').isVisible(), true);
+  assert.equal(await page.locator('.guide-frame').isVisible(), false);
+  await page.reload();
+  await page.waitForFunction(() => window.mimimaker?.kit);
+  await page.click('[data-step=build]');
+  await page.waitForSelector('.t4-mode');
+  assert.equal(await page.locator('.t4-build').isVisible(), true, 'step-by-step remembered');
+  await page.click('.t4-mode [data-mode=guide]');
+  assert.equal(await page.locator('.guide-frame').isVisible(), true);
+  assert.equal(await page.locator('.t4-build').isVisible(), false);
   await context.close();
 });
 
 test('build mode fits a phone: big tap targets, no sideways scrolling', async () => {
   const context = await browser.newContext({ ...devices['iPhone 13'] });
-  const page = await openBuild(context);
+  const page = await openBuild(context, { steps: false });
+  assert.equal(await page.locator('.t4-build').isVisible(), true, 'phones open on step-by-step');
+  assert.equal(await page.locator('.guide-frame').isVisible(), false);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   assert.ok(overflow <= 0, `page is ${overflow}px too wide`);
   for (const sel of ['.t4-next', '.t4-prev', '.t4-done', '.t4-parts label']) {
