@@ -88,3 +88,16 @@ test('mount picker: outside or flush behind the wall', () => {
   setMount(p, 'bogus');
   assert.equal(p.mount, undefined);
 });
+
+import { setCover } from '../src/ui/t5.js';
+
+test('cover toggle: on adds the cover, off removes it from the kit', () => {
+  const L = { enabled: true };
+  setCover(L, true);
+  assert.deepEqual(L.cover, { enabled: true });
+  L.cover.frameMaterial = 'card110';
+  setCover(L, true);
+  assert.equal(L.cover.frameMaterial, 'card110', 'keeps chosen materials');
+  setCover(L, false);
+  assert.equal(L.cover, undefined, 'off is stored as nothing');
+});
