@@ -60,8 +60,8 @@ export function shellRoom(kit) {
 
 /**
  * Where the power box goes on a shell that wires its own LEDs: always the
- * back wall (the wire holes are there); a position off the wall moves to its
- * middle, one on it is kept so the Power fields still move the box.
+ * back wall (the wire holes are there); a position off the wall moves low
+ * in its middle, one on it is kept so the Power fields still move the box.
  */
 export function shellPower(power = {}, room) {
   const ok = (v, max) => Number.isFinite(v) && v >= 0 && v <= max;
@@ -69,21 +69,31 @@ export function shellPower(power = {}, room) {
     ...power,
     wall: 'back',
     pos: ok(power.pos, room.width) ? power.pos : room.width / 2,
-    elev: ok(power.elev, room.height) ? power.elev : room.height / 2,
+    elev: ok(power.elev, room.height) ? power.elev : room.height * 0.15, // low: under shelves, floors and glazing
   };
 }
 
 /**
- * The LED spots the shell wires itself (#16), for the LED planner. Empty
- * unless the shell type has wired lights and the kit's lighting is on.
+ * For the LED planner: the shell's wired LEDs, and the windows in its back
+ * wall (`obstacles`, back-wall panel polygons) that the power box and the
+ * outside wire routes should keep clear of. Slots and wire holes don't count.
  */
-export function shellLights(prep, { t }) {
-  if (!prep?.def.wiredLights || !prep.kit.lighting?.enabled) return [];
+export function shellLighting(prep, { t }) {
+  const none = { lights: [], obstacles: [] };
+  if (!prep?.def.wiredLights || !prep.kit.lighting?.enabled) return none;
+  let sh;
   try {
-    return buildShell(prep.spec, { t, materials: prep.kit.materials }).lights.filter((l) => l.wire);
+    sh = buildShell(prep.spec, { t, materials: prep.kit.materials });
   } catch {
-    return []; // compileShell reports the problem
+    return none; // compileShell reports the problem
   }
+  const back = sh.parts.find((p) => p.key === 'shell-back');
+  const obstacles = (back?.polys.slice(1) || []).filter((h) => {
+    const xs = h.map(([x]) => x), zs = h.map(([, z]) => z);
+    const w = Math.max(...xs) - Math.min(...xs), hh = Math.max(...zs) - Math.min(...zs);
+    return Math.min(w, hh) > t + 0.5 && w * hh >= 12;
+  });
+  return { lights: sh.lights.filter((l) => l.wire), obstacles };
 }
 
 /** shellRoom for the compiler: reports problems as warnings instead of throwing. */

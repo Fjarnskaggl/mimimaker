@@ -11,7 +11,7 @@
 // goes in first), the upstairs wall into the upper floor and the roof.
 
 import { nookWalls } from './nook.js';
-import { wiredLight } from './wire.js';
+import { wiredLight, under } from './wire.js';
 import { buildStairs } from './stairs.js';
 import { pickSteps } from './staircase.js';
 import { buildSpiralStairs, spiralMinRadius } from './spiral.js';
@@ -211,13 +211,14 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
   // upstairs, the left room starts beyond the stairwell
   const roomsAcross = (wall, x0) => (xp != null && wall ? [[x0, xp - t], [xp, W - t]] : [[x0, W - t]]);
   // each straight back to the back wall, under the upper floor or the roof
-  const light = (x, z, storey, i, n) => {
+  const light = (x, z, zRun, storey, i, n) => {
     const side = n > 1 ? (i ? ', right room' : ', left room') : '';
-    return wiredLight({ p: [x, Di / 2, z], name: `${storey}${side}`, where: storey, backHoles: wallHoles.back, via: [[x, Di, z]] });
+    return wiredLight({ p: [x, Di / 2, z], name: `${storey}${side}`, where: storey, backHoles: wallHoles.back, via: [[x, Di / 2, zRun], [x, Di, zRun]] });
   };
-  const downRooms = roomsAcross(P.groundWall, t), up = roomsAcross(P.upperWall, xa);
-  downRooms.forEach(([x0, x1], i) => lights.push(light((x0 + x1) / 2, zF - 2, 'Ground floor', i, downRooms.length)));
-  up.forEach(([x0, x1], i) => lights.push(light((x0 + x1) / 2, H - t - 3, 'Upstairs', i, up.length)));
+  // the ground-floor left room's light hangs beside the stairwell too, clear of the stair
+  const downRooms = roomsAcross(P.groundWall, xa), up = roomsAcross(P.upperWall, xa);
+  downRooms.forEach(([x0, x1], i) => lights.push(light((x0 + x1) / 2, zF - 2, under(zF), 'Ground floor', i, downRooms.length)));
+  up.forEach(([x0, x1], i) => lights.push(light((x0 + x1) / 2, H - t - 3, under(H - t), 'Upstairs', i, up.length)));
 
   // ------------------------------------------------------------------- shell
   const shell = nookWalls({ W, D, H, t, fingerWidth, holes: wallHoles });

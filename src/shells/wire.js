@@ -7,6 +7,13 @@ import { ellipsePoly } from '../geometry.js';
 /** Radius of a wire hole (mm): a micro LED's two wires pass a 3 mm hole. */
 export const WIRE_R = 1.5;
 
+/** Board kept between a wire hole and any slot or edge (mm). */
+export const WIRE_KEEP = 2;
+/** Height for a wire run under a board whose underside is at `z`: its hole clears the board's slots. */
+export const under = (z) => z - WIRE_R - WIRE_KEEP;
+/** …and over a board whose top is at `z`. */
+export const over = (z) => z + WIRE_R + WIRE_KEEP;
+
 export const wireHole = (x, z) => ellipsePoly(x, z, WIRE_R, WIRE_R, 16);
 
 /**

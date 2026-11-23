@@ -99,8 +99,9 @@ export function routeWire(a, b, dims, obstacles = []) {
 
 /**
  * @param lighting kit.lighting
- * @param ctx { s, t, W, D, H, Wi, Di, Hi, ceiling, wallInfo, openings, shellLights? }
+ * @param ctx { s, t, W, D, H, Wi, Di, Hi, ceiling, wallInfo, openings, shellLights?, shellObstacles? }
  *   shellLights: LEDs a shell places itself, with wire paths to its own back-wall holes (lighting/shell.js)
+ *   shellObstacles: windows in a shell's back wall (back panel polygons) for routes and the power box to avoid
  */
 export function planLighting(lighting, ctx) {
   const warnings = [];
@@ -115,6 +116,11 @@ export function planLighting(lighting, ctx) {
     const b = bbox([o.poly.map(([u, v]) => netPoint(o.wall, u, v, ctx))]);
     return { x0: b.x0 - 0.5, y0: b.y0 - 0.5, x1: b.x1 + 0.5, y1: b.y1 + 0.5 };
   });
+  // windows in a shell's back wall (#16): routes keep clear, the power box mustn't cover one
+  for (const poly of ctx.shellObstacles || []) {
+    const b = bbox([poly.map(([u, v]) => netPoint('back', u, v, ctx))]);
+    obstacles.push({ x0: b.x0 - 0.5, y0: b.y0 - 0.5, x1: b.x1 + 0.5, y1: b.y1 + 0.5, window: true });
+  }
   const inOpening = (face, u, v) => ctx.openings.some((o) => o.wall === face && pointInPolygon([u, v], o.poly));
 
   // power box (outside a wall)
@@ -124,6 +130,9 @@ export function planLighting(lighting, ctx) {
   const power = { face: pWall, u: pu, v: pv, p: netPoint(pWall, pu, pv, ctx), kind: pw.kind || 'battery' };
   if (pu < 0 || pu > wallInfo[pWall].u0 + wallInfo[pWall].len || pv < 0 || pv > t + Hi) {
     warnings.push(`The power box is off the ${pWall} wall — move it.`);
+  }
+  if (pWall === 'back' && obstacles.some((o) => o.window && power.p[0] > o.x0 - 15 && power.p[0] < o.x1 + 15 && power.p[1] > o.y0 - 10 && power.p[1] < o.y1 + 10)) {
+    warnings.push('The power box sits over a window in the back wall — move it lower or to one side.');
   }
 
   (lighting.leds || []).forEach((led, i) => {
