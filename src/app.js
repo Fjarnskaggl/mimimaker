@@ -17,7 +17,7 @@ import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg
 import { guideHTML } from './guide.js';
 import { makeZip } from './zip.js';
 // T2 shells
-import { shellSection } from './ui/t2.js';
+import { shellSection, applyRoomLocks } from './ui/t2.js';
 
 const STORE_KEY = 'mimimaker.kit.v1';
 const $ = (sel) => document.querySelector(sel);
@@ -200,7 +200,7 @@ function kitSection() {
 
 function roomSection() {
   const r = kit.room;
-  return section('Room box', [
+  const el = section('Room box', [
     h('div', { class: 'grid3' },
       numberField('Width', r.width, (v) => { r.width = v; changed(); }, { min: 20, unit: 'cm' }),
       numberField('Depth', r.depth, (v) => { r.depth = v; changed(); }, { min: 20, unit: 'cm' }),
@@ -216,6 +216,8 @@ function roomSection() {
     ),
     selectField('Window & door trim material', r.trimMaterial, matOptions((m) => m.kind !== 'fabric'), (v) => { r.trimMaterial = v; changed(); }),
   ]);
+  applyRoomLocks(kit, el, h); // T2 shells: the shell owns the room size (and overlays for whole-scene shells)
+  return el;
 }
 
 const OPENING_KINDS = [['window', 'Window'], ['arch', 'Arched window'], ['round', 'Round window'], ['door', 'Door'], ['archdoor', 'Arched door']];
