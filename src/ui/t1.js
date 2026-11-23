@@ -14,17 +14,11 @@ const CSS = `
 .t1-meta { display: block; font-size: 10.5px; color: var(--ink-muted, var(--muted)); }
 .t1-parts { white-space: nowrap; }
 .t1-diff { font-weight: 600; }
-.t1-diff-1 { color: #3f8a4f; }
-.t1-diff-2 { color: #b5832a; }
-.t1-diff-3 { color: var(--accent); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .t1-diff-1 { color: #82c991; }
-  :root:not([data-theme="light"]) .t1-diff-2 { color: #e2b660; }
-}
-:root[data-theme="dark"] .t1-diff-1 { color: #82c991; }
-:root[data-theme="dark"] .t1-diff-2 { color: #e2b660; }
+.t1-diff-1 { color: var(--success, #1b6c8a); }
+.t1-diff-2 { color: var(--warning, #8a5300); }
+.t1-diff-3 { color: var(--danger, #b5341b); }
 .library .chips[hidden] { display: none; }
-.t1-empty { font-size: 12px; color: var(--muted); margin: 2px 0; grid-column: 1 / -1; }
+.t1-empty { font-size: 12px; color: var(--ink-muted, var(--muted)); margin: 2px 0; grid-column: 1 / -1; }
 `;
 
 function ensureStyles() {
