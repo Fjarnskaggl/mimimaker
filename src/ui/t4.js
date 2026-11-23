@@ -14,7 +14,7 @@ import {
   toggleStep, togglePart, goTo, summary, startTimer, timerLeft, formatClock,
 } from '../build/progress.js';
 import { billOfMaterials } from '../build/bom.js';
-import { explodedViewSVG } from '../build/exploded.js';
+import { explodedViewSVG, faceParts } from '../build/exploded.js';
 import { jointGraph } from '../build/joints.js';
 import { formatMinutes } from '../make.js';
 
@@ -134,9 +134,10 @@ export function buildCompanion(page, kit, compiled) {
   const matOf = new Map(compiled.groups.map((g) => [g.title, g.material]));
   let p = loadProgress(store(), key, steps);
   const graph = jointGraph(kit, compiled);
+  let owners = null; // faceParts, worked out once
   const views = new Map(); // step n → exploded view SVG (drawn on first visit)
   const viewOf = (n) => {
-    if (!views.has(n)) { try { views.set(n, explodedViewSVG(kit, compiled, steps, n, { graph })); } catch (err) { console.error('exploded view', err); views.set(n, null); } }
+    if (!views.has(n)) { try { owners ||= faceParts(kit, compiled); views.set(n, explodedViewSVG(kit, compiled, steps, n, { graph, owners })); } catch (err) { console.error('exploded view', err); views.set(n, null); } }
     return views.get(n);
   };
   const bomPanel = bomDetails(kit, compiled, steps);
