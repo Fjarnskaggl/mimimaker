@@ -13,7 +13,7 @@
 // visible face lies on its plane and its material runs t along −n.
 
 import { shellSize as sizeFromGap } from './fit.js';
-import { buildNook } from './nook.js';
+import { buildNook, nookBoxHeight, NOOK_PARAMS, NOOK_DEFAULTS } from './nook.js';
 import { buildAlley, ALLEY_PARAMS, ALLEY_DEFAULTS } from './alley.js';
 import { buildBookshop, BOOKSHOP_PARAMS, BOOKSHOP_DEFAULTS } from './bookshop.js';
 import { buildStaircase, STAIRCASE_PARAMS, STAIRCASE_DEFAULTS } from './staircase.js';
@@ -26,7 +26,8 @@ export function shellSize(spec) {
 
 export const SHELLS = {
   // furnishable: furniture, openings, overlays and LEDs go inside it like a room box
-  nook: { label: 'Book nook (open box)', params: [], defaults: {}, build: buildNook, furnishable: true },
+  // boxHeight: height of the box under any roof (the room is inside it)
+  nook: { label: 'Book nook (open box)', params: NOOK_PARAMS, defaults: NOOK_DEFAULTS, build: buildNook, boxHeight: nookBoxHeight, furnishable: true },
   alley: { label: 'Alley with lit facades', params: ALLEY_PARAMS, defaults: ALLEY_DEFAULTS, build: buildAlley, furnishable: false },
   bookshop: { label: 'Bookshop corner', params: BOOKSHOP_PARAMS, defaults: BOOKSHOP_DEFAULTS, build: buildBookshop, furnishable: false },
   staircase: { label: 'Staircase to a landing', params: STAIRCASE_PARAMS, defaults: STAIRCASE_DEFAULTS, build: buildStaircase, furnishable: false },
@@ -51,7 +52,7 @@ export function buildShell(spec, { t, fingerWidth = 0, holes = {}, materials }) 
     ...res,
     parts,
     type: spec.type,
-    dims: { W, D, H, t, inner: { x0: t, y0: 0, z0: t, W: W - 2 * t, D: D - t, H: H - 2 * t } },
+    dims: { W, D, H, t, inner: { x0: t, y0: 0, z0: t, W: W - 2 * t, D: D - t, H: (res.boxH ?? H) - 2 * t } },
     warnings,
   };
 }
