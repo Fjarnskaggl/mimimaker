@@ -51,3 +51,11 @@ test('trigonometry for round things (clock ticks, dials)', () => {
   assert.equal(evalExpr('cos(0)', {}), 1);
   assert.ok(Math.abs(evalExpr('cos(PI / 3)', {}) - 0.5) < 1e-12);
 });
+
+test('hash(k, seed) gives repeatable pseudo-random numbers in [0, 1)', () => {
+  const a = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => evalExpr('hash(k, 7)', { k }));
+  assert.deepEqual(a, [0, 1, 2, 3, 4, 5, 6, 7].map((k) => evalExpr('hash(k, 7)', { k })), 'same inputs, same numbers');
+  for (const x of a) assert.ok(x >= 0 && x < 1, String(x));
+  assert.ok(new Set(a.map((x) => x.toFixed(6))).size === a.length, 'different k, different numbers');
+  assert.notEqual(evalExpr('hash(3, 7)', {}), evalExpr('hash(3, 8)', {}), 'the seed changes the sequence');
+});
