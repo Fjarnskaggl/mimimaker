@@ -1,7 +1,10 @@
 // Step generator: turns the joint graph into ordered, grouped build steps.
 //
 // Order: room shell → wallpaper & flooring → window/door trim → lighting →
-// each piece of furniture (built, then placed in the room).
+// each piece of furniture (built, then placed in the room) → roof.
+// A book-nook shell is built from its declared joints: floor, back and first
+// side → anything that slots into them (shelves, landing, bench) → the second
+// side → the shell's other parts → … → the roof and anything only on it, last.
 // Inside a board box: base, back and first side → shelves → second side,
 // front and top, so shelves always slide in before the second side closes
 // them in.
@@ -11,7 +14,7 @@
 //   joints: joints made in this step (to this step's parts or earlier ones)
 //   cureMin: how long to let the glue set before moving on (glue timers)
 
-import { jointGraph, itemGroups, JOINT_KINDS, ROOM_UNIT } from './joints.js';
+import { jointGraph, itemGroups, shellPartIds, isShellGroup, JOINT_KINDS, ROOM_UNIT } from './joints.js';
 
 /** Minutes to let glue grab before handling, by what's being joined. */
 export const CURE = { room: 30, board: 15, card: 5, overlay: 10, flat: 5, place: 5 };
@@ -59,6 +62,68 @@ export function buildSteps(kit, compiled, graph = jointGraph(kit, compiled)) {
         'Glue the walls to the floor first, then to each other, tabs on the inside. Hold each joint until it grabs.',
       ],
     });
+  }
+
+  // --------------------------------------------------------------- shell
+  const shellIds = shellPartIds(compiled);
+  const shellGroups = compiled.groups.filter((g) => isShellGroup(g, shellIds));
+  const partners = (id) => graph.joints.filter((j) => j.a === id || j.b === id).map((j) => (j.a === id ? j.b : j.a));
+  // the lid: the top wall, any roof, and parts that only join those
+  const lid = new Set(graph.nodes.filter((n) => n.role === 'roof' || (shellIds.has(n.id) && n.face === 'top')).map((n) => n.id));
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const n of graph.nodes) {
+      if (lid.has(n.id) || !shellIds.has(n.id)) continue;
+      const ps = partners(n.id);
+      if (ps.length && ps.every((q) => lid.has(q))) { lid.add(n.id); grew = true; }
+    }
+  }
+  if (shellGroups.length) {
+    const texts = (title) => groupByTitle.get(title)?.steps || [];
+    const walls = groupNodes('Shell').filter((n) => n.face && !lid.has(n.id));
+    const first = ['bottom', 'back', 'left'].map((f) => walls.find((n) => n.face === f)).filter(Boolean);
+    const second = walls.filter((n) => !first.includes(n));
+    const firstIds = new Set(first.map((n) => n.id));
+    const slotted = graph.nodes.filter((n) => shellIds.has(n.id) && !n.face && !lid.has(n.id)
+      && graph.joints.some((j) => j.kind === 'slot' && ((j.a === n.id && firstIds.has(j.b)) || (j.b === n.id && firstIds.has(j.a)))));
+    const wallList = (list) => list.map((n) => `${lc(n.name)} #${n.id}`).join(', ');
+    const fingers = `the fingers only go together one way. Glue one joint at a time and check each corner is square`;
+    if (!slotted.length || !second.length) {
+      push({
+        title: 'Build the shell', group: 'Shell', unit: 'Shell', parts: [...first, ...second, ...slotted].map((n) => n.id), cureMin: CURE.room,
+        text: texts('Shell').length ? [texts('Shell')[0]] : [`Dry-fit ${wallList([...first, ...second])} — ${fingers}. Leave the roof off for now.`],
+      });
+    } else {
+      push({
+        title: 'Start the shell: floor, back and one side', group: 'Shell', unit: 'Shell', parts: first.map((n) => n.id), cureMin: CURE.room,
+        text: [`Dry-fit ${wallList(first)} — ${fingers}. Leave the roof off for now.`],
+      });
+      const slotsIn = first.filter((w) => slotted.some((n) => graph.joints.some((j) => j.kind === 'slot' && [j.a, j.b].includes(n.id) && [j.a, j.b].includes(w.id))));
+      push({
+        title: `Slot in the ${[...new Set(slotted.map((n) => lc(n.group)))].join(' and ')}`, group: slotted[0].group, unit: slotted[0].unit, parts: slotted.map((n) => n.id), cureMin: 0,
+        text: [`Push the tabs of ${ids(slotted)} into their slots in the ${slotsIn.map((w) => lc(w.name)).join(' and ')} — before the ${second.map((w) => lc(w.name)).join(' and ')} goes on. Don't glue them yet.`],
+      });
+      push({
+        title: 'Close the shell', group: 'Shell', unit: 'Shell', parts: second.map((n) => n.id), cureMin: CURE.room,
+        text: [`Fit ${wallList(second)} over the tabs and the remaining fingers, then run glue along every joint and slot from the inside.`],
+      });
+    }
+    // the shell's other parts, a group at a time, each after what it glues to
+    const done = new Set([...first, ...second, ...slotted].map((n) => n.id));
+    let todo = shellGroups.map((g) => ({ g, ns: groupNodes(g.title).filter((n) => !done.has(n.id) && !lid.has(n.id)) })).filter((x) => x.ns.length);
+    while (todo.length) {
+      const ready = todo.find(({ ns }) => ns.every((n) => partners(n.id).every((q) => done.has(q) || lid.has(q) || ns.some((m) => m.id === q) || !shellIds.has(q))));
+      const { g, ns } = ready || todo[0];
+      todo = todo.filter((x) => x.g !== g);
+      const own = texts(g.title);
+      const whole = groupNodes(g.title).every((n) => ns.includes(n) || lid.has(n.id));
+      push({
+        title: `Add the ${lc(g.title)}`, group: g.title, unit: g.title, parts: ns.map((n) => n.id),
+        cureMin: ns.some((n) => n.kind === 'board') ? CURE.board : CURE.card,
+        text: whole && own.length ? [...own] : ns.map((n) => `Glue the ${lc(n.name)} (#${n.id}) in place.`),
+      });
+      ns.forEach((n) => done.add(n.id));
+    }
   }
 
   // ------------------------------------------------- overlays and trim
@@ -160,6 +225,21 @@ export function buildSteps(kit, compiled, graph = jointGraph(kit, compiled)) {
         units.length ? `Glue the ${lc(g.title)} ${where} where the plan shows it.` : `Glue ${ids(flats)} ${where} where the plan shows it.`,
         ...(!units.length ? note : []),
       ],
+    });
+  }
+  // ---------------------------------------------------------------- roof
+  if (lid.size) {
+    const ns = graph.nodes.filter((n) => lid.has(n.id));
+    const shellText = shellGroups.length ? (groupByTitle.get('Shell')?.steps || []).slice(1) : [];
+    const roofText = groupByTitle.get('Roof')?.steps || [];
+    const others = ns.filter((n) => n.role !== 'roof' && !n.face);
+    push({
+      title: 'Put the roof on', group: ns[0].group, unit: ns[0].unit, parts: ns.map((n) => n.id), cureMin: CURE.room,
+      text: [
+        ...(shellText.length ? shellText : ns.some((n) => n.face) ? [`Test the lights and check the inside, then glue ${ids(ns.filter((n) => n.face))} on along every joint.`] : []),
+        ...roofText,
+        ...others.map((n) => `Glue the ${lc(n.name)} (#${n.id}) onto the roof.`),
+      ].filter((x, i, a) => x && a.indexOf(x) === i),
     });
   }
   return steps;
