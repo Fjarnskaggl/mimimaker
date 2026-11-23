@@ -121,3 +121,24 @@ test('furniture is built on the bench: its steps show the piece alone, not the r
   const groupOf = new Map(compiled.parts.map((p) => [p.id, p.group]));
   assert.ok(faces.length && faces.every((f) => groupOf.get(f.part) === 'Bookshelf'));
 });
+
+test('shelves slide out of the open front of a turned bookshelf too', () => {
+  const kit = defaultKit();
+  const shelf = kit.items.find((i) => i.type === 'bookshelf');
+  shelf.rot = 90;
+  const { compiled, steps } = setup(kit);
+  const slide = steps.find((s) => /^Slide the shelves/.test(s.title));
+  const moving = explodedFaces(kit, compiled, steps, slide.n).filter((f) => f.moving);
+  assert.ok(moving.length);
+  for (const f of moving) assert.ok(Math.abs(f.offset[0]) > 5 * Math.abs(f.offset[1]), `turned front: ${f.offset}`);
+});
+
+test('a "$" in a step title does not break the SVG', () => {
+  const kit = defaultKit();
+  kit.items[0] = { ...kit.items[0], name: "Shelf $' $&" };
+  const { compiled, steps } = setup(kit);
+  const step = steps.find((s) => s.kind === 'place' && s.group === kit.items[0].name);
+  const svg = explodedViewSVG(kit, compiled, steps, step.n);
+  assert.ok(svg.includes(`aria-label="Exploded view of step ${step.n}: Place the shelf $' $&"`));
+  assert.equal((svg.match(/<svg/g) || []).length, 1);
+});

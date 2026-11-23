@@ -109,3 +109,22 @@ test('room box with a gable roof: the roof is jointed to the box and built last'
   const roof = stepOf(steps, gable);
   assert.equal(roof, steps.length - 1 - [...steps].reverse().findIndex((s) => s.parts.length), 'last build step');
 });
+
+test('a piece of furniture called "Roof" is still furniture', () => {
+  const kit = defaultKit();
+  kit.items[0] = { ...kit.items[0], name: 'Roof' };
+  const { compiled, steps } = build(kit);
+  const titles = [...itemGroups(kit, compiled).keys()].map((g) => g.title);
+  assert.equal(titles[0], 'Roof');
+  assert.equal(titles.length, kit.items.length);
+  assert.ok(steps.some((s) => s.kind === 'place' && s.group === 'Roof'));
+});
+
+test("shell notes go where they belong: wall notes with the walls, roof notes with the roof", () => {
+  const alley = build(withShell('alley')).steps;
+  assert.match(alley[0].text.join(' '), /holes low in the back wall/);
+  assert.match(alley.at(-1).text.join(' '), /glue the roof on/);
+  assert.doesNotMatch(alley.at(-1).text.join(' '), /holes low in the back wall/);
+  const shop = build(withShell('bookshop')).steps;
+  assert.match(shop[0].text.join(' '), /slot is clear/);
+});

@@ -95,3 +95,13 @@ test('bomText: a plain-text list with every line and the total', () => {
   assert.match(txt, /Estimated total: \$\d+\.\d\d–\d+\.\d\d/);
   assert.match(txt, new RegExp(bom.difficulty.level));
 });
+
+test("a shell's suggested LED spots are on the bill, in the time and in the difficulty alike", () => {
+  const alley = { ...defaultKit(), shell: { type: 'alley', gap: { w: 90, h: 230, d: 180 }, clearance: 2, params: {} } };
+  const { compiled, bom } = bomOf(alley);
+  const spots = compiled.shell.lights.length;
+  assert.ok(spots > 0 && !compiled.lighting?.enabled);
+  const leds = bom.lights.filter((i) => /LED/.test(i.name)).reduce((n, i) => n + i.qty, 0);
+  assert.equal(leds, spots);
+  assert.ok(bom.difficulty.reasons.some((r) => r.includes(`${spots} LEDs`)));
+});
