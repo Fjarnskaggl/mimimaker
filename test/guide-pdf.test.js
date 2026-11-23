@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
-import { guidePDF } from '../src/build/pdfguide.js';
+import { guidePDF, drawSVG } from '../src/build/pdfguide.js';
+import { PdfCanvas } from '../src/export/pdf.js';
 import { buildSteps } from '../src/build/steps.js';
 import { billOfMaterials } from '../src/build/bom.js';
 import { pdfString } from '../src/export/pdf.js';
@@ -87,4 +88,37 @@ test('the creator bundle ships the PDF guide next to the HTML one, with the cred
   assert.ok(text.startsWith('%PDF-1.4'));
   assert.ok(has(text, 'Designed by tiny_rooms · CC BY-SA 4.0'));
   assert.match(b.files.find((f) => f.name === 'README.txt').data, /assembly-guide\.pdf/);
+});
+
+test('no "?" stands in for a character on any page (e.g. the LED lead "≥")', () => {
+  const kit = defaultKit();
+  kit.name = 'Corner café with reading nook and fireplace';
+  const { pdf } = make(kit);
+  const strings = [...pageText(pdf).matchAll(/\(((?:[^()\\]|\\.)*)\) Tj/g)].map((m) => m[1]);
+  assert.ok(strings.length > 100);
+  assert.deepEqual(strings.filter((x) => x.includes('?')), []);
+});
+
+test('the footer is right-aligned inside the page, even for a long kit name', () => {
+  const kit = defaultKit();
+  kit.name = 'Corner café with reading nook, fireplace, piano and a very long name indeed';
+  const { pdf } = make(kit);
+  const W = 210 * 72 / 25.4;
+  for (const m of pageText(pdf).matchAll(/BT \/F1 8\.00 Tf ([-\d.]+) [-\d.]+ Td \(((?:[^()\\]|\\.)*page \d+)\) Tj/g)) {
+    const width = m[2].length * 8 * 0.5;
+    assert.ok(+m[1] >= 0 && +m[1] + width <= W - 15 * 72 / 25.4 + 1, `footer ${m[2]}`);
+  }
+});
+
+test('see-through faces are outlined, not painted over what they should show', () => {
+  const c = new PdfCanvas(100, 100);
+  drawSVG(c, '<svg viewBox="0 0 10 10"><path d="M0 0L10 0L10 10Z" fill="rgb(200,100,50)" fill-opacity="0.12" stroke="rgba(40,30,20,0.25)"/><path class="halo" d="M0 0L5 0L5 5Z" fill="#ffcc00" fill-opacity="0.2"/></svg>', 0, 0, 100, 100);
+  assert.ok(!c.ops.includes('f*'), 'nothing filled');
+  assert.ok(c.ops.includes('S'), 'the ghost wall is outlined');
+});
+
+test('bold text is drawn once (copy-paste gives it once)', () => {
+  const { pdf } = make();
+  const titles = (pageText(pdf).match(/\(Bill of materials\) Tj/g) || []).length;
+  assert.equal(titles, 1);
 });
