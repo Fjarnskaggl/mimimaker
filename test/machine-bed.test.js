@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
-import { MACHINES, machineFor } from '../src/materials.js';
+import { MACHINES, machineFor, cleanOverrides } from '../src/materials.js';
 import { zipCutFiles } from '../src/export/bundle.js';
 
 test('machineFor returns the preset when the kit has no overrides', () => {
@@ -48,4 +48,15 @@ test('all-machines zip uses each machine’s overrides', () => {
   const plain = zipCutFiles({ ...kit, machineOverrides: {} }, compiled, compileKit, { allMachines: true });
   const n = (zz) => zz.files.filter((f) => f.name.startsWith('cut-files/laser/')).length;
   assert.ok(n(z) > n(plain));
+});
+
+test('all-machines README states the edited laser kerf', () => {
+  const kit = { ...defaultKit(), machine: 'maker', machineOverrides: { laser: { kerf: 0.3 } } };
+  const z = zipCutFiles(kit, compileKit(kit), compileKit, { allMachines: true });
+  assert.match(z.readme, /kerf-compensated \(0\.3 mm/);
+});
+
+test('cleanOverrides drops anything that is not an object of objects', () => {
+  assert.deepEqual(cleanOverrides('x'), {});
+  assert.deepEqual(cleanOverrides({ laser: 'abc', maker: { cut: [200, 200] }, nope: {} }), { maker: { cut: [200, 200] } });
 });

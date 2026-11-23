@@ -246,7 +246,7 @@ test('machine bed: edit the mat size and the sheets follow; reset restores it', 
   await hgt.fill('150'); await hgt.dispatchEvent('change');
   await page.waitForFunction((n) => document.querySelectorAll('.sheet-card').length > n, before);
   assert.deepEqual(await page.evaluate(() => window.mimimaker.kit.machineOverrides.laser.cut), [150, 150]);
-  const kerf = page.locator('input[aria-label="Laser kerf (mm)"]').first();
+  const kerf = page.locator('input[aria-label="Machine kerf (mm)"]');
   await kerf.fill('0.2'); await kerf.dispatchEvent('change');
   await page.waitForFunction(() => /kerf 0\.2 mm/.test(document.querySelector('.sheet-card .cut-time').textContent));
   await shot(page, 'machine-bed');
