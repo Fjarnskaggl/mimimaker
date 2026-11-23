@@ -198,3 +198,19 @@ test('wall-mounted boxes sit against the wall', () => {
   assert.ok(Math.abs(Math.max(...ys) - backInner) < 1e-6, 'back face touches the wall');
   assert.ok(Math.min(...ys) < backInner - 10, 'sticks out into the room');
 });
+
+test('3D preview draws a chair seat in front of its backrest', async () => {
+  const { renderScene } = await import('../src/preview3d.js');
+  const kit = defaultKit();
+  kit.lighting.enabled = false;
+  kit.items = [{ type: 'chair', params: { w: 55, d: 55, seat: 45, back: 95 }, material: 'chip15', x: 150, y: 70, rot: 0 }];
+  const faces = compileKit(kit).faces3d.filter((f) => f.item === 0);
+  const back = faces.find((f) => f.n[1] < -0.99 && f.polys[0].length > 8); // arched backrest
+  const seat = faces.find((f) => f.n[2] > 0.99); // seat top
+  back.opacity = 0.92;
+  seat.opacity = 0.91;
+  for (const view of [{ yaw: -40, pitch: 42 }, { yaw: -32, pitch: 26 }, { yaw: 30, pitch: 55 }]) {
+    const svg = renderScene(faces, view);
+    assert.ok(svg.indexOf('fill-opacity="0.92"') < svg.indexOf('fill-opacity="0.91"'), `backrest drawn before seat at ${JSON.stringify(view)}`);
+  }
+});
