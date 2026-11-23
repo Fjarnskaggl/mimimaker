@@ -66,7 +66,7 @@ export function ledMapSVG(compiled, { standalone = false } = {}) {
   lighting.leds.forEach((led, i) => {
     const [x, y] = P(led.p);
     const c = WIRE_COLORS[i % WIRE_COLORS.length];
-    const glow = LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex;
+    const glow = led.load?.device ? '#b8a990' : LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex; // [T5] motors and sound: no light colour
     const effect = EFFECTS[led.effect] ? led.effect : 'steady';
     const r = fs * 0.9;
     const g = [];
@@ -97,8 +97,8 @@ export function ledMapSVG(compiled, { standalone = false } = {}) {
   // one-line circuit summary under the map
   const cc = lighting.circuit;
   if (cc?.count) {
-    const what = cc.bulbs && cc.bulbs !== cc.count ? `${cc.count} lights (${cc.bulbs} LEDs)` : `${cc.count} LED${cc.count === 1 ? '' : 's'}`;
-    const life = cc.lifeHours == null ? cc.lifeText : `${cc.lifeText} of light (estimate)`;
+    const what = cc.what || (cc.bulbs && cc.bulbs !== cc.count ? `${cc.count} lights (${cc.bulbs} LEDs)` : `${cc.count} LED${cc.count === 1 ? '' : 's'}`);
+    const life = cc.lifeHours == null ? cc.lifeText : `${cc.lifeText} of ${cc.devices ? 'running' : 'light'} (estimate)`;
     const line = `${SUPPLY_LABEL[cc.supply.id] || cc.supply.short} · ${what} in parallel · up to ${Math.round(cc.totalMA * 10) / 10} mA · ${life}`;
     out.push(`<text class="circuit" x="${f(x0 + pad * 0.5)}" y="${f(y1 + fs * 0.4)}" font-size="${f(fs * 0.8)}" fill="${col.text}">${esc(line)}</text>`);
     y1 += fs * 1.2;
@@ -116,7 +116,7 @@ export function ledRows(compiled) {
   if (!lighting?.enabled) return [];
   const where = { back: 'Back wall', left: 'Left wall', right: 'Right wall', top: 'Ceiling', bottom: 'Floor' };
   return lighting.leds.map((l, i) => ({
-    label: l.label, name: l.name, where: l.where || where[l.face], color: LED_COLORS[l.color]?.name || l.color,
+    label: l.label, name: l.name, where: l.where || where[l.face], color: l.load?.device ? '—' : LED_COLORS[l.color]?.name || l.color,
     wireColor: WIRE_COLORS[i % WIRE_COLORS.length], runCm: l.length / 10, leadCm: l.leadCm,
     effect: (EFFECTS[l.effect] || EFFECTS.steady).name,
   }));

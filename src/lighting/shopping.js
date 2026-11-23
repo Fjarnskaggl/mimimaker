@@ -10,7 +10,7 @@ export const PRICE_NOTE = 'Prices are rough estimates in US dollars from typical
 
 const PRICES = {
   led: [0.3, 1], candle: [0.5, 1.5], fairy: [2, 6], stripReel: [3, 8],
-  'box-aa2': [1, 3], 'cells-aa': [0.5, 1.5], 'box-aaa2': [1, 3], 'cells-aaa': [0.5, 1.5], 'touch-board': [6, 9], 'box-cr2032': [1, 2.5], 'cells-cr2032': [0.5, 1.5],
+  'box-aa2': [1, 3], 'cells-aa': [0.5, 1.5], 'box-aaa2': [1, 3], 'cells-aaa': [0.5, 1.5], 'touch-board': [6, 9], 'gear-motor': [2, 4], 'vibe-disc': [1, 2], 'audio-fx': [10, 13], 'audio-amp': [4, 5], speaker: [1, 2], 'box-cr2032': [1, 2.5], 'cells-cr2032': [0.5, 1.5],
   'usb-lead': [2, 5], 'usb-socket': [0.5, 2], 'push-switch': [0.3, 1], 'touch-switch': [0.5, 2],
 };
 const STRIP_REEL_MM = 500;
@@ -68,6 +68,18 @@ export function shoppingList(lighting) {
     // one density keeps the plain id; several get one line each
     const id = strips.size === 1 ? 'strip' : `strip-${perM}`;
     add(id, reels, `5 V LED strip, ${perM} LED/m, ${STRIP_REEL_MM / 1000} m reel`, `cut ${total} mm in total (${lens.join(' + ')} mm) at the cut marks`, 'stripReel');
+  }
+
+  // moving and sound parts
+  const count = (id) => lighting.leds.filter((l) => l.effect === id).length;
+  const motors = count('fan') + count('turntable');
+  if (motors) add('gear-motor', motors, 'Geared micro DC motor, 3 V, about 250 rpm (pager size, e.g. Adafruit 3871)', 'turns a fan or turntable; glued to its cut motor mount', 'gear-motor');
+  if (count('vibe')) add('vibe-disc', count('vibe'), 'Vibration motor disc, 10 mm (e.g. Adafruit 1201)', '2–5 V, self-adhesive', 'vibe-disc');
+  if (count('sound')) {
+    const n = count('sound');
+    add('audio-fx', n, 'Audio FX Mini sound board (e.g. Adafruit 2342)', 'plays a sound file in a loop; 3–5.5 V', 'audio-fx');
+    add('audio-amp', n, 'Mono class-D amp breakout (PAM8302, e.g. Adafruit 2130)', 'drives the speaker from the board\'s audio out', 'audio-amp');
+    add('speaker', n, 'Mini speaker, 28 mm, 8 Ω (e.g. Adafruit 1890)', 'glued behind the grille', 'speaker');
   }
 
   // power

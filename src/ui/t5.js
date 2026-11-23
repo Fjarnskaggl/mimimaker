@@ -29,9 +29,9 @@ export function circuitSummaryModel(circuit) {
     status: circuit.status,
     title: supply.name,
     rows: [
-      ['LEDs', `${count}, wired in parallel`],
+      circuit.devices ? ['Parts', `${circuit.what}, wired in parallel`] : ['LEDs', `${count}, wired in parallel`],
       ['Current', `up to ${round(totalMA)} mA${avg} · ${budget.recommendedMA} mA comfortable, ${budget.maxMA} mA max`],
-      ['Battery life', lifeHours == null ? lifeText : `${lifeText} of light (estimate)`],
+      ['Battery life', lifeHours == null ? lifeText : `${lifeText} of ${circuit.devices ? 'running' : 'light'} (estimate)`],
     ],
     load: Math.min(1, circuit.load),
     messages: circuit.warnings.map((w) => w.msg),
@@ -107,7 +107,7 @@ export function renderSupplyField(power, onChange) {
 // ------------------------------------------------------------ effects
 
 export const EFFECT_OPTIONS = Object.entries(EFFECTS).map(([id, e]) => [id, e.name]);
-const EFFECT_KEYS = ['bulbs', 'lengthMm', 'ledsPerM'];
+const EFFECT_KEYS = ['bulbs', 'lengthMm', 'ledsPerM', 'sizeMm'];
 
 /** Set a light's effect, filling that effect's defaults and dropping fields it doesn't use. */
 export function setEffect(led, id) {
@@ -129,6 +129,8 @@ const FIELD_SPECS = {
     { key: 'lengthMm', label: 'Strip length', min: 5, max: 2000, step: 5, unit: 'mm' },
     { key: 'ledsPerM', label: 'LEDs per metre', min: 10, max: 240, step: 1 },
   ],
+  fan: [{ key: 'sizeMm', label: 'Blade span', min: 20, max: 200, step: 5, unit: 'mm' }],
+  turntable: [{ key: 'sizeMm', label: 'Platform', min: 20, max: 200, step: 5, unit: 'mm' }],
 };
 /** The number fields an effect needs (real product sizes, not scaled). */
 export const effectFieldSpecs = (led) => FIELD_SPECS[effectOf(led)] || [];

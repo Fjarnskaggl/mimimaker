@@ -5,8 +5,8 @@ import { planCircuit, ledSpec } from '../src/lighting/circuit.js';
 import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
 
-test('effect catalogue: steady, candle flicker, fairy string, LED strip', () => {
-  assert.deepEqual(Object.keys(EFFECTS).sort(), ['candle', 'fairy', 'steady', 'strip']);
+test('effect catalogue: lights (steady, candle, fairy, strip) and motion or sound parts', () => {
+  assert.deepEqual(Object.keys(EFFECTS).sort(), ['candle', 'fairy', 'fan', 'sound', 'steady', 'strip', 'turntable', 'vibe']);
   for (const e of Object.values(EFFECTS)) assert.ok(e.name && e.blurb, 'named and described');
   assert.equal(effectOf({}), 'steady', 'old kits are steady LEDs');
   assert.equal(effectOf({ effect: 'nope' }), 'steady');

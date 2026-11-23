@@ -102,7 +102,7 @@ export function guideHTML(kit, compiled) {
   const lit = compiled.lighting?.enabled && compiled.lighting.leds.length;
   const lighting = lit ? `
   <h2>Lighting</h2>
-  <p>${compiled.lighting.leds.length} LED${compiled.lighting.leds.length === 1 ? '' : 's'} powered by a ${esc(powerName(compiled.lighting).toLowerCase())}. ${compiled.lighting.leds.some((l) => l.inside)
+  <p>${compiled.lighting.circuit?.devices ? esc(compiled.lighting.circuit.what) : `${compiled.lighting.leds.length} LED${compiled.lighting.leds.length === 1 ? '' : 's'}`} powered by a ${esc(powerName(compiled.lighting).toLowerCase())}. ${compiled.lighting.leds.some((l) => l.inside)
     ? 'The map shows the shell from behind, unfolded flat. Each LED sits inside the shell: its dashed line runs inside to a small hole in the back wall, already cut (in an alley, down the cavity and along the floor channel), and the solid line is its wire route from there to the power box.'
     : 'The map shows the room from behind, unfolded flat: wire holes are already cut, and each coloured line is that LED\'s wire route to the power box.'}</p>
   <div class="ledmap">${ledMapSVG(compiled, { standalone: true })}</div>
