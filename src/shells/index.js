@@ -28,11 +28,12 @@ export const SHELLS = {
 };
 
 /** `holes`: face → polygons (wall panel coords) to cut through the shell walls. */
-export function buildShell(spec, { t, fingerWidth = 0, holes = {} }) {
+/** `materials`: the kit's materials, so a shell type can cut some parts from another (thinner) one. */
+export function buildShell(spec, { t, fingerWidth = 0, holes = {}, materials }) {
   const def = SHELLS[spec.type];
   if (!def) throw new Error(`Unknown shell type "${spec.type}".`);
   const { W, H, D } = sizeFromGap(spec);
-  const res = def.build({ W, D, H, t, fingerWidth, holes }, { ...def.defaults, ...(spec.params || {}) });
+  const res = def.build({ W, D, H, t, fingerWidth, holes, materials, material: spec.material }, { ...def.defaults, ...(spec.params || {}) });
   const warnings = [...res.warnings];
   if (res.minFinger < 3) {
     warnings.push({ level: 'warn', msg: `Shell finger joints are only ${res.minFinger.toFixed(1)} mm wide — the Knife Blade is cleaner above 3 mm.` });

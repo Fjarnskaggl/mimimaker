@@ -71,7 +71,7 @@ export function prepareShell(kit, warn) {
 export function compileShell(prep, { t, fingerWidth, holes, getMat, newGroup, addPart, add3d, warn, xf }) {
   let sh;
   try {
-    sh = buildShell(prep.spec, { t, fingerWidth, holes });
+    sh = buildShell(prep.spec, { t, fingerWidth, holes, materials: prep.kit.materials });
   } catch (err) {
     warn(err.message, 'error');
     return { type: prep.spec.type, joints: [], lights: [] };
