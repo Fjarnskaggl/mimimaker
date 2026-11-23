@@ -239,6 +239,7 @@ function setStep(step) {
   $('#workspace').dataset.step = step;
   document.querySelectorAll('.mm-steps [data-step]').forEach((b) => (b.dataset.step === step ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current')));
   if (step !== 'design') closeDrawer();
+  if (step !== 'design' && view.sel?.kind !== 'led') view.sel = null; // pieces and openings are edited on Design
   $('#view').dataset.key = '';
   $('#view').replaceChildren();
   $('#view').scrollTop = 0;
@@ -673,7 +674,7 @@ function build3d(bar) {
   }
   bar.append(rendererToggle(drawScene)); // T6
   const foot = h('div', { class: 'stage-foot' },
-    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit' : 'Drag to orbit · edit pieces on the plan or in the list'),
+    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit' : 'Drag to orbit · click a piece to select · R turn · D duplicate · Del remove'),
     h('div', { class: 'orbit' }, h('label', {}, 'Rotate', yaw), h('label', {}, 'Tilt', pitch)));
   let drag = null;
   stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
@@ -687,7 +688,10 @@ function build3d(bar) {
   const end = () => { drag = null; };
   stage.addEventListener('pointerup', end);
   stage.addEventListener('pointercancel', end);
-  attachPicking(stage, (index) => select({ kind: 'item', index })); // T6: click a piece to select it
+  attachPicking(stage, (index) => {
+    if (index != null) select({ kind: 'item', index });
+    else if (view.sel?.kind === 'item') select(null); // a click off the pieces; a window or light picked from the list stays
+  }, { enabled: () => view.step === 'design' }); // T6: click a piece to select it (pieces are edited on Design)
   return h('div', { class: 'stage-wrap' }, stage, bar, foot);
 }
 function drawScene() {
@@ -828,7 +832,11 @@ function onKey(ev) {
   const key = ev.key.toLowerCase();
   if (mod && key === 'z') { ev.preventDefault(); ev.shiftKey ? redo() : undo(); return; }
   if (mod && key === 'y') { ev.preventDefault(); redo(); return; }
-  if (view.tab !== 'plan' || mod || ev.altKey) return;
+  if (mod || ev.altKey) return;
+  // the plan and Design's 3D view share the shortcuts; in 3D only while nothing
+  // else has focus, so a focused list button keeps its own keys
+  const in3d = view.tab === 'preview' && view.step === 'design' && (ev.target === document.body || ev.target?.closest?.('.stage'));
+  if (view.tab !== 'plan' && !in3d) return;
   const step = ev.shiftKey ? 10 : 1;
   const actions = {
     r: () => planAction('rotate'), d: () => planAction('duplicate'),

@@ -8,7 +8,9 @@ import { createViewer } from '../render/webgl.js';
 import { resolveLook, faceMaterial, textureChoices, textureChoice, setTextureChoice } from '../textures/look.js';
 
 const PREF_KEY = 'mimimaker.t6.webgl';
-const state = { want: readPref(), viewer: null, loading: false, failed: null, last: null, button: null };
+// zoom is the viewer's own (wheel), kept here so every redraw uses it: the app
+// may pass a fresh copy of its view each time (the Light step does)
+const state = { want: readPref(), viewer: null, loading: false, failed: null, last: null, button: null, zoom: 1 };
 
 function readPref() {
   try { return localStorage.getItem(PREF_KEY) === '1'; } catch { return false; }
@@ -96,23 +98,36 @@ function pickAt(stage, x, y) {
 
 /**
  * Click a piece in the 3D view to select it. onPick(index) should select it
- * the same way the plan does. Drags still orbit: only a press that barely
- * moves counts as a click.
+ * the same way the plan does, and redraw the stage to show it; onPick(null)
+ * means a click on empty space. Drags still orbit: only a press that barely
+ * moves counts as a click. opts.enabled() turns picking and hover off while
+ * pieces can't be edited from this view.
  */
-export function attachPicking(stage, onPick) {
+export function attachPicking(stage, onPick, { enabled = () => true } = {}) {
   let down = null;
-  stage.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
+  stage.addEventListener('pointerdown', (e) => { down = enabled() ? { x: e.clientX, y: e.clientY } : null; });
   stage.addEventListener('pointerup', (e) => {
     if (!down) return;
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
     down = null;
     if (moved > CLICK_SLOP) return;
-    const index = pickAt(stage, e.clientX, e.clientY);
-    if (index == null) return;
-    onPick(index);
-    redrawLast(); // show the highlight
+    onPick(pickAt(stage, e.clientX, e.clientY)); // null: empty space, which clears the selection
   });
   stage.addEventListener('pointercancel', () => { down = null; });
+  // hover: show which piece a click would pick (checked once per frame)
+  let pending = null, frame = 0;
+  const clearHover = () => { cancelAnimationFrame(frame); pending = null; setHover(stage, null); };
+  stage.addEventListener('pointermove', (e) => {
+    if (e.buttons || !enabled()) { clearHover(); return; } // orbiting, or nothing to pick
+    if (pending) { pending.x = e.clientX; pending.y = e.clientY; return; }
+    pending = { x: e.clientX, y: e.clientY };
+    frame = requestAnimationFrame(() => {
+      const { x, y } = pending;
+      pending = null;
+      setHover(stage, enabled() ? pickAt(stage, x, y) : null);
+    });
+  });
+  stage.addEventListener('pointerleave', clearHover);
   // tests and tours: a point where the piece is the front-most thing
   stage.t6pickPoint = (index) => {
     if (stage.dataset.renderer === 'webgl' && state.viewer) return state.viewer.pointFor(index);
@@ -123,6 +138,20 @@ export function attachPicking(stage, onPick) {
     }
     return null;
   };
+}
+
+/** Mark the piece under the pointer in whichever renderer is showing (null: none). */
+function setHover(stage, index) {
+  index = index ?? null;
+  stage.t6hover = index;
+  stage.classList.toggle('t6-over-piece', index != null);
+  if (stage.dataset.renderer === 'webgl' && state.viewer) { state.viewer.hover(index); return; }
+  paintSvgHover(stage);
+}
+function paintSvgHover(stage) {
+  const index = stage.t6hover ?? null;
+  for (const el of stage.querySelectorAll('path.hover')) if (Number(el.dataset.item) !== index) el.classList.remove('hover');
+  if (index != null) for (const el of stage.querySelectorAll(`path[data-item="${index}"]`)) el.classList.add('hover');
 }
 
 function disposeViewer() {
@@ -147,10 +176,9 @@ function startViewer() {
       if (!state.want) return;
       const v = createViewer(THREE);
       v.canvas.addEventListener('wheel', (e) => {
-        const view = state.last?.view;
-        if (!view) return;
+        if (!state.last) return;
         e.preventDefault();
-        view.zoom = Math.max(0.6, Math.min(4, (view.zoom || 1) * Math.exp(-e.deltaY * 0.0015)));
+        state.zoom = Math.max(0.6, Math.min(4, state.zoom * Math.exp(-e.deltaY * 0.0015)));
         redrawLast();
       }, { passive: false });
       state.viewer = v;
@@ -168,13 +196,19 @@ function startViewer() {
  * "loading" or "unavailable".
  */
 export function drawStage(stage, faces, view, kit = null) {
+  // new pieces or a new stage: whatever was hovered may now be another piece
+  if (state.last && (state.last.faces !== faces || state.last.stage !== stage)) {
+    stage.t6hover = null;
+    stage.classList.remove('t6-over-piece');
+    state.viewer?.hover(null);
+  }
   state.last = { stage, faces, view, kit };
   if (kit) syncPicker(kit);
   if (state.want && state.viewer) {
     for (const child of [...stage.children]) if (child !== state.viewer.canvas) child.remove();
     state.viewer.mount(stage);
     const look = kit ? resolveLook(kit) : {};
-    state.viewer.update(faces, view, {
+    state.viewer.update(faces, { ...view, zoom: state.zoom }, {
       textureOf: (face) => look[faceMaterial(face, kit)] || null,
       lookKey: JSON.stringify([look, kit?.scale]),
       scale: kit?.scale,
@@ -188,6 +222,7 @@ export function drawStage(stage, faces, view, kit = null) {
   stage.t6viewer = null;
   stage.innerHTML = renderScene(faces, { ...view, selected: view.sel?.kind === 'item' ? view.sel.index : null });
   stage.dataset.renderer = 'svg';
+  paintSvgHover(stage); // the redraw replaced the hovered paths
   if (!state.want) { delete stage.dataset.webgl; return; }
   if (!state.failed) startViewer();
   if (state.failed) {
