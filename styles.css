@@ -263,6 +263,7 @@ button:disabled, .mm-btn:disabled { opacity: .45; cursor: not-allowed; backgroun
 .night-toggle i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-control); }
 .night-toggle[aria-pressed="true"] { background: #1d2624; color: #f6ead2; border-color: #1d2624; }
 .night-toggle[aria-pressed="true"] i { background: var(--glow); box-shadow: 0 0 8px 2px rgba(242,177,58,.7); }
+.stage-bar > .renderer-toggle[aria-pressed="true"] { background: var(--mat-soft); border-color: var(--mat); color: var(--ink); }
 .snap { display: flex; align-items: center; gap: 6px; font: 600 12px/1 var(--font-sans); color: var(--ink-muted); }
 .snap select { height: var(--control-h-sm); border: 1px solid var(--line-control); border-radius: var(--radius-sm); background: var(--surface); padding: 0 var(--space-2); font-size: 13px; }
 
