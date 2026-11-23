@@ -30,8 +30,8 @@ import { drawStage, rendererToggle, texturePicker, attachPicking } from './ui/t6
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 // T3 wiring: per-machine cut files
-import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, handCutButton, printCutButton, updatePrintCutButton, materialLibrary, kitCost } from './ui/t3.js';
-import { kitCutFiles, machineReadme } from './export/machines.js';
+import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, handCutButton, printCutButton, updatePrintCutButton, materialLibrary, kitCost, allMachinesField } from './ui/t3.js';
+import { zipCutFiles, zipFileList } from './export/bundle.js';
 import { kitHandCutFiles } from './export/handcut.js';
 import { kitPrintCutFiles } from './export/printcut.js';
 // T2 shells
@@ -905,7 +905,8 @@ function renderMake(el) {
         h('button', { id: 'btn-zip', type: 'button', class: 'mm-btn mm-btn--primary', onclick: exportZip }, ic('download'), 'Download kit')),
       h('div', { class: 'make-setup' },
         selectField('Cutting machine', kit.machine, Object.entries(MACHINES).map(([k, m]) => [k, m.name]), (v) => { kit.machine = v; changed(); }),
-        Object.assign(selectField('Scale', kit.scale, SCALES.map((sc) => [sc, `1:${sc}`]), (v) => { kit.scale = Number(v); changed(); }), { className: 'field narrow' })),
+        Object.assign(selectField('Scale', kit.scale, SCALES.map((sc) => [sc, `1:${sc}`]), (v) => { kit.scale = Number(v); changed(); }), { className: 'field narrow' }),
+        allMachinesField(() => kit, () => saveKit())), // T3
       h('div', { id: 'make-calib' }),
       h('section', { class: 'calib' }, h('h3', {}, 'Sheets'), h('div', { id: 'make-legend' }), h('div', { id: 'make-sheets', class: 'sheets-grid' })),
       h('details', { class: 'more' }, h('summary', {}, ic('sliders'), 'Advanced'), h('div', {},
@@ -960,7 +961,8 @@ function renderBuild(el) {
 
 // ---------------------------------------------------------------- export
 function exportZip() {
-  const files = kitCutFiles(compiled.sheets, compiled.machine, { drawLabels: kit.drawLabels, title: (s) => `${kit.name} – ${s.material.name} ${s.index}` }); // T3
+  const cut = zipCutFiles(kit, compiled, compileKit, { drawLabels: kit.drawLabels, title: (s) => `${kit.name} – ${s.material.name} ${s.index}`, allMachines: !!kit.zipAllMachines }); // T3
+  const files = cut.files;
   files.push(...kitHandCutFiles(compiled.sheets, { title: kit.name })); // T3
   try { files.push(...kitPrintCutFiles(compiled, kit)); } catch (e) { console.warn('print-then-cut skipped:', e); } // T3: never block the kit
   files.push({ name: 'assembly-guide.html', data: guideHTML(kit, compiled) });
@@ -969,7 +971,7 @@ function exportZip() {
   files.push({ name: 'kit.json', data: JSON.stringify(kit, null, 2) });
   files.push({
     name: 'README.txt',
-    data: `${kit.name}\n\nOpen assembly-guide.html in a browser for the parts list, Design Space steps and assembly instructions.\n${machineReadme(compiled.machine)}kit.json re-opens this design in mimimaker.\n`,
+    data: `${kit.name}\n\nOpen assembly-guide.html in a browser for the parts list, Design Space steps and assembly instructions.\n${cut.readme}kit.json re-opens this design in mimimaker.\n\n${zipFileList([...files, { name: 'README.txt' }])}`, // T3 file list
   });
   download(`${slug(kit.name)}.zip`, makeZip(files), 'application/zip');
 }
