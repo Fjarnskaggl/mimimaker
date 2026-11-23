@@ -82,7 +82,7 @@ export function compileShell(prep, { t, fingerWidth, holes, getMat, newGroup, ad
     const mat = getMat(p.material, p.name);
     if (!groups.has(p.group)) groups.set(p.group, newGroup(p.group, mat));
     ids.set(p.key, addPart(groups.get(p.group), p.name, mat, p.polys, p.scores));
-    add3d(0, p.polys, p.plane, xf, mat.color);
+    add3d(0, p.polys, p.plane, xf, mat.color, { thickness: mat.thickness }); // solid: material runs along −n
   }
   for (const s of sh.steps) groups.get(s.group)?.steps.push(s.text);
   // suggested LED spots glow in the preview until T5 plans their wiring (#16)
