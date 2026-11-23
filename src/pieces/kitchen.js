@@ -73,7 +73,7 @@ export const KITCHEN = [
     tags: ['cooking', 'storage', 'dining'], difficulty: 2,
     params: [num('w', 'Width', 80, 240), num('d', 'Depth', 50, 120), num('h', 'Height', 85, 100), num('over', 'Seating overhang', 0, 40), cnt('count', 'Doors', 1, 6)],
     defaults: { w: 140, d: 80, h: 90, over: 25, count: 3 },
-    let: { top: 'max(2 * t, h * 0.04)' },
+    let: { top: 'max(2 * t, 3, h * 0.04)' },
     components: [
       { kind: 'box', name: 'Island', size: ['w', 'd - over', 'h - top'], faces: 'all', at: [0, 0, 0], scores: { front: [doorsFront('round(count)')] } },
       { kind: 'box', name: 'Worktop', size: ['w', 'd', 'top'], faces: 'all', at: [0, 0, 'h - top'] },

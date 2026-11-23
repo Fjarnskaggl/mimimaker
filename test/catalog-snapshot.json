@@ -189,11 +189,11 @@
   ],
   "cases": {
    "defaults@board": "f1065d7f987b6216",
-   "defaults@card": "305631a8f0e9a091",
+   "defaults@card": "2ac15f62241453e1",
    "min@board": "7921c13300892875",
-   "min@card": "a50b893a01826f2a",
+   "min@card": "ce5ecd6a77f80b14",
    "max@board": "85a5117fd6caf04d",
-   "max@card": "cb76b94eab9316be"
+   "max@card": "42a43eb2bdb4f876"
   }
  },
  "bed": {
@@ -374,11 +374,11 @@
   ],
   "cases": {
    "defaults@board": "cfc1729915dde900",
-   "defaults@card": "e408c9ec5d86b849",
+   "defaults@card": "9b188f0c08e7bb3d",
    "min@board": "91427671e4074204",
-   "min@card": "a0e6a9539cbd8589",
+   "min@card": "91427671e4074204",
    "max@board": "254aa2f1740f92a9",
-   "max@card": "d44e7475f66a8155"
+   "max@card": "0a67223e3710d254"
   }
  },
  "bathtub": {
@@ -655,12 +655,12 @@
    "flat:Stand"
   ],
   "cases": {
-   "defaults@board": "c78b9e8d1488eb41",
-   "defaults@card": "c78b9e8d1488eb41",
-   "min@board": "b3429064179b51ef",
-   "min@card": "b3429064179b51ef",
-   "max@board": "a3543344afd8b4ef",
-   "max@card": "a3543344afd8b4ef"
+   "defaults@board": "e0b3ec16b0ebca8b",
+   "defaults@card": "e0b3ec16b0ebca8b",
+   "min@board": "a809d9196fc8a95c",
+   "min@card": "a809d9196fc8a95c",
+   "max@board": "41c8f2cef9b979c8",
+   "max@card": "41c8f2cef9b979c8"
   }
  },
  "wallclock": {
