@@ -104,3 +104,71 @@ test('hand-cut PDF: a secondary button on Make, and both papers in the zip', asy
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+// ------------------------------------------------------- material library
+async function openLibrary(page) {
+  await page.click('[data-step=make]');
+  await page.locator('details.more summary', { hasText: 'Materials' }).click();
+  return page.locator('.mat-library');
+}
+
+test('material library: add, duplicate and delete materials', async () => {
+  const page = await open();
+  const lib = await openLibrary(page);
+  const rows = lib.locator('.mat-row:not(.mat-head)');
+  const start = await rows.count();
+  await lib.locator('button', { hasText: 'Add material' }).click();
+  assert.equal(await rows.count(), start + 1);
+  assert.equal(await rows.last().locator('input[aria-label="Material name"]').inputValue(), 'New material');
+  await rows.first().locator('button[title^="Duplicate"]').click();
+  assert.equal(await rows.count(), start + 2);
+  assert.match(await rows.last().locator('input[aria-label="Material name"]').inputValue(), /copy$/);
+  // a material the kit uses can't be deleted; an unused one can
+  assert.equal(await rows.first().locator('button[title^="Delete"]').isDisabled(), true);
+  await rows.last().locator('button[title^="Delete"]').click();
+  assert.equal(await rows.count(), start + 1);
+  assert.equal(await page.evaluate(() => window.mimimaker.kit.materials.length), start + 1);
+  await shot(page, 'material-library');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('material library: price per sheet drives the kit material cost', async () => {
+  const page = await open();
+  const lib = await openLibrary(page);
+  await lib.locator('input[aria-label="Currency"]').fill('€');
+  await lib.locator('input[aria-label="Currency"]').dispatchEvent('change');
+  const used = await page.evaluate(() => [...new Set(window.mimimaker.compiled.sheets.map((s) => s.material.id))]);
+  const sheets = await page.evaluate(() => window.mimimaker.compiled.sheets.length);
+  for (const id of used) {
+    const price = lib.locator(`.mat-row[data-material="${id}"] input[aria-label$="price per sheet"]`);
+    await price.fill('2');
+    await price.dispatchEvent('input');
+  }
+  const meter = page.locator('#make-meter');
+  await page.waitForFunction(() => /€/.test(document.querySelector('#make-meter').textContent));
+  assert.match(await meter.textContent(), new RegExp(`€${sheets * 2}\\.00`));
+  assert.match(await lib.locator('.mat-cost').textContent(), new RegExp(`Total.*€${sheets * 2}\\.00`));
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('material library: per-machine settings show on the sheet cards', async () => {
+  const page = await open();
+  await chooseMachine(page, 'Laser cutter (generic)');
+  const lib = await openLibrary(page);
+  const id = await page.evaluate(() => window.mimimaker.compiled.sheets[0].material.id);
+  const row = lib.locator(`.mat-row[data-material="${id}"]`);
+  await row.locator('button[title^="Machine settings"]').click();
+  const panel = lib.locator(`.mat-settings[data-material="${id}"]`);
+  await panel.locator('input[aria-label="Laser power (%)"]').fill('37');
+  await panel.locator('input[aria-label="Laser power (%)"]').dispatchEvent('input');
+  await panel.locator('input[aria-label="Laser kerf (mm)"]').fill('0.18');
+  await panel.locator('input[aria-label="Laser kerf (mm)"]').dispatchEvent('input');
+  const line = page.locator('.sheet-card .cut-time').first();
+  await page.waitForFunction(() => /37% power/.test(document.querySelector('.sheet-card .cut-time').textContent));
+  assert.match(await line.textContent(), /kerf 0\.18 mm/);
+  await shot(page, 'material-settings');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
