@@ -6,6 +6,7 @@ import { compileKit } from '../kit.js';
 import { renderScene } from '../preview3d.js';
 import { kitCutFiles } from '../export/machines.js';
 import { guideHTML } from '../guide.js';
+import { guidePDF } from '../build/pdfguide.js';
 import { MACHINES } from '../materials.js';
 import { LICENCES, HANDLE_RE, kitOrigin, slugify, makeSubmission, submissionProblems } from '../share.js';
 
@@ -59,6 +60,8 @@ export function creatorBundle(kit, { author = '', licence = 'CC-BY-4.0', dryRun 
   const credit = `<p class="creator-credit" style="margin:0 0 12px;font:500 14px/1.4 system-ui,sans-serif">Designed by ${esc(author)} · <a href="${esc(lic.url)}">${esc(shortName(licence))}</a>${origin ? ` · Remix of ${esc(origin.title)}${origin.author ? ` by ${esc(origin.author)}` : ''}` : ''}</p>`;
   const guide = guideHTML(kit, compiled);
   files.push({ name: 'assembly-guide.html', data: /<body[^>]*>/.test(guide) ? guide.replace(/<body[^>]*>/, (m) => `${m}\n${credit}`) : credit + guide });
+  // T4: the same guide as a PDF, with the credit on its cover (#91)
+  files.push({ name: 'assembly-guide.pdf', data: guidePDF(kit, compiled, { creator: author, licence: shortName(licence), remix: origin ? `${origin.title}${origin.author ? ` by ${origin.author}` : ''}` : '' }) });
 
   // Licence, README, design
   const remixLine = origin ? `Remix of ${origin.title}${origin.author ? ` by ${origin.author}` : ''}${origin.licence ? `, used under ${shortName(origin.licence)}` : ''}.\n` : '';
@@ -72,7 +75,7 @@ export function creatorBundle(kit, { author = '', licence = 'CC-BY-4.0', dryRun 
   const machineList = Object.entries(BUNDLE_MACHINES).map(([fam, m]) => `  cut-files/${fam}/  ${MACHINES[m].name}`).join('\n');
   files.push({
     name: 'README.txt',
-    data: `${title} by ${author}\n\n${selling}\n\nWhat's inside\n  box-art/      renders of the finished room for a cover or listing\n${machineList}\n  assembly-guide.html  parts list and steps; open it in a browser and print, or "Save as PDF"\n  ${id}.kit.json  the design; open it in mimimaker with File → Open a file to change it\n  LICENSE.txt   how others may use this design\n`,
+    data: `${title} by ${author}\n\n${selling}\n\nWhat's inside\n  box-art/      renders of the finished room for a cover or listing\n${machineList}\n  assembly-guide.html  parts list and steps; open it in a browser and print, or "Save as PDF"\n  assembly-guide.pdf   the same guide, ready to print or send\n  ${id}.kit.json  the design; open it in mimimaker with File → Open a file to change it\n  LICENSE.txt   how others may use this design\n`,
   });
   files.push({ name: `${id}.kit.json`, data: JSON.stringify(entry, null, 2) + '\n' });
   return { files, problems: [], zipName };
