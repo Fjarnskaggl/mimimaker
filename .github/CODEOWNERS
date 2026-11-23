@@ -1,0 +1,4 @@
+# Every change needs the owner's eyes. Outside PRs auto-request Fjarnskaggl.
+# Threads only merge PRs opened from branches in this repo by Fjarnskaggl or a
+# project thread (see docs/threads/README.md).
+* @Fjarnskaggl
