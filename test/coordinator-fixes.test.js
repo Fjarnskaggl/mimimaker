@@ -6,7 +6,7 @@ import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
 import { collisions, findFreeSpot, footprint } from '../src/plan.js';
 
-const lightingSteps = (kit) => compileKit(kit).groups.find((g) => g.name === 'Lighting')?.steps.join('\n') || '';
+const lightingSteps = (kit) => compileKit(kit).groups.find((g) => g.title === 'Lighting')?.steps.join('\n') || '';
 
 test('the guide says to fit a flush power box behind the wall, not glue it outside', () => {
   const kit = defaultKit();
