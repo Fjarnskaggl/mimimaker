@@ -78,8 +78,8 @@ test('each effect lists the fields it needs', () => {
   for (const f of effectFieldSpecs({ effect: 'strip' })) assert.ok(f.label && f.min > 0);
 });
 
-test('mount picker: outside or flush behind the wall', () => {
-  assert.deepEqual(MOUNT_OPTIONS.map(([id]) => id), ['outside', 'flush']);
+test('mount picker: outside, flush behind the wall, or a hidden base', () => {
+  assert.deepEqual(MOUNT_OPTIONS.map(([id]) => id), ['outside', 'flush', 'base']);
   const p = { kind: 'battery' };
   setMount(p, 'flush');
   assert.equal(p.mount, 'flush');
