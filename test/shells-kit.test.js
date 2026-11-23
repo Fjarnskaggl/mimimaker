@@ -97,10 +97,15 @@ test('shell parts are solid in 3D: each face carries its material thickness, LED
   for (const type of ['nook', 'alley']) {
     const kit = withShell(type);
     const r = compileKit(kit);
-    const t = kit.materials.find((m) => m.id === kit.room.material).thickness;
+    // shell parts and their faces are added in the same order: each face is as thick as its part's material
     const shellFaces = r.faces3d.filter((f) => f.layer === 0);
+    const shellParts = r.parts.filter((p) => ['Shell', 'Left facade', 'Right facade', 'Backdrop'].includes(p.group));
     assert.ok(shellFaces.length >= 5);
-    for (const f of shellFaces) assert.equal(f.thickness, t, `${type}: shell face thickness`);
+    assert.equal(shellFaces.length, shellParts.length);
+    shellFaces.forEach((f, i) => {
+      const want = kit.materials.find((m) => m.id === shellParts[i].material).thickness;
+      assert.equal(f.thickness, want, `${type}: ${shellParts[i].name}`);
+    });
     const glows = r.faces3d.filter((f) => f.glow);
     if (type === 'alley') assert.ok(glows.length > 0);
     for (const f of glows) assert.equal(f.thickness, undefined, 'LED spots are flat');
@@ -117,4 +122,22 @@ test('the default alley is light enough to cut: under 6.5 h on 2 mm chipboard, s
     assert.ok(lit.length >= 12, `${side}: ${lit.length} lit windows`);
   }
   assert.equal(sh.alley.layers, 2, 'still layered');
+});
+
+test('the default alley cuts its relief from thin basswood: under 5.5 h, and the relief is 0.8 mm', () => {
+  const kit = withShell('alley');
+  const r = compileKit(kit);
+  const hours = r.sheets.reduce((sum, s) => sum + estimateCutMinutes(s), 0) / 60;
+  assert.ok(hours < 5.5, `estimated ${hours.toFixed(2)} h`);
+  const relief = r.parts.filter((p) => / relief /.test(p.name));
+  assert.ok(relief.length > 0);
+  assert.ok(relief.every((p) => p.material === 'bass08'), 'relief layers in 0.8 mm basswood');
+  const reliefFaces = r.faces3d.filter((f) => f.layer === 0 && f.thickness === 0.8);
+  assert.equal(reliefFaces.length, relief.length, 'and they are 0.8 mm thick in 3D');
+});
+
+test('with short cavity spacers the default alley cuts in under 5 h', () => {
+  const r = compileKit(withShell('alley'));
+  const hours = r.sheets.reduce((sum, s) => sum + estimateCutMinutes(s), 0) / 60;
+  assert.ok(hours < 5, `estimated ${hours.toFixed(2)} h`);
 });

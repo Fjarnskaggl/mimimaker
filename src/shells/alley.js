@@ -22,11 +22,13 @@ import { rectPoly, archPoly, ellipsePoly, cleanPolygon } from '../geometry.js';
 export const ALLEY_DEFAULTS = {
   buildings: 3, layers: 2, cavity: 6, perspective: 0.6, horizon: 0.4,
   windowW: 8, windowH: 12, litRatio: 0.5, seed: 1, backdrop: true, backCavity: 6,
+  reliefMaterial: 'bass08',
 };
 
 export const ALLEY_PARAMS = [
   { key: 'buildings', label: 'Buildings per side', type: 'int', min: 1, max: 6 },
   { key: 'layers', label: 'Facade layers', type: 'int', min: 1, max: 4 },
+  { key: 'reliefMaterial', label: 'Relief layers cut from', type: 'material' },
   { key: 'cavity', label: 'Light cavity', type: 'num', min: 3, max: 15, step: 0.5, unit: 'mm' },
   { key: 'perspective', label: 'Forced perspective', type: 'num', min: 0.05, max: 1.5, step: 0.05 },
   { key: 'horizon', label: 'Eye height', type: 'num', min: 0.1, max: 0.6, step: 0.05 },
@@ -48,6 +50,8 @@ const EDGE = 1.5, BRIDGE = 2;
 const MIN_HOLE = 3;
 /** Wire notch at the foot of each cavity spacer (mm). */
 const NOTCH_W = 3, NOTCH_H = 6;
+/** Behind the front, a spacer is just a foot block and a head block (mm). */
+const FOOT_H = NOTCH_H + 8, HEAD_H = 12;
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -115,7 +119,7 @@ function layoutWindows({ a, b, roofA, roofB, side, roof, bottom, bridge, winW, w
   return { windows, skipped };
 }
 
-export function buildAlley({ W, D, H, t, fingerWidth, holes = {} }, params) {
+export function buildAlley({ W, D, H, t, fingerWidth, holes = {}, materials, material }, params) {
   const P = { ...ALLEY_DEFAULTS, ...params };
   const nb = clampInt(P.buildings, 1, 6);
   const layers = clampInt(P.layers, 1, 4);
@@ -125,7 +129,14 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {} }, params) {
   const litRatio = clamp(P.litRatio, 0, 1);
   const warnings = [];
   const Di = D - t, Hi = H - 2 * t;
-  const sx0 = t + c + layers * t, sx1 = W - sx0;
+  // relief layers may be cut from a thinner material (cuts much faster)
+  let reliefMat = null;
+  if (materials && layers > 1) {
+    reliefMat = materials.find((m) => m.id === P.reliefMaterial && m.kind !== 'fabric') || null;
+    if (!reliefMat) warnings.push({ level: 'warn', msg: `Relief layer material "${P.reliefMaterial}" isn't in this kit, so the relief layers are cut from the shell board.` });
+  }
+  const tr = reliefMat ? reliefMat.thickness : t;
+  const sx0 = t + c + t + (layers - 1) * tr, sx1 = W - sx0;
   const street = sx1 - sx0;
   if (street < 20) {
     throw new Error(`The street between the facades is only ${street.toFixed(1)} mm wide — make the shelf gap wider, or use fewer layers or a thinner light cavity.`);
@@ -188,7 +199,7 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {} }, params) {
     const mirror = side === 'right';
     const toPanel = (poly) => (mirror ? poly.map(([yy, v]) => [Di - yy, v]).reverse() : poly);
     const facePlane = (L) => {
-      const x = t + c + (L + 1) * t;
+      const x = t + c + t + L * tr; // visible face of layer L (base is shell board, reliefs are tr thick)
       return mirror
         ? { o: [W - x, Di, t], U: [0, -1, 0], V: [0, 0, 1], n: [-1, 0, 0] }
         : { o: [x, 0, t], U: [0, 1, 0], V: [0, 0, 1], n: [1, 0, 0] };
@@ -219,6 +230,7 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {} }, params) {
         parts.push({
           key: `${side}-relief${L}-${b.index}`, name: `${sideName} relief ${L} · building ${b.index + 1}`, group,
           role: 'layer', side, layer: L, building: b.id,
+          ...(reliefMat ? { material: reliefMat.id, thickness: tr } : {}),
           // light only needs to pass the lit windows; the rest of the relief stays whole
           polys: [toPanel(poly), ...b.windows.filter((w) => w.lit).map((w) => toPanel(windowPoly(w, L * FRAME)))],
           scores: L === layers - 1 ? drawn(b.windows) : [], plane: facePlane(L),
@@ -234,22 +246,33 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {} }, params) {
       return yy > Lv ? last.roofBack : roofAt(b, Math.min(yy, b.y1));
     };
     const notch = c - NOTCH_W >= 2;
+    const a = (c - NOTCH_W) / 2;
+    const foot = (h) => (notch
+      ? [[0, 0], [a, 0], [a, NOTCH_H], [a + NOTCH_W, NOTCH_H], [a + NOTCH_W, 0], [c, 0], [c, h], [0, h]]
+      : rectPoly(0, 0, c, h));
+    const x = side === 'left' ? t : W - t - c;
+    const plane = (ys) => ({ o: [x, ys, t], U: [1, 0, 0], V: [0, 0, 1], n: [0, -1, 0] });
     spacerYs.forEach((ys, k) => {
       const hs = Math.min(baseTop(ys), baseTop(ys + t)) - 1;
-      const a = (c - NOTCH_W) / 2;
-      const poly = notch
-        ? [[0, 0], [a, 0], [a, NOTCH_H], [a + NOTCH_W, NOTCH_H], [a + NOTCH_W, 0], [c, 0], [c, hs], [0, hs]]
-        : rectPoly(0, 0, c, hs);
-      const x = side === 'left' ? t : W - t - c;
-      parts.push({
-        key: `${side}-spacer${k}`, name: `${sideName} spacer ${k + 1}`, group, role: 'spacer', side,
-        polys: [poly], scores: [], plane: { o: [x, ys, t], U: [1, 0, 0], V: [0, 0, 1], n: [0, -1, 0] },
-      });
-      const key = `${side}-spacer${k}`;
-      glue(key, `shell-${side}`);
-      glue(key, `${side}-base`);
-      glue(key, 'shell-bottom');
-      if (k === spacerYs.length - 1) glue(key, 'shell-back');
+      const last = k === spacerYs.length - 1;
+      // the front spacer closes the light cavity, so it runs full height; the
+      // others only hold the facade off the wall: a block at the foot (wire
+      // notch) and one under the roofline, unless the facade is too short to split
+      const blocks = k === 0 || hs < FOOT_H + HEAD_H + 10
+        ? [{ kind: 'full', poly: foot(hs) }]
+        : [{ kind: 'foot', poly: foot(FOOT_H) }, { kind: 'head', poly: rectPoly(0, hs - HEAD_H, c, HEAD_H) }];
+      for (const bl of blocks) {
+        const key = bl.kind === 'head' ? `${side}-spacer${k}-head` : `${side}-spacer${k}`;
+        const label = bl.kind === 'full' ? '' : bl.kind === 'foot' ? ' foot' : ' head';
+        parts.push({
+          key, name: `${sideName} spacer ${k + 1}${label}`, group, role: 'spacer', side, spacer: bl.kind,
+          polys: [bl.poly], scores: [], plane: plane(ys),
+        });
+        glue(key, `shell-${side}`);
+        glue(key, `${side}-base`);
+        if (bl.kind !== 'head') glue(key, 'shell-bottom');
+        if (last) glue(key, 'shell-back');
+      }
     });
     backHoles.push(wireHole(side === 'left' ? t + c / 2 : W - t - c / 2));
 
@@ -337,7 +360,7 @@ export function buildAlley({ W, D, H, t, fingerWidth, holes = {} }, params) {
   for (const side of ['left', 'right']) {
     const group = groupOf[side];
     steps.push(
-      { group, text: `Glue the ${side} spacers upright against the ${side} wall, notch down, first one flush with the front edge and the last one against the back wall (${ids((p) => p.side === side && p.role === 'spacer').length} spacers). The notches make a wire channel along the floor.` },
+      { group, text: `Glue the ${side} spacers upright against the ${side} wall (${ids((p) => p.side === side && p.role === 'spacer').length} pieces): the tall one flush with the front edge, then at each mark a foot block on the floor, notch down, with its head block just under the roofline above it; the last pair goes against the back wall. The notches make a wire channel along the floor.` },
       { group, text: `Lay one micro LED in the ${side} cavity behind each building with lit windows (the 3D view shows where), feed the wires along the channel and out of the back wall. Glue vellum or tracing paper behind the base facade's window holes to diffuse the light.` },
       { group, text: layers > 1
         ? `Glue the ${side} base facade onto the spacers, then stack the relief layers on it building by building, matching each window frame to its window.`

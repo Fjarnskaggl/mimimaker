@@ -11,6 +11,8 @@ const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+/** A part's own thickness (e.g. a thin relief layer), else the shell board's. */
+const thick = (part, t) => part.thickness ?? t;
 
 /** Size a shell to slide into a shelf gap: W and H lose `clearance`, D is capped at the shelf. */
 export function shellSize({ gap, clearance = 2, depth }) {
@@ -24,12 +26,13 @@ export function shellSize({ gap, clearance = 2, depth }) {
 
 /** Material volume of a part (mm³). */
 export function partVolume(part, t) {
-  return partArea(part.polys) * t;
+  return partArea(part.polys) * thick(part, t);
 }
 
 /** Axis-aligned bounds [[x0,x1],[y0,y1],[z0,z1]] of a part's solid. */
 export function partBox(part, t) {
   const { o, U, V, n } = part.plane;
+  t = thick(part, t);
   const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
   for (const [u, v] of part.polys[0]) {
     const p = add(o, add(mul(U, u), mul(V, v)));
@@ -45,7 +48,7 @@ export function partContains(part, t, p) {
   const { o, U, V, n } = part.plane;
   const d = sub(p, o);
   const w = -dot(d, n);
-  if (w <= 0 || w >= t) return false;
+  if (w <= 0 || w >= thick(part, t)) return false;
   const uv = [dot(d, U), dot(d, V)];
   let inside = false;
   for (const poly of part.polys) if (pointInPolygon(uv, poly)) inside = !inside;

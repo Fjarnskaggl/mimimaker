@@ -50,6 +50,9 @@ test('shell panel: pick an alley, size it to a shelf gap, tune it, and turn it o
   assert.ok(k.room.width > wantWidth, 'wider gap, wider room');
   await panel(page).locator('input[data-shell-param=layers]').fill('3');
   assert.equal((await kit(page)).shell.params.layers, 3);
+  // relief material: any card or board in the kit
+  await panel(page).locator('select[data-shell-param=reliefMaterial]').selectOption('card110');
+  assert.equal((await kit(page)).shell.params.reliefMaterial, 'card110');
 
   // the preview and the parts list show the facades
   await page.waitForFunction(() => document.querySelectorAll('#view svg path').length > 20);

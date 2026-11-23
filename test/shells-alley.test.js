@@ -38,7 +38,7 @@ test('layers, cavity and street exactly fill the width', () => {
     const { W } = sh.dims;
     const { cavity, layers } = sh.alley;
     const { x0, x1 } = sh.alley.street;
-    assert.ok(Math.abs(x0 - (t + cavity + layers * t)) < 1e-9);
+    assert.ok(Math.abs(x0 - (t + cavity + layers * t)) < 1e-9, 'no materials list: every layer is shell board');
     assert.ok(Math.abs(W - x1 - x0) < 1e-9, 'symmetric');
     for (const side of ['left', 'right']) {
       const layerBoxes = sh.parts.filter((p) => p.side === side && p.role === 'layer').map((p) => partBox(p, t)[0]);
@@ -62,7 +62,7 @@ test('spacers hold each base facade off its wall and touch both', () => {
       const [[a, b], [y0, y1], [z0]] = partBox(sp, t);
       assert.ok(Math.abs(b - a - cavity) < 1e-9, 'spans the cavity');
       assert.ok(Math.abs(y1 - y0 - t) < 1e-9);
-      assert.ok(Math.abs(z0 - t) < 1e-9, 'stands on the floor');
+      if (sp.spacer !== 'head') assert.ok(Math.abs(z0 - t) < 1e-9, 'stands on the floor');
       if (side === 'left') assert.ok(Math.abs(a - t) < 1e-9, 'touches the wall');
       else assert.ok(Math.abs(b - (sh.dims.W - t)) < 1e-9);
     }
@@ -203,6 +203,85 @@ test('relief layers open only over lit windows; unlit ones are drawn on the fron
     if (layers > 1) {
       for (const base of sh.parts.filter((p) => p.role === 'layer' && p.layer === 0)) {
         assert.equal(base.scores.length, 0, `${base.key}: hidden under the relief, so nothing to draw`);
+      }
+    }
+  }
+});
+
+const MATS = [
+  { id: 'chip2', thickness: 2, kind: 'board' },
+  { id: 'bass08', thickness: 0.8, kind: 'board' },
+  { id: 'card110', thickness: 0.38, kind: 'card' },
+];
+
+test('relief layers can be cut from thinner material: they stack at its thickness and still fit', () => {
+  const t = 2;
+  for (const relief of ['bass08', 'card110']) for (const layers of [2, 3]) {
+    const sh = buildShell({ type: 'alley', gap, clearance: 2, material: 'chip2', params: { layers, reliefMaterial: relief } }, { t, materials: MATS });
+    const tr = MATS.find((m) => m.id === relief).thickness;
+    const reliefs = sh.parts.filter((p) => p.role === 'layer' && p.layer > 0);
+    assert.ok(reliefs.length > 0);
+    for (const p of reliefs) {
+      assert.equal(p.material, relief, p.key);
+      assert.equal(p.thickness, tr, p.key);
+    }
+    for (const p of sh.parts.filter((q) => !(q.role === 'layer' && q.layer > 0))) {
+      assert.equal(p.material, 'chip2', `${p.key} stays board`);
+      assert.ok(p.thickness === undefined || p.thickness === t, p.key);
+    }
+    const { x0, x1 } = sh.alley.street;
+    assert.ok(Math.abs(x0 - (t + sh.alley.cavity + t + (layers - 1) * tr)) < 1e-9, 'street starts at the last relief face');
+    assert.ok(Math.abs(sh.dims.W - x1 - x0) < 1e-9);
+    assert.deepEqual(findOverlaps(sh.parts, t), [], `${relief} × ${layers}`);
+    assert.deepEqual(outsideEnvelope(sh.parts, t, sh.dims), []);
+    checkJoints(sh, t);
+  }
+});
+
+test('an unknown relief material falls back to the shell board, with a warning', () => {
+  const sh = buildShell({ type: 'alley', gap, material: 'chip2', params: { reliefMaterial: 'nope' } }, { t: 2, materials: MATS });
+  assert.ok(sh.warnings.some((w) => /relief/i.test(w.msg)), JSON.stringify(sh.warnings));
+  for (const p of sh.parts.filter((q) => q.role === 'layer' && q.layer > 0)) assert.equal(p.material, 'chip2');
+});
+
+// roofline (world z) of a side's facade at depth y
+function roofZ(sh, side, y, t) {
+  const blds = sh.alley.buildings.filter((b) => b.side === side);
+  const b = blds.find((q) => y <= q.y1 + 1e-9) || blds[blds.length - 1];
+  const yy = Math.min(y, b.y1);
+  return t + b.roofFront + ((b.roofBack - b.roofFront) * (yy - b.y0)) / (b.y1 - b.y0);
+}
+
+test('cavity spacers: a full-height one closes the front, the rest are a foot block and a head block', () => {
+  for (const [params, t] of VARIANTS) {
+    const sh = alley(params, t);
+    const { cavity } = sh.alley;
+    for (const side of ['left', 'right']) {
+      const spacers = sh.parts.filter((p) => p.side === side && p.role === 'spacer');
+      const box = (sp) => partBox(sp, t);
+      const front = spacers.filter((sp) => box(sp)[1][0] < 1e-9);
+      assert.equal(front.length, 1, 'one spacer at the open front');
+      const [, [fy0, fy1], [fz0, fz1]] = box(front[0]);
+      assert.ok(fz1 >= Math.min(roofZ(sh, side, fy0, t), roofZ(sh, side, fy1, t)) - 1 - 1e-9, 'front spacer runs up to the roofline');
+      assert.ok(Math.abs(fz0 - t) < 1e-9);
+      const feet = spacers.filter((sp) => sp.spacer === 'foot');
+      const heads = spacers.filter((sp) => sp.spacer === 'head');
+      assert.ok(feet.length >= 1 && feet.length === heads.length, 'a foot and a head at every other station');
+      assert.equal(feet.length + heads.length + 1, spacers.length);
+      for (const sp of feet) {
+        const [, , [z0, z1]] = box(sp);
+        assert.ok(Math.abs(z0 - t) < 1e-9 && z1 - z0 <= 25, `${sp.key}: short block on the floor`);
+      }
+      for (const sp of heads) {
+        const [, [y0, y1], [z0, z1]] = box(sp);
+        const top = Math.min(roofZ(sh, side, y0, t), roofZ(sh, side, y1, t));
+        assert.ok(z1 - z0 <= 20, `${sp.key}: short block`);
+        assert.ok(z1 <= top + 1e-9 && z1 >= top - 3, `${sp.key}: tucked just under the roofline`);
+        assert.ok(z0 > t + 25, `${sp.key}: well clear of the foot`);
+      }
+      for (const sp of spacers) {
+        const [[a, b]] = box(sp);
+        assert.ok(Math.abs(b - a - cavity) < 1e-9, 'spans the cavity');
       }
     }
   }
