@@ -74,7 +74,7 @@ test('machine profiles: the kit zip carries the chosen machine’s files', async
 test('true-shape nesting runs in a worker and swaps in fewer sheets', async () => {
   const page = await open();
   await chooseMachine(page, 'Cricut Joy Xtra');
-  await page.click('[data-tab=sheets]');
+  await page.click('[data-step=make]');
   const note = page.locator('.nest-note');
   await note.waitFor({ timeout: 10000 });
   assert.match(await note.textContent(), /saved 1 sheet/);
