@@ -93,10 +93,10 @@ export function faceParts(kit, compiled) {
  * Faces for step `n`'s exploded view: [{ source, polys, n, color, opacity, part, moving, offset }]
  * (source is the original face3d). Empty for steps with nothing to draw.
  */
-export function explodedFaces(kit, compiled, steps = buildSteps(kit, compiled), n, graph = jointGraph(kit, compiled)) {
+export function explodedFaces(kit, compiled, steps = buildSteps(kit, compiled), n, graph = jointGraph(kit, compiled), owners = null) {
   const step = steps.find((s) => s.n === n);
   if (!step || step.kind === 'info') return [];
-  const owner = faceParts(kit, compiled);
+  const owner = owners || faceParts(kit, compiled);
   const builtAt = new Map();
   for (const s of steps) for (const id of s.parts) builtAt.set(id, s.n);
   // a place step moves the whole piece (built in earlier steps)
@@ -198,7 +198,7 @@ export function explodedFaces(kit, compiled, steps = buildSteps(kit, compiled), 
 
 /** The step's exploded view as an SVG string, or null when there's nothing to draw. */
 export function explodedViewSVG(kit, compiled, steps = buildSteps(kit, compiled), n, opts = {}) {
-  const faces = explodedFaces(kit, compiled, steps, n, opts.graph);
+  const faces = explodedFaces(kit, compiled, steps, n, opts.graph, opts.owners);
   if (!faces.some((f) => f.moving)) return null;
   const step = steps.find((s) => s.n === n);
   const svg = renderScene(faces, { yaw: opts.yaw ?? -32, pitch: opts.pitch ?? 26 });
