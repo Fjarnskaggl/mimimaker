@@ -189,3 +189,21 @@ test('the Realistic 3D button looks pressed while it is on', async () => {
   assert.notEqual(await bg(), off, 'pressed state is visible');
   await page.close();
 });
+
+test('Realistic 3D: zoom holds through redraws in the Light step', async () => {
+  const page = await open({ webgl: true });
+  await page.click('[data-step=light]');
+  await page.waitForSelector('.stage[data-renderer=webgl] canvas', { timeout: 15000 });
+  const box = await page.locator('.stage canvas').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -400);
+  const zoom = () => page.evaluate(() => document.querySelector('.stage').t6viewer.sample().zoom);
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.sample().zoom > 1.2, null, { timeout: 2000 });
+  const z = await zoom();
+  await page.click('[data-select-led="0"]'); // redraws the room
+  assert.equal(await zoom(), z, 'zoom kept after selecting a light');
+  await page.locator('input[aria-label=Rotate]').fill('10'); // and after orbiting
+  assert.equal(await zoom(), z, 'zoom kept after orbiting');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
