@@ -10,7 +10,7 @@ import { labelAnchor } from './labels.js';
 import { planLighting, LED_COLORS, POWER_KINDS } from './lighting.js';
 import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometry.js';
 // T2 shells
-import { prepareShell, compileShell } from './shells/kit.js';
+import { prepareShell, compileShell, compileRoof } from './shells/kit.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
@@ -162,6 +162,9 @@ export function compileKit(kit) {
     );
     if (rm.thickness < 0.7) warn(`The room box is cut from ${rm.name}; laminate two layers or back it with foam board so it stands up.`, 'info');
   }
+  // >>> T2 roofs: kit.room.roof = { type: 'gable', pitch } puts a bevel-free gable roof on the box
+  if (!shellPrep) compileRoof(room, { W, D, H, t, fingerWidth, rm, newGroup, addPart, add3d, warn, xf: worldXf });
+  // <<< T2 roofs
 
   // ------------------------------------------------------------ trim pieces
   const trimOpenings = openings.filter((o) => o.trim);
