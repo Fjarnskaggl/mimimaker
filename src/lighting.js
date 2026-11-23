@@ -100,7 +100,8 @@ export function routeWire(a, b, dims, obstacles = []) {
 
 /**
  * @param lighting kit.lighting
- * @param ctx { s, t, W, D, H, Wi, Di, Hi, ceiling, wallInfo, openings, shellLights?, shellObstacles? }
+ * @param ctx { s, t, W, D, H, Wi, Di, Hi, ceiling, wallInfo, openings, shellLights?, shellObstacles?, baseT? }
+ *   baseT: thickness of the board a hidden base is cut from (default t)
  *   shellLights: LEDs a shell places itself, with wire paths to its own back-wall holes (lighting/shell.js)
  *   shellObstacles: windows in a shell's back wall (back panel polygons) for routes and the power box to avoid
  */
@@ -130,8 +131,11 @@ export function planLighting(lighting, ctx) {
   const pu = wallInfo[pWall].u0 + (pw.pos ?? 0) * s, pv = t + (pw.elev ?? 0) * s;
   // hidden base (Rolife-style): the box sits under the room and the wires come in beside its hatch
   const base = pw.mount === 'base'
-    ? baseLayout({ supply: supplyFor(pw), pos: pWall === 'back' ? pw.pos : undefined, switchAt: pw.switchAt, switchKind: pw.switch, W: ctx.W, D, t, s })
+    ? baseLayout({ supply: supplyFor(pw), pos: pWall === 'back' ? pw.pos : undefined, switchAt: pw.switchAt, switchKind: pw.switch, W: ctx.W, D, t: ctx.baseT ?? t, s })
     : null;
+  if (base && pWall !== 'back') {
+    warnings.push({ level: 'info', msg: 'In the hidden base the battery box sits under the back of the room, in the middle — set the power box to the back wall to move it along.' });
+  }
   const power = base
     ? { face: 'base', u: base.entry.x, v: 0, p: [base.entry.x, 0], kind: pw.kind || 'battery', base }
     : { face: pWall, u: pu, v: pv, p: netPoint(pWall, pu, pv, ctx), kind: pw.kind || 'battery' };
@@ -170,7 +174,8 @@ export function planLighting(lighting, ctx) {
     // into a hidden base, a floor light's wires drop straight through its hole
     const route = base && face === 'bottom' ? { points: [p], crossesOpening: false } : routeWire({ face, p }, power, ctx, obstacles);
     if (route.crossesOpening) warnings.push(`${label}'s wire would cross a window or door on the outside — tape it around the opening by hand.`);
-    const length = pathLength(route.points) + t + (base ? base.inRun : 0);
+    const inBase = !base ? 0 : face === 'bottom' ? base.floorRun(u, v) : base.inRun;
+    const length = pathLength(route.points) + t + inBase;
     leds.push({
       label, name: led.name || '', mount: led.mount, face, u, v, p, color: led.color || 'warm',
       route: route.points, length, leadCm: Math.ceil((length / 10 + 3) / 5) * 5,

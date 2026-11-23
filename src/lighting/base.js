@@ -24,7 +24,7 @@ import { CUTOUTS } from './cutouts.js';
 
 export const BASE = {
   // battery box (or USB socket board) bodies lying flat: length, width, height
-  box: { aa2: { l: 64, w: 36, h: 18 }, cr2032: { l: 32, w: 26, h: 10 }, usb: { l: 24, w: 14, h: 10 } },
+  box: { aa2: { l: 64, w: 36, h: 18 }, cr2032: { l: 32, w: 26, h: 10 }, usb: { l: 24, w: 14, h: 10 } }, // usb: the lead's inline switch
   hatchExtra: 10, // mm the hatch opening is wider than the box (the stops take 3 mm each side)
   stopWidth: 6, // mm, a hatch stop strip
   stopOverlap: 3, // mm of each stop showing through the opening
@@ -53,7 +53,8 @@ const faceOf = (f) => (SWITCH_FACES.includes(f) ? f : 'front');
  * Where everything in the base goes.
  * @param o { supply, pos (real cm along the back wall, the battery box centre), switchAt, switchKind, W, D, t, s }
  * @returns { W, D, H, t, supply, box: {x, y, l, w, h}, hatch: {x0, z0, w, h}, entry: {x, z, r},
- *   switch: {face, kind, cx, cz, hole}, inRun (mm of wire inside the base), warnings }
+ *   switch: {face, kind, cx, cz, hole}, inRun (mm of wire inside the base from the wire hole),
+ *   floorRun(x, y) (the same for a floor light's hole), warnings }
  */
 export function baseLayout({ supply = 'aa2', pos, switchAt, switchKind, W, D, t, s = 1 }) {
   const warnings = [];
@@ -91,14 +92,17 @@ export function baseLayout({ supply = 'aa2', pos, switchAt, switchKind, W, D, t,
   const by = D - t - 3 - box.w / 2;
   // wire inside: entry to the switch (along the back, then to the front) and on to the box
   const swPoint = face === 'front' ? [cx, t] : [face === 'left' ? t : W - t, cx];
-  const inRun = Math.abs(ex - swPoint[0]) + Math.abs(D - t - swPoint[1]) + Math.abs(swPoint[0] - bx) + Math.abs(swPoint[1] - by) + 20;
+  const toBox = Math.abs(swPoint[0] - bx) + Math.abs(swPoint[1] - by) + 20;
+  const inRun = Math.abs(ex - swPoint[0]) + Math.abs(D - t - swPoint[1]) + toBox;
+  // a floor light drops in wherever it is (x across, y from the front) and runs to the switch
+  const floorRun = (x, y) => Math.abs(x - swPoint[0]) + Math.abs(y - swPoint[1]) + toBox;
 
   return {
     W, D, H, t, supply,
     box: { x: bx, y: by, ...box },
     hatch, entry,
     switch: { face, kind: kindOf(switchKind), cx, cz, hole: sw.hole },
-    inRun, warnings,
+    inRun, floorRun, warnings,
   };
 }
 
@@ -150,7 +154,7 @@ export function buildBase(L, { fingerWidth, minFeature = 0 } = {}) {
     'Glue the room onto the base, edges flush all round.',
     `Run every LED wire down the back to the base and in through the wire hole beside the hatch. Inside, join them: ${power} + (red) to one switch lead, the other switch lead to every LED +, and every LED − to the ${power} − (black). Insulate the joins. A battery box's own switch stays on: the ${sw.name} turns the lights on and off.`,
     L.supply === 'usb'
-      ? 'Lay the USB socket board just inside the hatch, pass the USB lead through the hole in the hatch {hatch} and push the hatch in.'
+      ? 'Pass the USB lead in through the hole in the hatch {hatch}, join it like a battery box (red +, black −) and leave its inline switch on, then push the hatch in.'
       : `Slide the battery box in through the hatch — don't glue it, so it comes out to change batteries — and push the hatch {hatch} in. To change batteries, pull the hatch out by its finger hole.`,
   ];
   return { panels, parts, steps, minFinger: res.minFinger };

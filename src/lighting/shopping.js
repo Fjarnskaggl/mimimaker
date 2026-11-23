@@ -80,7 +80,7 @@ export function shoppingList(lighting) {
       add('usb-socket', 1, 'USB-C panel-mount power socket (2-pin)', `fits a ${CUTOUTS.usb.w} × ${CUTOUTS.usb.h} mm slot`, 'usb-socket');
       add('push-switch', 1, '6 mm latching push switch', `fits the ${CUTOUTS.button.d} mm hole`, 'push-switch');
     } else {
-      add('usb-lead', 1, SUPPLIES.usb.name, '5 V; any USB phone charger powers it', 'usb-lead');
+      add('usb-lead', 1, SUPPLIES.usb.name, base ? '5 V; comes in through the hatch, its inline switch left on' : '5 V; any USB phone charger powers it', 'usb-lead');
     }
   } else if (supply === 'cr2032') {
     add('box-cr2032', 1, SUPPLIES.cr2032.name, boxNote, 'box-cr2032');

@@ -93,7 +93,7 @@ export function planSVG(kit, { selected = null, clashes = new Set() } = {}) {
     const p = L.power;
     const ps = wallSpan(p.wall, p.pos ?? 0, 0, room);
     const ox = p.wall === 'back' ? 0 : p.wall === 'left' ? -T * 1.6 : T * 1.6, oy = p.wall === 'back' ? -T * 1.6 : 0;
-    out.push(`<g class="plan-power"><title>Power box (outside the ${p.wall} wall)</title><rect x="${f(ps.x0 + ox - T)}" y="${f(ps.y0 + oy - T * 0.6)}" width="${f(2 * T)}" height="${f(1.2 * T)}" rx="1"/></g>`);
+    if (p.mount !== 'base') out.push(`<g class="plan-power"><title>Power box (outside the ${p.wall} wall)</title><rect x="${f(ps.x0 + ox - T)}" y="${f(ps.y0 + oy - T * 0.6)}" width="${f(2 * T)}" height="${f(1.2 * T)}" rx="1"/></g>`);
     (L.leds || []).forEach((led, i) => {
       let x, y;
       if (led.mount === 'wall') { const s = wallSpan(led.wall, led.pos ?? 0, 0, room); x = s.x0; y = s.y0; } else { x = led.x ?? 0; y = led.y ?? 0; }

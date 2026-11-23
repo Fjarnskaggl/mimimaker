@@ -141,7 +141,8 @@ export function compileKit(kit) {
 
   // LED wire holes go through the structure (and the overlays below)
   const shellLit = shellLighting(shellPrep, { t }); // T2 shells: LEDs the shell places itself, and its back-wall windows (#16)
-  const lighting = planLighting(kit.lighting, { s, t, W, D, H, Wi, Di, Hi, ceiling: room.ceiling, wallInfo, openings,
+  const baseMat = rm.kind === 'board' ? rm : (kit.materials || []).find((m) => m.kind === 'board'); // [T5] a hidden base is cut from board
+  const lighting = planLighting(kit.lighting, { s, t, W, D, H, Wi, Di, Hi, ceiling: room.ceiling, wallInfo, openings, baseT: baseMat?.thickness,
     shellLights: shellLit.lights, shellObstacles: shellLit.obstacles });
   for (const [f, list] of Object.entries(lighting.holes)) (holes[f] ||= []).push(...list);
   for (const w of lighting.warnings) typeof w === 'string' ? warn(w) : warn(w.msg, w.level);
@@ -283,11 +284,11 @@ export function compileKit(kit) {
     // >>> [T5] hidden base under the room: battery hatch, wire hole and switch mount
     if (lighting.power.base) {
       const L = lighting.power.base;
-      const bm = rm.kind === 'board' ? rm : (kit.materials || []).find((m) => m.kind === 'board');
+      const bm = baseMat;
       if (!bm) {
         warn('The hidden base is cut from board, and this kit has no board material — add one in Materials.', 'error');
       } else {
-        const b = buildBase({ ...L, t: bm.thickness }, { fingerWidth: jointWidth(bm), minFeature: minJointFeature(machine, bm) });
+        const b = buildBase(L, { fingerWidth: jointWidth(bm), minFeature: minJointFeature(machine, bm) });
         checkFingers(b.minFinger, bm, 'Hidden base');
         const bg = newGroup('Hidden base', bm);
         const under = { p: ([x, y, z]) => [x, y, z - L.H], n: (q) => q };
