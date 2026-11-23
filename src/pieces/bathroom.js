@@ -32,4 +32,16 @@ export const BATHROOM = [
       { kind: 'box', name: 'Tank', size: ['w', 'tank', 'h'], faces: 'all', at: [0, 'bd', 0] },
     ],
   },
+  {
+    id: 'bathcabinet', label: 'Mirror cabinet', theme: 'Bathroom', placement: 'wall', mat: 'board',
+    tags: ['water', 'storage', 'wall-mounted'], difficulty: 2,
+    params: [num('w', 'Width', 30, 100), num('d', 'Depth', 10, 25), num('h', 'Height', 40, 90), { key: 'count', label: 'Doors', type: 'number', min: 1, max: 2, step: 1 }],
+    defaults: { w: 60, d: 15, h: 60, count: 1 },
+    let: { b: 'max(t + 1.5, min(w, h) * 0.08)' },
+    components: [{
+      kind: 'box', name: 'Mirror cabinet', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0],
+      scores: { front: [{ fronts: { style: "'doors'", count: 'round(count)', w: 'w', h: 'h' } }, { rect: ['b', 'b', 'w - 2 * b', 'h - 2 * b'] }] },
+    }],
+    note: 'Glue mirror card (or silver foil card) inside the scored outline, then hang it above the vanity with its back flat on the wall.',
+  },
 ];

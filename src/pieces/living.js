@@ -64,4 +64,19 @@ export const LIVING = [
     ],
     note: 'Pair it with a floor LED: thread the wire up the pole and tuck the bulb inside the shade. Use vellum or thin paper for a softer glow.',
   },
+  {
+    id: 'sideboard', label: 'Sideboard', theme: 'Living room', placement: 'floor', mat: 'board',
+    tags: ['storage', 'dining'], difficulty: 2,
+    params: [num('w', 'Width', 80, 240), num('d', 'Depth', 30, 60), num('h', 'Height', 50, 110), cnt('count', 'Doors', 2, 6)],
+    defaults: { w: 160, d: 45, h: 80, count: 3 },
+    let: { top: 'max(2 * t, h * 0.04)', ov: 'min(w * 0.03, 3)' },
+    components: [
+      {
+        kind: 'box', name: 'Sideboard', size: ['w - 2 * ov', 'd - ov', 'h - top'], faces: 'all', at: ['ov', 'ov', 0],
+        scores: { front: [{ fronts: { style: "'doors'", count: 'round(count)', w: 'w - 2 * ov', h: 'h - top' } }] },
+      },
+      { kind: 'box', name: 'Top', size: ['w', 'd', 'top'], faces: 'all', at: [0, 0, 'h - top'] },
+    ],
+    note: 'Build the body, then glue the top on so it overhangs the front and both ends evenly. A strip of washi tape along the top edge looks like veneer.',
+  },
 ];

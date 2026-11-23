@@ -68,4 +68,16 @@ export const KITCHEN = [
     defaults: { w: 80, d: 30, h: 60, shelves: 1 },
     components: [{ kind: 'box', name: 'Wall shelf', size: ['w', 'd', 'h'], faces: ['bottom', 'top', 'left', 'right', 'back'], shelves: { even: 'round(shelves)', h: 'h' }, at: [0, 0, 0] }],
   },
+  {
+    id: 'island', label: 'Kitchen island', theme: 'Kitchen', placement: 'floor', mat: 'board',
+    tags: ['cooking', 'storage', 'dining'], difficulty: 2,
+    params: [num('w', 'Width', 80, 240), num('d', 'Depth', 50, 120), num('h', 'Height', 85, 100), num('over', 'Seating overhang', 0, 40), cnt('count', 'Doors', 1, 6)],
+    defaults: { w: 140, d: 80, h: 90, over: 25, count: 3 },
+    let: { top: 'max(2 * t, h * 0.04)' },
+    components: [
+      { kind: 'box', name: 'Island', size: ['w', 'd - over', 'h - top'], faces: 'all', at: [0, 0, 0], scores: { front: [doorsFront('round(count)')] } },
+      { kind: 'box', name: 'Worktop', size: ['w', 'd', 'top'], faces: 'all', at: [0, 0, 'h - top'] },
+    ],
+    note: 'Glue the worktop flush with the door side so the overhang sticks out at the back; slide bar stools under it.',
+  },
 ];

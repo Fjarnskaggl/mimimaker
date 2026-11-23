@@ -180,6 +180,22 @@
    "max@card": "75c5f7843f202306"
   }
  },
+ "sideboard": {
+  "label": "Sideboard",
+  "meta": "0b0a1128f0cca193",
+  "components": [
+   "box:Sideboard",
+   "box:Top"
+  ],
+  "cases": {
+   "defaults@board": "f1065d7f987b6216",
+   "defaults@card": "305631a8f0e9a091",
+   "min@board": "7921c13300892875",
+   "min@card": "a50b893a01826f2a",
+   "max@board": "85a5117fd6caf04d",
+   "max@card": "cb76b94eab9316be"
+  }
+ },
  "bed": {
   "label": "Bed",
   "meta": "69a026d740d518b5",
@@ -239,6 +255,24 @@
    "min@card": "f9b936827ad57585",
    "max@board": "799cad1e18b76a57",
    "max@card": "29853b321e3c6435"
+  }
+ },
+ "bunkbed": {
+  "label": "Bunk bed",
+  "meta": "2c7c49ec0ddb037b",
+  "components": [
+   "box:Lower deck",
+   "box:Upper deck",
+   "flat:Foot end",
+   "flat:Head end"
+  ],
+  "cases": {
+   "defaults@board": "7ae2d82f0f2e0ef1",
+   "defaults@card": "358101a476209a96",
+   "min@board": "cd4573bbb133f5ec",
+   "min@card": "8a4152e55e4b5e6f",
+   "max@board": "b0eeb5172e158212",
+   "max@card": "47c97a2783c72d9f"
   }
  },
  "counter": {
@@ -331,6 +365,22 @@
    "max@card": "432abe6c4b838467"
   }
  },
+ "island": {
+  "label": "Kitchen island",
+  "meta": "2d6eca062cfe2f8f",
+  "components": [
+   "box:Island",
+   "box:Worktop"
+  ],
+  "cases": {
+   "defaults@board": "cfc1729915dde900",
+   "defaults@card": "e408c9ec5d86b849",
+   "min@board": "91427671e4074204",
+   "min@card": "a0e6a9539cbd8589",
+   "max@board": "254aa2f1740f92a9",
+   "max@card": "d44e7475f66a8155"
+  }
+ },
  "bathtub": {
   "label": "Bathtub",
   "meta": "33753272749693b9",
@@ -375,6 +425,21 @@
    "min@card": "dace964556959c71",
    "max@board": "9ac4b3e4cd7bcb9b",
    "max@card": "9ac4b3e4cd7bcb9b"
+  }
+ },
+ "bathcabinet": {
+  "label": "Mirror cabinet",
+  "meta": "f06cf9a4b2517be9",
+  "components": [
+   "box:Mirror cabinet"
+  ],
+  "cases": {
+   "defaults@board": "0c9f558fd04bd0fa",
+   "defaults@card": "de2a320d9657fa2a",
+   "min@board": "29a2c38047f19ff2",
+   "min@card": "5cdd38c1f52a5e6e",
+   "max@board": "a4d5a2f36a429d54",
+   "max@card": "d62d62bc5a8f77bf"
   }
  },
  "cafecounter": {
@@ -580,6 +645,37 @@
    "min@card": "7f118838d87f54ec",
    "max@board": "9cc5adc6667bfa6c",
    "max@card": "9cc5adc6667bfa6c"
+  }
+ },
+ "coatrack": {
+  "label": "Hall coat stand",
+  "meta": "04ab2c7399bc214e",
+  "components": [
+   "box:Base",
+   "flat:Stand"
+  ],
+  "cases": {
+   "defaults@board": "c78b9e8d1488eb41",
+   "defaults@card": "c78b9e8d1488eb41",
+   "min@board": "b3429064179b51ef",
+   "min@card": "b3429064179b51ef",
+   "max@board": "a3543344afd8b4ef",
+   "max@card": "a3543344afd8b4ef"
+  }
+ },
+ "wallclock": {
+  "label": "Wall clock",
+  "meta": "27f6f0bab19a86b3",
+  "components": [
+   "flat:Clock face"
+  ],
+  "cases": {
+   "defaults@board": "56bdf42972a7b412",
+   "defaults@card": "56bdf42972a7b412",
+   "min@board": "29b2aee48fcf4782",
+   "min@card": "29b2aee48fcf4782",
+   "max@board": "989ee8b6e73d4c5b",
+   "max@card": "989ee8b6e73d4c5b"
   }
  }
 }

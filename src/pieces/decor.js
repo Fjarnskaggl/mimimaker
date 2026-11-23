@@ -72,4 +72,44 @@ export const DECOR = [
     ],
     note: 'Centre the curtains on a window; fabric-backed paper or thin felt drapes nicely.',
   },
+  {
+    id: 'coatrack', label: 'Hall coat stand', theme: 'Decor', placement: 'floor', mat: 'board',
+    tags: ['clothes', 'hall'], difficulty: 1,
+    params: [num('w', 'Spread', 30, 70), num('h', 'Height', 150, 200)],
+    defaults: { w: 45, h: 175 },
+    size: ['w', 'w * 0.6', 'h'],
+    let: { b: 'w * 0.6', p: 'max(2, w * 0.1)', c: 'w / 2', q: 'p / 2', h1: 'h * 0.78', rise: 'w * 0.25', bh: 'max(2, h * 0.015)' },
+    components: [
+      { kind: 'box', name: 'Base', size: ['b', 'b', 'bh'], faces: 'all', at: ['(w - b) / 2', 0, 0] },
+      {
+        kind: 'flat', name: 'Stand', plane: { upright: { y: 'b / 2' } },
+        polys: [{ poly: [
+          ['c - q', 0], ['c + q', 0], ['c + q', 'h1'], ['w', 'h1 + rise'], ['w', 'h1 + rise + p'], ['c + q', 'h1 + p'],
+          ['c + q', 'h'], ['c - q', 'h'], ['c - q', 'h1 + p'], [0, 'h1 + rise + p'], [0, 'h1 + rise'], ['c - q', 'h1'],
+        ] }],
+      },
+    ],
+    note: 'Cut a slot in the base for the stand, or glue it upright in the middle; cut a second stand and glue it across the first for a four-armed version.',
+  },
+  {
+    id: 'wallclock', label: 'Wall clock', theme: 'Decor', placement: 'wall', mat: 'card',
+    tags: ['clock', 'wall-mounted'], difficulty: 1,
+    params: [num('w', 'Diameter', 10, 60), { key: 'hour', label: 'Hour', type: 'number', min: 1, max: 12, step: 1 }, { key: 'minute', label: 'Minutes', type: 'number', min: 0, max: 55, step: 5 }],
+    defaults: { w: 30, hour: 10, minute: 10 },
+    size: ['w', 0, 'w'],
+    let: {
+      r: 'w / 2', in: 'r * 0.78', out: 'r * 0.9',
+      ah: 'PI / 2 - ((hour % 12) + minute / 60) * PI / 6', am: 'PI / 2 - minute * PI / 30',
+    },
+    components: [{
+      kind: 'flat', name: 'Clock face', wall: true, surface: true,
+      polys: [{ circle: ['r', 'r', 'r', 64] }],
+      scores: [
+        { repeat: 12, as: 'k', let: { a: 'k * PI / 6' }, each: { line: [['r + cos(a) * in', 'r + sin(a) * in'], ['r + cos(a) * out', 'r + sin(a) * out']] } },
+        { line: [['r', 'r'], ['r + cos(ah) * r * 0.5', 'r + sin(ah) * r * 0.5']] },
+        { line: [['r', 'r'], ['r + cos(am) * r * 0.72', 'r + sin(am) * r * 0.72']] },
+      ],
+    }],
+    note: 'The score lines mark the hour ticks and hands — trace them with a fine black pen, or set the time you like before cutting.',
+  },
 ];

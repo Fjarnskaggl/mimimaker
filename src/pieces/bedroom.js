@@ -39,4 +39,27 @@ export const BEDROOM = [
     defaults: { w: 100, d: 60, h: 200, count: 2 },
     components: drawerBox('Wardrobe', 'doors'),
   },
+  {
+    id: 'bunkbed', label: 'Bunk bed', theme: 'Bedroom', placement: 'floor', mat: 'board',
+    tags: ['sleep', 'kids'], difficulty: 3,
+    params: [num('w', 'Width', 70, 140), num('d', 'Length', 160, 220), num('h', 'Lower deck height', 20, 50), num('H', 'Total height', 120, 200), num('deck', 'Deck thickness', 10, 30)],
+    defaults: { w: 90, d: 200, h: 35, H: 160, deck: 20 },
+    size: ['w', 'd', 'H'],
+    let: { rail: 'max(3, w * 0.08)', up: 'H * 0.55', dd: 'd - 2 * t' },
+    components: [
+      { kind: 'box', name: 'Lower deck', size: ['w', 'dd', 'h'], faces: 'all', at: [0, 't', 0] },
+      { kind: 'box', name: 'Upper deck', size: ['w', 'dd', 'deck'], faces: 'all', at: [0, 't', 'up'] },
+      {
+        repeat: 2, as: 'k', each: {
+          kind: 'flat', name: "{k == 0 ? 'Foot end' : 'Head end'}", plane: { upright: { y: 'k * (d - t)' } },
+          polys: [
+            { rect: [0, 0, 'w', 'H'] },
+            { rect: ['rail', 'h', 'w - 2 * rail', 'up - h'] },
+            { rect: ['rail', 'up + deck', 'w - 2 * rail', 'H - up - deck - rail'] },
+          ],
+        },
+      },
+    ],
+    note: 'Glue both decks to one end panel first, check they are square, then add the other end. Lean a library ladder against the side to climb up.',
+  },
 ];

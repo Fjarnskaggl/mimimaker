@@ -7,7 +7,7 @@
 //
 //   numbers 1.5 · strings 'doors' · names w, t, k · ( )
 //   unary - !   * / %   + -   < <= > >= == !=   &&   ||   a ? b : c
-//   min max round floor ceil abs sqrt clamp
+//   min max round floor ceil abs sqrt clamp sin cos (radians)
 //
 // Operators keep JavaScript's precedence and left-to-right evaluation, so an
 // expression written in the same order as JS code gives bit-identical floats.
@@ -20,6 +20,8 @@ export const FUNCTIONS = {
   ceil: Math.ceil,
   abs: Math.abs,
   sqrt: Math.sqrt,
+  sin: Math.sin,
+  cos: Math.cos,
   clamp: (x, lo, hi) => Math.min(hi, Math.max(lo, x)),
 };
 
