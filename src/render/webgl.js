@@ -2,37 +2,27 @@
 // night mode lit by point lights at the LEDs. Rendering is on demand (no
 // animation loop), so an idle preview costs nothing.
 
-import { cameraDirection, cameraPose, sceneBounds, ledLights, faceToPlanar, layerOffset } from './scene.js';
+import { cameraDirection, cameraPose, sceneBounds, ledLights, layerOffset, faceThickness, extrudeFace } from './scene.js';
 
 const FOV = 35;
 const SUN_DIR = [-0.15, -1, 1.4]; // key light from the open front, like a display lamp
 const DAY = { hemi: 0.7, sun: 0.65, sky: 0xfff6ea, ground: 0x9a8878, sunColor: 0xfff1dc };
 const NIGHT = { hemi: 0.1, sun: 0.06, sky: 0x8090c0, ground: 0x202028, sunColor: 0x9fb0e0 };
 
-/** Triangulated BufferGeometry for one compiler face (outline + holes). */
+/**
+ * BufferGeometry for one compiler face: board panels become solids with real
+ * thickness (outline and holes extruded behind the face); overlays stay flat,
+ * lifted a hair off their wall.
+ */
 function faceGeometry(THREE, face) {
-  const p = faceToPlanar(face);
-  const lift = layerOffset(face.layer);
-  const pts2 = [p.contour, ...p.holes];
-  const tris = THREE.ShapeUtils.triangulateShape(
-    p.contour.map(([u, v]) => new THREE.Vector2(u, v)),
-    p.holes.map((h) => h.map(([u, v]) => new THREE.Vector2(u, v))),
+  const triangulate = (contour, holes) => THREE.ShapeUtils.triangulateShape(
+    contour.map(([u, v]) => new THREE.Vector2(u, v)),
+    holes.map((h) => h.map(([u, v]) => new THREE.Vector2(u, v))),
   );
-  const flat = pts2.flat();
-  const pos = [], nor = [];
-  for (const tri of tris) {
-    const [a, b, c] = tri.map((i) => flat[i]);
-    const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-    const order = area >= 0 ? [a, b, c] : [a, c, b]; // CCW in (U, V) faces +n
-    for (const [u, v] of order) {
-      const q = p.to3d(u, v);
-      pos.push(q[0] + p.normal[0] * lift, q[1] + p.normal[1] * lift, q[2] + p.normal[2] * lift);
-      nor.push(...p.normal);
-    }
-  }
+  const { positions, normals } = extrudeFace(face, faceThickness(face), triangulate, { lift: layerOffset(face.layer) });
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
   return g;
 }
 
@@ -81,12 +71,12 @@ export function createViewer(THREE) {
       const glow = face.glow;
       const material = glow
         ? new THREE.MeshBasicMaterial({ color: face.color, transparent: face.opacity < 1, opacity: face.opacity, depthWrite: face.opacity >= 1 })
-        : new THREE.MeshStandardMaterial({ color: face.color, roughness: 0.88, metalness: 0, side: face.cull ? THREE.FrontSide : THREE.DoubleSide });
+        : new THREE.MeshStandardMaterial({ color: face.color, roughness: 0.88, metalness: 0, side: face.cull || faceThickness(face) > 0 ? THREE.FrontSide : THREE.DoubleSide });
       const mesh = new THREE.Mesh(faceGeometry(THREE, face), material);
       mesh.castShadow = !glow;
       mesh.receiveShadow = !glow;
       model.add(mesh);
-      entries.push({ face, mesh });
+      entries.push({ face, mesh, solid: faceThickness(face) > 0 });
     }
     ledData = ledLights(faces);
     // several LEDs share the room: keep the total roughly constant so it doesn't blow out
@@ -177,7 +167,7 @@ export function createViewer(THREE) {
       }
       return {
         lit: lit / (W * H), mean: lit ? sum / lit : 0, max, hash,
-        meshes: entries.length, pointLights: leds.visible ? leds.children.length : 0,
+        meshes: entries.length, solids: entries.filter((e) => e.solid).length, flat: entries.filter((e) => !e.solid).length, pointLights: leds.visible ? leds.children.length : 0,
         shadows: renderer.shadowMap.enabled && sun.castShadow,
       };
     },

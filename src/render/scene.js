@@ -79,3 +79,64 @@ export function faceToPlanar(face) {
 export function layerOffset(layer) {
   return layer > 0 && layer < 2 ? 0.2 * layer : 0;
 }
+
+// Board panels get a default thickness until the compiler reports the real
+// one on each face (face.thickness, mm). Paper overlays, trim, LEDs and
+// see-through faces stay flat.
+export const DEFAULT_BOARD_THICKNESS = 2;
+
+export function faceThickness(face) {
+  if (face.glow || (face.opacity ?? 1) < 1) return 0;
+  if (face.layer !== 0 && face.layer !== 2) return 0;
+  return face.thickness ?? DEFAULT_BOARD_THICKNESS;
+}
+
+const area2 = (ring) => {
+  let a = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) a += ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1];
+  return a / 2;
+};
+
+/**
+ * Triangles for a face extruded `thickness` mm behind itself (along −n),
+ * as flat position/normal arrays (9 numbers per triangle), outward wound.
+ * `triangulate(contour2d, holes2d)` returns index triples into the
+ * concatenated rings, like THREE.ShapeUtils.triangulateShape.
+ * With thickness 0 only the front face is returned.
+ */
+export function extrudeFace(face, thickness, triangulate, { lift = 0 } = {}) {
+  const p = faceToPlanar(face);
+  const n = p.normal;
+  // contour counter-clockwise, holes clockwise: the solid is always on the left of each edge
+  const contour = area2(p.contour) < 0 ? [...p.contour].reverse() : p.contour;
+  const holes = p.holes.map((h) => (area2(h) > 0 ? [...h].reverse() : h));
+  const front = ([u, v]) => p.to3d(u, v).map((c, i) => c + n[i] * lift);
+  const back = (q) => front(q).map((c, i) => c - n[i] * thickness);
+  const positions = [], normals = [];
+  const tri = (a, b, c, nn) => { positions.push(...a, ...b, ...c); normals.push(...nn, ...nn, ...nn); };
+
+  const flat = [contour, ...holes].flat();
+  const negN = n.map((v) => -v);
+  for (const [i, j, k] of triangulate(contour, holes)) {
+    let [a, b, c] = [flat[i], flat[j], flat[k]];
+    if ((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) < 0) [b, c] = [c, b];
+    tri(front(a), front(b), front(c), n);
+    if (thickness > 0) tri(back(a), back(c), back(b), negN);
+  }
+  if (thickness > 0) {
+    for (const ring of [contour, ...holes]) {
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i], b = ring[(i + 1) % ring.length];
+        const du = b[0] - a[0], dv = b[1] - a[1];
+        const len = Math.hypot(du, dv);
+        if (len < 1e-12) continue;
+        // outward = right of the edge, in 3D
+        const out = p.U.map((x, k) => (x * dv - p.V[k] * du) / len);
+        const af = front(a), bf = front(b), ab = back(a), bb = back(b);
+        tri(af, bb, bf, out);
+        tri(af, ab, bb, out);
+      }
+    }
+  }
+  return { positions, normals };
+}
