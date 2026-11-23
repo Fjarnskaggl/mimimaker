@@ -9,6 +9,8 @@ import { packParts, SHEET_MARGIN } from './nest.js';
 import { labelAnchor } from './labels.js';
 import { planLighting, LED_COLORS, POWER_KINDS } from './lighting.js';
 import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometry.js';
+// T2 shells
+import { prepareShell, compileShell } from './shells/kit.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
@@ -91,6 +93,12 @@ export function compileKit(kit) {
   };
 
   // ---------------------------------------------------------------- room box
+  // >>> T2 shells: kit.shell swaps the room box for a book-nook shell; its
+  // interior becomes the effective room (see src/shells/kit.js).
+  const shellPrep = prepareShell(kit, warn);
+  if (shellPrep) kit = shellPrep.kit;
+  let shell = null;
+  // <<< T2 shells
   const room = kit.room;
   const rm = getMat(room.material, 'Room');
   const t = rm.thickness;
@@ -124,8 +132,11 @@ export function compileKit(kit) {
   for (const [f, list] of Object.entries(lighting.holes)) (holes[f] ||= []).push(...list);
   for (const w of lighting.warnings) typeof w === 'string' ? warn(w) : warn(w.msg, w.level);
 
-  const roomGroup = newGroup('Room box', rm);
-  if (rm.kind === 'board') {
+  // >>> T2 shells
+  const roomGroup = shellPrep ? null : newGroup('Room box', rm);
+  if (shellPrep) {
+    shell = compileShell(shellPrep, { t, fingerWidth, holes, getMat, newGroup, addPart, add3d, warn, xf: worldXf });
+  } else if (rm.kind === 'board') { // <<< T2 shells
     const res = buildBox({ W, D, H, t, faces: roomFaces, holes, fingerWidth });
     checkFingers(res.minFinger, rm, 'Room box');
     for (const p of res.panels) {
@@ -370,5 +381,6 @@ export function compileKit(kit) {
   return {
     parts, groups, faces3d, sheets, warnings, usedMats, machine,
     dims: { W, D, H, Wi, Di, Hi, t }, lighting, openings, ceiling: !!room.ceiling,
+    shell, // T2 shells: { type, dims, joints (by part id), lights } or null
   };
 }
