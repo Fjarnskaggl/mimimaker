@@ -473,7 +473,7 @@ function lightingInspector() {
         renderSupplyField(L.power, changed), // [T5] supply picker
         numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
       renderMountField(L.power, changed), // [T5] mount picker
-      renderCoverField(L, { checkField, restructured }), // [T5] cable cover
+      renderCoverField(L, { checkField, restructured, range: compiled.lighting?.coverRange }), // [T5] cable cover
       renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
       h('div', { class: 'grid3' },
         selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),

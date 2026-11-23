@@ -113,3 +113,40 @@ test('cover off leaves every built-in room exactly as before', () => {
     assert.equal(JSON.stringify(b.groups), JSON.stringify(a.groups), rt.id);
   }
 });
+
+import { setCover } from '../src/ui/t5.js';
+
+test('with the cover on, the old "optional cardstock panel" step goes', () => {
+  const on = compileKit(kitWith([backLed])).groups.find((g) => g.title === 'Lighting').steps;
+  assert.ok(!on.some((s) => /Optional: glue a cardstock panel/.test(s)));
+  const k = kitWith([backLed]);
+  delete k.lighting.cover;
+  const off = compileKit(k).groups.find((g) => g.title === 'Lighting').steps;
+  assert.ok(off.some((s) => /Optional: glue a cardstock panel/.test(s)), 'kept when the cover is off');
+});
+
+test('coverRange: where a back-wall power box fits behind the cover, in real cm', () => {
+  const r = compileKit(kitWith([backLed], { cover: { enabled: false }, power: { pos: 2, elev: 2 } }));
+  const range = r.lighting.coverRange;
+  assert.ok(range.elev[0] < range.elev[1] && range.pos[0] < range.pos[1]);
+  const k = kitWith([backLed], { power: { pos: range.pos[0], elev: range.elev[0] } });
+  assert.ok(!compileKit(k).warnings.some((w) => /cable cover/.test(w.msg)), 'the low corner of the range fits');
+});
+
+test('turning the cover on moves a back-wall power box into range (once)', () => {
+  const range = { pos: [80, 270], elev: [50, 200] };
+  const L = { power: { wall: 'back', pos: 300, elev: 25 } };
+  setCover(L, true, range);
+  assert.deepEqual([L.power.pos, L.power.elev], [270, 50]);
+  const inside = { power: { wall: 'back', pos: 150, elev: 100 } };
+  setCover(inside, true, range);
+  assert.deepEqual([inside.power.pos, inside.power.elev], [150, 100], 'left alone when it already fits');
+  for (const power of [{ wall: 'left', pos: 300, elev: 25 }, { wall: 'back', pos: 300, elev: 25, mount: 'flush' }]) {
+    const other = { power: { ...power } };
+    setCover(other, true, range);
+    assert.deepEqual(other.power, power, 'other walls and flush boxes are not moved');
+  }
+  const off = { power: { wall: 'back', pos: 300, elev: 25 }, cover: { enabled: true } };
+  setCover(off, false, range);
+  assert.deepEqual([off.power.pos, off.power.elev], [300, 25], 'turning it off moves nothing');
+});

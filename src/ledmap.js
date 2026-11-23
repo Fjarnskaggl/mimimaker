@@ -1,6 +1,9 @@
 // SVG wiring map of the room's outside surfaces, seen from behind.
 
 import { netFaces, netPoint, LED_COLORS, WIRE_COLORS, POWER_KINDS } from './lighting.js';
+import { EFFECTS } from './lighting/effects.js';
+
+const SUPPLY_LABEL = { aa2: '2×AA', cr2032: 'CR2032', usb: 'USB' };
 
 const f = (v) => (Math.round(v * 100) / 100).toString();
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -18,7 +21,8 @@ export function ledMapSVG(compiled, { standalone = false } = {}) {
   const xs = faces.flatMap((q) => [W - q.x0, W - q.x1]);
   const ys = faces.flatMap((q) => [-q.y0, -q.y1]);
   const pad = Math.max(dims.W, dims.H) * 0.08;
-  const x0 = Math.min(...xs) - pad, x1 = Math.max(...xs) + pad, y0 = Math.min(...ys) - pad, y1 = Math.max(...ys) + pad;
+  const x0 = Math.min(...xs) - pad, x1 = Math.max(...xs) + pad, y0 = Math.min(...ys) - pad;
+  let y1 = Math.max(...ys) + pad;
   const fs = Math.max(3, Math.max(dims.W, dims.H) / 32);
 
   const col = standalone
@@ -49,15 +53,49 @@ export function ledMapSVG(compiled, { standalone = false } = {}) {
   const [px, py] = P(lighting.power.p);
   const bw = fs * 4.2, bh = fs * 2.4;
   out.push(`<rect x="${f(px - bw / 2)}" y="${f(py - bh / 2)}" width="${f(bw)}" height="${f(bh)}" rx="${f(fs * 0.3)}" fill="#33302c" stroke="#000" stroke-width="${f(fs * 0.05)}"/>`);
-  out.push(`<text x="${f(px)}" y="${f(py)}" font-size="${f(fs * 0.75)}" fill="#fff" text-anchor="middle" dominant-baseline="central" font-weight="700">${lighting.power.kind === 'usb' ? 'USB' : 'BATTERY'}</text>`);
+  const supplyId = lighting.power.supply || (lighting.power.kind === 'usb' ? 'usb' : 'aa2');
+  out.push(`<text x="${f(px)}" y="${f(py)}" font-size="${f(fs * 0.75)}" fill="#fff" text-anchor="middle" dominant-baseline="central" font-weight="700">${SUPPLY_LABEL[supplyId] || 'BATTERY'}</text>`);
   // LEDs
   lighting.leds.forEach((led, i) => {
     const [x, y] = P(led.p);
     const c = WIRE_COLORS[i % WIRE_COLORS.length];
     const glow = LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex;
-    out.push(`<circle cx="${f(x)}" cy="${f(y)}" r="${f(fs * 0.9)}" fill="${glow}" stroke="${c}" stroke-width="${f(fs * 0.22)}"/>`);
-    out.push(`<text x="${f(x)}" y="${f(y - fs * 1.4)}" font-size="${f(fs * 0.85)}" fill="${col.text}" text-anchor="middle" font-weight="700">${led.label}</text>`);
+    const effect = EFFECTS[led.effect] ? led.effect : 'steady';
+    const r = fs * 0.9;
+    const g = [];
+    if (effect === 'strip') {
+      // the strip runs from the LED along its wall, at its real length
+      const len = led.load?.lengthMm ?? 0;
+      const dir = led.face === 'right' ? -1 : 1;
+      const [ax] = P(led.p), [bx] = P([led.p[0] + dir * len, led.p[1]]);
+      g.push(`<rect class="fx-strip" x="${f(Math.min(ax, bx))}" y="${f(y - fs * 0.3)}" width="${f(Math.abs(bx - ax))}" height="${f(fs * 0.6)}" rx="${f(fs * 0.15)}" fill="${glow}" stroke="${c}" stroke-width="${f(fs * 0.12)}"/>`);
+    }
+    g.push(`<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="${glow}" stroke="${c}" stroke-width="${f(fs * 0.22)}"/>`);
+    if (effect === 'candle') {
+      // a little flame on top
+      g.push(`<path class="fx-candle" d="M${f(x)} ${f(y - r * 2.1)}Q${f(x + r * 0.7)} ${f(y - r * 1.2)} ${f(x)} ${f(y - r * 0.9)}Q${f(x - r * 0.7)} ${f(y - r * 1.2)} ${f(x)} ${f(y - r * 2.1)}Z" fill="#ff9b3d" stroke="${c}" stroke-width="${f(fs * 0.06)}"/>`);
+    }
+    if (effect === 'fairy') {
+      // a ring of tiny bulbs
+      const dots = Array.from({ length: 8 }, (_, k) => {
+        const a = (k / 8) * Math.PI * 2;
+        return `<circle cx="${f(x + Math.cos(a) * r * 1.7)}" cy="${f(y + Math.sin(a) * r * 1.7)}" r="${f(r * 0.28)}" fill="${glow}"/>`;
+      }).join('');
+      g.push(`<g class="fx-fairy">${dots}</g>`);
+    }
+    g.push(`<text x="${f(x)}" y="${f(y - fs * (effect === 'candle' || effect === 'fairy' ? 2.3 : 1.4))}" font-size="${f(fs * 0.85)}" fill="${col.text}" text-anchor="middle" font-weight="700">${led.label}</text>`);
+    out.push(`<g data-effect="${effect}">${g.join('')}</g>`);
   });
+
+  // one-line circuit summary under the map
+  const cc = lighting.circuit;
+  if (cc?.count) {
+    const what = cc.bulbs && cc.bulbs !== cc.count ? `${cc.count} lights (${cc.bulbs} LEDs)` : `${cc.count} LED${cc.count === 1 ? '' : 's'}`;
+    const life = cc.lifeHours == null ? cc.lifeText : `${cc.lifeText} of light (estimate)`;
+    const line = `${SUPPLY_LABEL[cc.supply.id] || cc.supply.short} · ${what} in parallel · up to ${Math.round(cc.totalMA * 10) / 10} mA · ${life}`;
+    out.push(`<text class="circuit" x="${f(x0 + pad * 0.5)}" y="${f(y1 + fs * 0.4)}" font-size="${f(fs * 0.8)}" fill="${col.text}">${esc(line)}</text>`);
+    y1 += fs * 1.2;
+  }
   return wrap();
 
   function wrap() {
@@ -73,6 +111,7 @@ export function ledRows(compiled) {
   return lighting.leds.map((l, i) => ({
     label: l.label, name: l.name, where: where[l.face], color: LED_COLORS[l.color]?.name || l.color,
     wireColor: WIRE_COLORS[i % WIRE_COLORS.length], runCm: l.length / 10, leadCm: l.leadCm,
+    effect: (EFFECTS[l.effect] || EFFECTS.steady).name,
   }));
 }
 

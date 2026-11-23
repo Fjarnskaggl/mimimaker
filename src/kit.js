@@ -253,7 +253,7 @@ export function compileKit(kit) {
           ? `Fit the power box behind the ${lighting.power.face} wall so its switch shows through the cut-out, then run each wire along its route on the outside and hold it down with thin tape or tiny staples.`
           : `Glue the power box to the outside of the ${lighting.power.face} wall where the map shows it, then run each wire along its route on the outside and hold it down with thin tape or tiny staples.`,
         'Wire all LEDs in parallel: twist every LED\'s + lead to the power box + lead (red) and every − to − (black), then insulate with heat-shrink or tape. Test before closing up.',
-        'Optional: glue a cardstock panel over the back of the room to hide the wiring.',
+        ...(lighting.parts?.length ? [] : ['Optional: glue a cardstock panel over the back of the room to hide the wiring.']), // [T5] the cable cover replaces this
       ],
       parts: [],
     });

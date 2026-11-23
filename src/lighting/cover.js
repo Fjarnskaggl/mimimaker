@@ -74,9 +74,10 @@ export function planCover({ cover, leds, power, openings, W, H, s = 1, t = 0 }) 
       const hb = bbox([hole]);
       if (hb.x0 < fw || hb.y0 < fw || hb.x1 > W - fw || hb.y1 > H - fw) {
         // where the box would fit, in the same real-world cm the power box fields use
+        const r = coverRange(power.supply, { W, H, s, t });
         const fix = [];
-        if (hb.y0 < fw || hb.y1 > H - fw) fix.push(`a height between ${Math.ceil((fw + box.h / 2 - t) / s)} and ${Math.floor((H - fw - box.h / 2 - t) / s)} cm`);
-        if (hb.x0 < fw || hb.x1 > W - fw) fix.push(`between ${Math.ceil((fw + box.w / 2 - t) / s)} and ${Math.floor((W - fw - box.w / 2 - t) / s)} cm along the wall`);
+        if (hb.y0 < fw || hb.y1 > H - fw) fix.push(`a height between ${r.elev[0]} and ${r.elev[1]} cm`);
+        if (hb.x0 < fw || hb.x1 > W - fw) fix.push(`between ${r.pos[0]} and ${r.pos[1]} cm along the wall`);
         out.warnings.push(`The power box is too close to the edge of the back wall for the cable cover — move it to ${fix.join(' and ')}, or put it on another wall.`);
       } else {
         holes.push(hole);
@@ -92,6 +93,19 @@ export function planCover({ cover, leds, power, openings, W, H, s = 1, t = 0 }) 
     `Glue the cover panel onto the frame. Its holes line up with the back-wall windows and doors${reach}.`,
   );
   return out;
+}
+
+/**
+ * Where a power box on the back wall fits inside the cover frame, in the real
+ * cm the power box fields use: { pos: [lo, hi], elev: [lo, hi] }.
+ */
+export function coverRange(supply, { W, H, s = 1, t = 0 }) {
+  const fw = COVER.frameWidth;
+  const box = COVER.box[supply] || COVER.box.aa2;
+  return {
+    pos: [Math.ceil((fw + box.w / 2 - t) / s), Math.floor((W - fw - box.w / 2 - t) / s)],
+    elev: [Math.ceil((fw + box.h / 2 - t) / s), Math.floor((H - fw - box.h / 2 - t) / s)],
+  };
 }
 
 /** [from, to] minus the cut intervals, dropping pieces shorter than a strip is wide. */
