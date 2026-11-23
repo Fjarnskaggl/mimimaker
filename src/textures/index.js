@@ -106,6 +106,26 @@ const SYMBOLS = {
     + `<circle cx="0" cy="-0.65" r="0.2" fill="${p.colors[2]}"/>`,
 };
 
+// The same motifs as structured shapes (unit coordinates, absolute M L H V Q C Z
+// paths and circles) for renderers that can't draw SVG strings, such as the
+// print-then-cut PDF (#53). Keep these in step with SYMBOLS above.
+const SYMBOL_SHAPES = {
+  sprig: (p) => [
+    { type: 'path', d: 'M0 0.9Q0.1 0.2 0 -0.5M0 0.3Q0.6 0.2 0.7 -0.2Q0.3 0 0 0.3M0 0Q-0.6 -0.1 -0.6 -0.5Q-0.2 -0.3 0 0', fill: p.colors[1], stroke: p.colors[1], width: 0.08 },
+    { type: 'circle', cx: 0, cy: -0.65, r: 0.2, fill: p.colors[2] },
+  ],
+};
+
+/**
+ * A motif placed by `use` shapes, as [{ type: 'path', d, fill?, stroke?, width? }
+ * | { type: 'circle', cx, cy, r, fill }] in unit coordinates (about −1…1).
+ */
+export function symbolShapes(name, params) {
+  const make = SYMBOL_SHAPES[name];
+  if (!make) throw new Error(`Unknown symbol "${name}"`);
+  return make(params);
+}
+
 function bookSpines({ width, height, mm, r, p }) {
   const shapes = [];
   let x = r() * mm(p.minWidth) * 0.5;
