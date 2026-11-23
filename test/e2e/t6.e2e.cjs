@@ -105,6 +105,11 @@ test('texture picker: change the floor, switch a texture off, undo; only shown w
   assert.equal(await page.locator('#texture-picker').isVisible(), false, 'hidden in the SVG preview');
   await switchOn(page);
   await page.waitForSelector('#texture-picker', { state: 'visible' });
+  // a compact "Textures" button in the stage bar opens the picker popover
+  assert.equal(await page.locator('#texture-pop').isVisible(), false, 'closed until asked for');
+  await page.click('#texture-btn');
+  assert.equal(await page.locator('#texture-btn').getAttribute('aria-expanded'), 'true');
+  await page.waitForSelector('#texture-pop', { state: 'visible' });
   const floorMat = await page.evaluate(() => window.mimimaker.kit.room.floor.material);
   const floor = page.locator(`#texture-picker select[data-material="${floorMat}"]`);
   assert.equal(await floor.inputValue(), '', 'follows the room palette');
@@ -118,6 +123,10 @@ test('texture picker: change the floor, switch a texture off, undo; only shown w
   await floor.selectOption('none');
   await page.waitForFunction((n) => document.querySelector('.stage').t6viewer.sample().textured < n, before);
   assert.ok(!(await textures()).includes('tiles'));
+
+  // Escape closes the popover
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#texture-pop').isVisible(), false);
 
   // undo goes back to tiles, and the picker follows
   await page.waitForTimeout(500); // let the edit settle into its own undo step
