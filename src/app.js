@@ -34,7 +34,7 @@ import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, han
 import { kitCutFiles, machineReadme } from './export/machines.js';
 import { kitHandCutFiles } from './export/handcut.js';
 // T2 shells
-import { shellSection, applyRoomLocks, appendRoofControls } from './ui/t2.js';
+import { shellSection, applyRoomLocks, appendRoofControls, syncShellRoom } from './ui/t2.js';
 // [T5] lighting UI
 import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
@@ -168,6 +168,7 @@ const slug = (s) => (s || 'kit').toLowerCase().replace(/[^a-z0-9]+/g, '-').repla
 
 // ------------------------------------------------------------- recompile
 function update({ sidebar = false } = {}) {
+  syncShellRoom(kit); // T2 shells: the room follows the shell after any edit (scale, board thickness, undo)
   try {
     compiled = compileKit(kit);
   } catch (err) {
