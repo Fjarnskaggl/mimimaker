@@ -98,11 +98,12 @@ function pickAt(stage, x, y) {
  * Click a piece in the 3D view to select it. onPick(index) should select it
  * the same way the plan does, and redraw the stage to show it; onPick(null)
  * means a click on empty space. Drags still orbit: only a press that barely
- * moves counts as a click.
+ * moves counts as a click. opts.enabled() turns picking and hover off while
+ * pieces can't be edited from this view.
  */
-export function attachPicking(stage, onPick) {
+export function attachPicking(stage, onPick, { enabled = () => true } = {}) {
   let down = null;
-  stage.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
+  stage.addEventListener('pointerdown', (e) => { down = enabled() ? { x: e.clientX, y: e.clientY } : null; });
   stage.addEventListener('pointerup', (e) => {
     if (!down) return;
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
@@ -114,7 +115,7 @@ export function attachPicking(stage, onPick) {
   // hover: show which piece a click would pick (checked once per frame)
   let pending = null;
   stage.addEventListener('pointermove', (e) => {
-    if (e.buttons) { setHover(stage, null); return; } // orbiting
+    if (e.buttons || !enabled()) { if (stage.t6hover != null) setHover(stage, null); return; } // orbiting, or nothing to pick
     if (pending) { pending.x = e.clientX; pending.y = e.clientY; return; }
     pending = { x: e.clientX, y: e.clientY };
     requestAnimationFrame(() => {

@@ -687,7 +687,7 @@ function build3d(bar) {
   const end = () => { drag = null; };
   stage.addEventListener('pointerup', end);
   stage.addEventListener('pointercancel', end);
-  attachPicking(stage, (index) => select(index == null ? null : { kind: 'item', index })); // T6: click a piece to select it
+  attachPicking(stage, (index) => select(index == null ? null : { kind: 'item', index }), { enabled: () => view.step === 'design' }); // T6: click a piece to select it (pieces are edited on Design)
   return h('div', { class: 'stage-wrap' }, stage, bar, foot);
 }
 function drawScene() {
