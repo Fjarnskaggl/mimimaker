@@ -131,3 +131,12 @@ test('lighting adds a wiring step after the room and before furniture', () => {
     assert.ok(i < firstItem);
   } else assert.equal(i, -1);
 });
+
+test('the place-in-room joint belongs to the place step, not to building the piece', () => {
+  const { steps } = build(defaultKit());
+  for (const s of steps) {
+    const placing = s.joints.filter((j) => j.note === 'place in room');
+    if (s.kind === 'place') assert.equal(placing.length, 1, `${s.title} glues the piece into the room`);
+    else assert.deepEqual(placing, [], `${s.title} should not include placing the piece`);
+  }
+});
