@@ -51,7 +51,10 @@ test('submit: on hold, so the File menu does not offer "Submit to the gallery"',
   await page.waitForFunction(() => window.mimimaker?.kit, null, { timeout: 8000 });
   await page.click('#btn-file');
   await page.locator('#file-menu').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('#file-menu [role=menuitem]', { hasText: /gallery/i }).filter({ visible: true }).count(), 0);
+  const offered = await page.evaluate(() => [...document.querySelectorAll('#file-menu [role=menuitem]')]
+    .filter((el) => el.getClientRects().length).map((el) => el.textContent.trim()));
+  assert.ok(offered.length >= 3, `the menu still has its other items: ${offered}`);
+  assert.ok(!offered.some((t) => /gallery/i.test(t)), `no gallery item: ${offered}`);
   assert.equal(await page.locator('#btn-submit').isVisible(), false);
   await ctx.close();
 });
