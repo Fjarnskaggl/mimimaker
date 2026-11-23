@@ -1,5 +1,6 @@
 // Procedural print-then-cut textures: wood planks, tiles, brick, wallpaper
-// and book spines. Pure functions (no DOM): shapes are in millimetres on the
+// and book spines, plus raw material finishes (chipboard, basswood, card,
+// felt, clear sheet) for parts that aren't printed. Pure functions (no DOM): shapes are in millimetres on the
 // printed sheet, pattern sizes are real-world centimetres divided by the kit
 // scale (1:N), and a seed makes every texture reproducible.
 //
@@ -101,7 +102,10 @@ function sprig({ width, height, mm, r, p }) {
 }
 
 // Motifs drawn once in unit coordinates (about −1…1), placed with <use>.
+const fuzzPath = 'M-0.8 0.1Q-0.3 -0.5 0.1 0Q0.5 0.5 0.9 -0.1M-0.5 0.6Q0 0.1 0.6 0.5M-0.4 -0.6Q0.1 -0.2 0.5 -0.7';
 const SYMBOLS = {
+  fuzz: (p) => `<path d="${fuzzPath}" fill="none" stroke="${p.colors[1]}" stroke-width="0.12" stroke-linecap="round"/>`,
+  fuzzLight: (p) => `<path d="${fuzzPath}" fill="none" stroke="${p.colors[2]}" stroke-width="0.12" stroke-linecap="round"/>`,
   sprig: (p) => `<path d="M0 0.9Q0.1 0.2 0 -0.5M0 0.3Q0.6 0.2 0.7 -0.2Q0.3 0 0 0.3M0 0Q-0.6 -0.1 -0.6 -0.5Q-0.2 -0.3 0 0" fill="${p.colors[1]}" stroke="${p.colors[1]}" stroke-width="0.08" stroke-linecap="round"/>`
     + `<circle cx="0" cy="-0.65" r="0.2" fill="${p.colors[2]}"/>`,
 };
@@ -110,6 +114,8 @@ const SYMBOLS = {
 // paths and circles) for renderers that can't draw SVG strings, such as the
 // print-then-cut PDF (#53). Keep these in step with SYMBOLS above.
 const SYMBOL_SHAPES = {
+  fuzz: (p) => [{ type: 'path', d: fuzzPath, stroke: p.colors[1], width: 0.12 }],
+  fuzzLight: (p) => [{ type: 'path', d: fuzzPath, stroke: p.colors[2], width: 0.12 }],
   sprig: (p) => [
     { type: 'path', d: 'M0 0.9Q0.1 0.2 0 -0.5M0 0.3Q0.6 0.2 0.7 -0.2Q0.3 0 0 0.3M0 0Q-0.6 -0.1 -0.6 -0.5Q-0.2 -0.3 0 0', fill: p.colors[1], stroke: p.colors[1], width: 0.08 },
     { type: 'circle', cx: 0, cy: -0.65, r: 0.2, fill: p.colors[2] },
@@ -145,6 +151,71 @@ function bookSpines({ width, height, mm, r, p }) {
   return shapes;
 }
 
+// ----------------------------------------------------- raw material finishes
+// How an unprinted part looks: the board or card it is cut from. Sizes are
+// real mm on the material (not scaled), and each is drawn to repeat on a
+// small tile in the 3D view. colors: [material, darker, lighter].
+
+function chipboard({ width, height, r, p }) {
+  const shapes = [];
+  const n = Math.round((width * height) / 22);
+  for (let i = 0; i < n; i++) {
+    const w = 0.25 + r() * (r() < 0.15 ? 1.1 : 0.45), h = w * (0.4 + 0.6 * r());
+    shapes.push({ type: 'rect', x: r() * width, y: r() * height, w, h, fill: r() < 0.6 ? p.colors[1] : p.colors[2], opacity: Math.round(50 + 45 * r()) / 100 });
+  }
+  return shapes;
+}
+
+function woodGrain({ width, height, r, p }) {
+  const shapes = [];
+  // a couple of soft growth bands, then fine wavy grain lines across the width
+  for (let k = 0; k < 3; k++) {
+    shapes.push({ type: 'rect', x: 0, y: r() * height, w: width, h: height * (0.04 + 0.08 * r()), fill: p.colors[2], opacity: 0.45 });
+  }
+  const waves = Math.max(1, Math.round(width / 30)); // whole waves, so the tile repeats
+  for (let y = r() * 0.8; y < height; y += 0.6 + r() * 1.1) {
+    const amp = 0.15 + r() * 0.35, step = width / (waves * 2);
+    let d = `M0 ${f(y)}`;
+    for (let i = 0; i < waves * 2; i++) d += `Q${f(step * (i + 0.5))} ${f(y + (i % 2 ? -amp : amp) * 2)} ${f(step * (i + 1))} ${f(y)}`;
+    shapes.push({ type: 'path', d, stroke: r() < 0.75 ? p.colors[1] : p.colors[2], width: 0.08 + r() * 0.14 });
+  }
+  return shapes;
+}
+
+function cardFibre({ width, height, r, p }) {
+  const shapes = [];
+  const n = Math.round((width * height) / 30);
+  for (let i = 0; i < n; i++) {
+    const x = r() * width, y = r() * height, a = r() * Math.PI, l = 0.6 + r() * 1.6;
+    const dx = Math.cos(a) * l, dy = Math.sin(a) * l;
+    shapes.push({ type: 'path', d: `M${f(x)} ${f(y)}Q${f(x + dx / 2 + dy * 0.2)} ${f(y + dy / 2 - dx * 0.2)} ${f(x + dx)} ${f(y + dy)}`, stroke: r() < 0.5 ? p.colors[1] : p.colors[2], width: 0.07 });
+  }
+  return shapes;
+}
+
+function felt({ width, height, r, p }) {
+  const shapes = [];
+  const n = Math.round((width * height) / 26);
+  for (let i = 0; i < n; i++) {
+    shapes.push({ type: 'use', motif: true, symbol: r() < 0.5 ? 'fuzz' : 'fuzzLight', x: r() * width, y: r() * height, angle: Math.round(r() * 360), size: Math.round(12 + r() * 12) / 10 });
+  }
+  return shapes;
+}
+
+function clearSheet({ width, height, r, p }) {
+  const shapes = [];
+  // faint diagonal sheen streaks, like light on clear plastic
+  for (let x = -height + r() * 10; x < width; x += 6 + r() * 14) {
+    const w = 0.8 + r() * 3;
+    shapes.push({ type: 'path', d: `M${f(x)} ${f(height)}L${f(x + height)} 0L${f(x + height + w)} 0L${f(x + w)} ${f(height)}Z`, fill: p.colors[2], opacity: 0.35 + 0.3 * r() });
+  }
+  for (let i = 0; i < 6; i++) {
+    const x = r() * width, y = r() * height, l = 2 + r() * 6;
+    shapes.push({ type: 'path', d: `M${f(x)} ${f(y)}L${f(x + l)} ${f(y - l)}`, stroke: p.colors[1], width: 0.06 });
+  }
+  return shapes;
+}
+
 // ------------------------------------------------------------------ registry
 export const TEXTURES = [
   { id: 'wood-planks', name: 'Wood planks', kind: 'floor', gen: woodPlanks,
@@ -159,6 +230,17 @@ export const TEXTURES = [
     params: { repeat: 10, colors: ['#f1e8d6', '#7d9a6b', '#d9826b'] } },
   { id: 'book-spines', name: 'Book spines', kind: 'decor', gen: bookSpines,
     params: { minWidth: 2, maxWidth: 5, band: '#d9c48a', colors: ['#3a2a20', '#7a2e2e', '#2f4a6b', '#3d5e3a', '#8a6a3a', '#5a3d5e', '#c9b48a', '#2a2a2a'] } },
+  // raw material finishes (kind 'material'): what unprinted parts look like in 3D
+  { id: 'chipboard', name: 'Chipboard', kind: 'material', gen: chipboard, tile: 40,
+    params: { colors: ['#b8956a', '#8f6f48', '#d4b68c'] } },
+  { id: 'wood-grain', name: 'Basswood grain', kind: 'material', gen: woodGrain, tile: 60,
+    params: { colors: ['#e6d2a6', '#c9ae7c', '#f1e2c0'] } },
+  { id: 'card-fibre', name: 'Cardstock', kind: 'material', gen: cardFibre, tile: 40,
+    params: { colors: ['#f3efe4', '#ddd6c6', '#fbf9f3'] } },
+  { id: 'felt', name: 'Felt', kind: 'material', gen: felt, tile: 30,
+    params: { colors: ['#9db592', '#879f7c', '#b4c9aa'] } },
+  { id: 'clear-sheet', name: 'Clear sheet', kind: 'material', gen: clearSheet, tile: 60,
+    params: { colors: ['#dff3f7', '#b9d6dc', '#ffffff'] } },
 ];
 const byId = new Map(TEXTURES.map((t) => [t.id, t]));
 
@@ -195,7 +277,8 @@ export function textureSVG(id, opts = {}) {
   const body = shapes.map((s) => {
     if (s.type === 'rect') return `<rect x="${f(s.x)}" y="${f(s.y)}" width="${f(s.w)}" height="${f(s.h)}" fill="${s.fill}"${s.opacity != null && s.opacity < 1 ? ` fill-opacity="${f(s.opacity)}"` : ''}/>`;
     if (s.type === 'use') return `<use href="#${cid}-${s.symbol}" transform="translate(${f(s.x)} ${f(s.y)}) rotate(${f(s.angle)}) scale(${f(s.size)})"/>`;
-    return `<path d="${s.d}" fill="${s.fill || 'none'}"${s.stroke ? ` stroke="${s.stroke}" stroke-width="${f(s.width)}" stroke-linecap="round"` : ''}/>`;
+    const op = s.opacity != null && s.opacity < 1 ? ` opacity="${f(s.opacity)}"` : '';
+    return `<path d="${s.d}" fill="${s.fill || 'none'}"${s.stroke ? ` stroke="${s.stroke}" stroke-width="${f(s.width)}" stroke-linecap="round"` : ''}${op}/>`;
   }).join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${f(width)}mm" height="${f(height)}mm" viewBox="0 0 ${f(width)} ${f(height)}">`
     + `<defs>${symbols}<clipPath id="${cid}"><rect x="0" y="0" width="${f(width)}" height="${f(height)}"/></clipPath></defs>`

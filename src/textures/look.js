@@ -76,6 +76,43 @@ export function faceMaterial(face, kit) {
   return null;
 }
 
+// ------------------------------------------------------ raw material finishes
+const FINISH_BY_MATERIAL = { chip2: 'chipboard', chip15: 'chipboard', bass16: 'wood-grain', bass08: 'wood-grain', card110: 'card-fibre', card65: 'card-fibre', paper: 'card-fibre', acetate: 'clear-sheet', felt: 'felt' };
+const FINISH_BY_KIND = { board: 'wood-grain', card: 'card-fibre', fabric: 'felt' };
+
+function shadeHex(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => Math.max(0, Math.min(255, Math.round(v * k + (k > 1 ? (255 - v) * (k - 1) : 0)))));
+  return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * How an unprinted part cut from `mat` looks: its raw board, card or felt,
+ * in the material's own colour, on a small repeating tile (`tile`, mm).
+ */
+export function materialFinish(mat) {
+  const name = String(mat?.name || '');
+  const id = FINISH_BY_MATERIAL[mat?.id]
+    || (/acetate|clear|acrylic|perspex/i.test(name) ? 'clear-sheet' : /chip|grey ?board|mount ?board/i.test(name) && mat?.kind === 'board' ? 'chipboard' : FINISH_BY_KIND[mat?.kind])
+    || 'card-fibre';
+  const color = /^#[0-9a-f]{6}$/i.test(mat?.color || '') ? mat.color : '#d9cfc1';
+  const def = TEXTURES.find((t) => t.id === id);
+  return { id, params: { colors: [color, shadeHex(color, 0.82), shadeHex(color, 1.12)] }, seed: seedFor(String(mat?.id ?? id)), tile: def.tile };
+}
+
+/**
+ * The texture a 3D face wears: the printed pattern when its material is
+ * printed (the same spec the print-then-cut sheet uses), else the raw
+ * material finish. Null only for LED glows, which stay plain light.
+ */
+export function faceTexture(face, kit, look = resolveLook(kit)) {
+  if (face.glow) return null;
+  const id = faceMaterial(face, kit);
+  if (id && look[id]) return look[id];
+  const mat = kit?.materials?.find((m) => m.id === id);
+  return materialFinish(mat || { id: `face-${face.color}`, kind: face.thickness > 0 ? 'board' : 'card', color: face.color });
+}
+
 const normalize = (a) => { const l = Math.hypot(...a) || 1; return a.map((v) => v / l); };
 
 /**

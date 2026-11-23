@@ -122,14 +122,16 @@ export function createViewer(THREE) {
       if (!face.polys.length || face.polys[0].length < 3) continue;
       const glow = face.glow;
       const spec = !glow && opts.textureOf ? opts.textureOf(face) : null;
-      const tex = spec ? textureFor(spec, opts.scale || 12, texSize, face.color) : null;
+      // raw material finishes repeat on a small tile; printed patterns span the scene
+      const size = spec?.tile > 0 ? spec.tile : texSize;
+      const tex = spec ? textureFor(spec, opts.scale || 12, size, face.color) : null;
       const material = glow
         ? new THREE.MeshBasicMaterial({ color: face.color, transparent: face.opacity < 1, opacity: face.opacity, depthWrite: face.opacity >= 1 })
         : new THREE.MeshStandardMaterial({
           color: tex ? 0xffffff : face.color, map: tex ? tex.texture : null, roughness: 0.88, metalness: 0,
           side: face.cull || faceThickness(face) > 0 ? THREE.FrontSide : THREE.DoubleSide,
         });
-      const mesh = new THREE.Mesh(faceGeometry(THREE, face, tex ? texSize : 0), material);
+      const mesh = new THREE.Mesh(faceGeometry(THREE, face, tex ? size : 0), material);
       mesh.castShadow = !glow;
       mesh.receiveShadow = !glow;
       model.add(mesh);
@@ -288,6 +290,7 @@ export function createViewer(THREE) {
       return {
         lit: lit / (W * H), mean: lit ? sum / lit : 0, max, hash,
         textured: entries.filter((e) => e.texture).length,
+        untextured: entries.filter((e) => !e.texture && !e.face.glow).length,
         textures: [...new Set(entries.filter((e) => e.texture).map((e) => e.texture.id))].sort(),
         texturesReady: [...textures.values()].every((t) => t.ready),
         meshes: entries.length, solids: entries.filter((e) => e.solid).length, flat: entries.filter((e) => !e.solid).length, pointLights: leds.visible ? leds.children.length : 0,
