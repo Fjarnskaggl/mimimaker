@@ -45,3 +45,9 @@ test('template strings interpolate expressions', () => {
   assert.equal(fillTemplate('Shelf', {}), 'Shelf');
   assert.deepEqual(templateExprs('Rung {k + 1} of {n}'), ['k + 1', 'n']);
 });
+
+test('trigonometry for round things (clock ticks, dials)', () => {
+  assert.equal(evalExpr('sin(PI / 2)', {}), 1);
+  assert.equal(evalExpr('cos(0)', {}), 1);
+  assert.ok(Math.abs(evalExpr('cos(PI / 3)', {}) - 0.5) < 1e-12);
+});

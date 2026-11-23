@@ -71,12 +71,15 @@ test('every catalogue piece builds exactly what the snapshot recorded', () => {
     return;
   }
   const want = JSON.parse(readFileSync(FILE, 'utf8'));
-  assert.deepEqual(Object.keys(now), Object.keys(want), 'same pieces, same order');
+  // Pinned pieces never change; a new piece must be added to the snapshot
+  // (regenerate, then check the diff only adds entries).
   for (const type of Object.keys(want)) assert.deepEqual(now[type], want[type], type);
+  const missing = Object.keys(now).filter((t) => !(t in want));
+  assert.deepEqual(missing, [], 'new pieces are missing from the snapshot — run with UPDATE_SNAPSHOTS=1');
 });
 
-test('the snapshot covers all 37 original pieces', () => {
+test('the snapshot covers at least the 37 original pieces', () => {
   const want = JSON.parse(readFileSync(FILE, 'utf8'));
-  assert.equal(Object.keys(want).length, 37);
+  assert.ok(Object.keys(want).length >= 37);
   for (const type of Object.keys(want)) assert.ok(Object.keys(want[type].cases).length >= 6, type);
 });

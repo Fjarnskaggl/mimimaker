@@ -56,12 +56,12 @@ test('searchPieces matches label, id and tags, and filters by theme, tag and dif
   assert.deepEqual(ids(searchPieces('drawers')), ['cabinet', 'nightstand', 'dresser']);
   assert.deepEqual(ids(searchPieces('SHELF')), ['bookshelf', 'wallshelf', 'displayshelf']);
   assert.ok(ids(searchPieces('')).length === PIECES.length, 'empty query lists everything');
-  assert.deepEqual(ids(searchPieces('', { theme: 'Bathroom' })), ['bathtub', 'vanity', 'toilet']);
+  assert.deepEqual(ids(searchPieces('', { theme: 'Bathroom' })), ['bathtub', 'vanity', 'toilet', 'bathcabinet']);
   for (const p of searchPieces('', { difficulty: 1 })) assert.equal(p.difficulty, 1);
   for (const p of searchPieces('', { tag: 'seating' })) assert.ok(p.tags.includes('seating'));
   assert.ok(ids(searchPieces('', { tag: 'seating' })).includes('sofa'));
   assert.deepEqual(ids(searchPieces('sofa chair')), [], 'every word must match');
-  assert.deepEqual(ids(searchPieces('bed sleep')), ['bed']);
+  assert.deepEqual(ids(searchPieces('bed sleep')), ['bed', 'bunkbed']);
 });
 
 test('allTags lists each tag once, sorted, with counts', () => {
