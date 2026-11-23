@@ -119,3 +119,18 @@ export function handCutPDF(sheets, opts = {}) {
 }
 
 export const handCutFileName = (paper = 'a4') => `hand-cut-templates-${paper}.pdf`;
+
+// Letter-paper countries (US, Canada, Mexico, and a few in the Americas and
+// the Philippines); everywhere else uses A4.
+const LETTER_REGIONS = new Set(['US', 'CA', 'MX', 'PH', 'CL', 'CO', 'VE', 'GT', 'CR', 'PA', 'DO', 'PR', 'SV', 'NI', 'BZ']);
+
+/** 'letter' or 'a4' from a BCP 47 language tag such as navigator.language. */
+export function defaultPaper(lang) {
+  const region = String(lang || '').split(/[-_]/)[1]?.toUpperCase();
+  return region && LETTER_REGIONS.has(region) ? 'letter' : 'a4';
+}
+
+/** Hand-cut templates for the kit zip: both papers, under hand-cut/. */
+export function kitHandCutFiles(sheets, { title = '' } = {}) {
+  return ['a4', 'letter'].map((paper) => ({ name: `hand-cut/${handCutFileName(paper)}`, data: handCutPDF(sheets, { paper, title }) }));
+}
