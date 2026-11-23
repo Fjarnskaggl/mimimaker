@@ -30,8 +30,9 @@ import { drawStage, rendererToggle, texturePicker } from './ui/t6.js';
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 // T3 wiring: per-machine cut files
-import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground } from './ui/t3.js';
+import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, handCutButton } from './ui/t3.js';
 import { kitCutFiles, machineReadme } from './export/machines.js';
+import { kitHandCutFiles } from './export/handcut.js';
 // T2 shells
 import { shellSection, applyRoomLocks } from './ui/t2.js';
 // [T5] lighting UI
@@ -874,6 +875,7 @@ function renderMake(el) {
         h('h2', {}, 'Make'),
         h('div', { class: 'mm-meter', id: 'make-meter' }),
         h('span', { class: 'grow' }),
+        handCutButton(() => ({ kit, compiled }), download, ic('download')), // T3
         h('button', { id: 'btn-zip', type: 'button', class: 'mm-btn mm-btn--primary', onclick: exportZip }, ic('download'), 'Download kit')),
       h('div', { class: 'make-setup' },
         selectField('Cutting machine', kit.machine, Object.entries(MACHINES).map(([k, m]) => [k, m.name]), (v) => { kit.machine = v; changed(); }),
@@ -926,6 +928,7 @@ function renderBuild(el) {
 // ---------------------------------------------------------------- export
 function exportZip() {
   const files = kitCutFiles(compiled.sheets, compiled.machine, { drawLabels: kit.drawLabels, title: (s) => `${kit.name} – ${s.material.name} ${s.index}` }); // T3
+  files.push(...kitHandCutFiles(compiled.sheets, { title: kit.name })); // T3
   files.push({ name: 'assembly-guide.html', data: guideHTML(kit, compiled) });
   if (compiled.lighting?.enabled && compiled.lighting.leds.length) files.push({ name: 'led-map.svg', data: ledMapSVG(compiled, { standalone: true }) });
   files.push({ name: 'kit.json', data: JSON.stringify(kit, null, 2) });

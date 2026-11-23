@@ -3,6 +3,7 @@
 import { sheetFiles, machineSettingsLine, layerLegend } from '../export/machines.js';
 import { trueShapeCore, workerSource } from '../export/trueshape.js';
 import { nestJobs, applyNestResults } from '../export/nestjobs.js';
+import { handCutPDF, handCutFileName, defaultPaper, PAPER_NAMES } from '../export/handcut.js';
 
 function el(tag, attrs = {}, ...children) {
   const e = document.createElement(tag);
@@ -97,4 +98,21 @@ export function nestInBackground(compiled, onImproved) {
       if (applyNestResults(compiled, jobs, results).saved) onImproved(compiled);
     },
   });
+}
+
+// ---------------------------------------------------------- hand-cut PDF
+/**
+ * Secondary "Hand-cut PDF" button for the Make page head. `get()` returns
+ * { kit, compiled } at click time, since the head is built once.
+ */
+export function handCutButton(get, download, icon = null) {
+  const paper = defaultPaper(typeof navigator !== 'undefined' ? navigator.language : '');
+  return el('button', {
+    id: 'btn-handcut', type: 'button', class: 'mm-btn',
+    title: `Print every sheet 1:1 on ${PAPER_NAMES[paper]} to cut by hand (both paper sizes are in the kit zip)`,
+    onclick: () => {
+      const { kit, compiled } = get();
+      download(handCutFileName(paper), handCutPDF(compiled.sheets, { paper, title: kit.name }), 'application/pdf');
+    },
+  }, ...(icon ? [icon] : []), 'Hand-cut PDF');
 }
