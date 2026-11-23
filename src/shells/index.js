@@ -11,11 +11,14 @@
 // box.js: x width, y depth with the open front at y = 0, z up. A part's
 // visible face lies on its plane and its material runs t along −n.
 
-import { shellSize } from './fit.js';
+import { shellSize as sizeFromGap } from './fit.js';
 import { buildNook } from './nook.js';
 import { buildAlley, ALLEY_PARAMS, ALLEY_DEFAULTS } from './alley.js';
 
-export { shellSize };
+/** Outer W × H × D of a shell that slides into `gap` (see fit.js). */
+export function shellSize(spec) {
+  return sizeFromGap(spec);
+}
 
 export const SHELLS = {
   nook: { label: 'Book nook (open box)', params: [], defaults: {}, build: buildNook },
@@ -25,7 +28,7 @@ export const SHELLS = {
 export function buildShell(spec, { t, fingerWidth = 0 }) {
   const def = SHELLS[spec.type];
   if (!def) throw new Error(`Unknown shell type "${spec.type}".`);
-  const { W, H, D } = shellSize(spec);
+  const { W, H, D } = sizeFromGap(spec);
   const res = def.build({ W, D, H, t, fingerWidth }, { ...def.defaults, ...(spec.params || {}) });
   const warnings = [...res.warnings];
   if (res.minFinger < 3) {
