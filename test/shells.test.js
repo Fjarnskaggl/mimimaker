@@ -85,3 +85,10 @@ test('shell registry describes its types for the UI', () => {
   }
   assert.throws(() => buildShell({ type: 'nope', gap: GAPS[0] }, { t: 2 }), /unknown shell/i);
 });
+
+test('shell modules go through the single-file bundler', async () => {
+  const { bundle } = await import('../scripts/build-single.js');
+  const { js: out } = bundle(new URL('../src/shells/index.js', import.meta.url).pathname);
+  assert.match(out, /buildShell/);
+  assert.match(out, /shellSize/);
+});
