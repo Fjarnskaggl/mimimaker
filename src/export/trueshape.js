@@ -204,3 +204,18 @@ export function nestTrueShape(parts, sheetW, sheetH, opts = {}) {
   core ||= trueShapeCore();
   return hydrate(core.nest(nestInput(parts), sheetW, sheetH, opts), parts, sheetW, sheetH);
 }
+
+/**
+ * Source of a Web Worker that runs the core. Built from the function's own
+ * text, so it also works in the single-file build where there is no separate
+ * worker file to load. Message in: { id, jobs: [{ parts, w, h, opts }] };
+ * message out: { id, results: [core output per job] }.
+ */
+export function workerSource() {
+  return `const core = (${trueShapeCore.toString()})();
+onmessage = (e) => {
+  const { id, jobs } = e.data;
+  postMessage({ id, results: jobs.map((j) => core.nest(j.parts, j.w, j.h, j.opts || {})) });
+};
+`;
+}
