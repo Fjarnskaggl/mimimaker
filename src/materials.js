@@ -184,6 +184,12 @@ export function machineFor(kit, id = kit?.machine) {
   return out.cut === base.cut && out.kerf === base.kerf ? base : out;
 }
 
+/** kit.machineOverrides with only known machines and plain-object entries kept. */
+export function cleanOverrides(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+  return Object.fromEntries(Object.entries(v).filter(([k, o]) => MACHINES[k] && o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length));
+}
+
 export const BED_LIMITS = { min: MIN_BED, max: MAX_BED, maxKerf: MAX_KERF };
 
 export const TOOL_NAMES = { fine: 'Fine-Point Blade', knife: 'Knife Blade', rotary: 'Rotary Blade' };

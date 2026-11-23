@@ -55,7 +55,7 @@ export function zipCutFiles(kit, compiled, compileFor, { allMachines = false, ..
   const FAMILY = { cricut: 'Cricut', silhouette: 'Silhouette', laser: 'Laser cutter' };
   const families = [...new Set(Object.values(MACHINES).map((m) => m.family))].map((family) => {
     const ids = Object.keys(MACHINES).filter((k) => MACHINES[k].family === family);
-    const first = MACHINES[ids[0]];
+    const first = machineFor(kit, ids[0]);
     const how = machineReadme(family === 'silhouette' ? { ...first, name: 'Silhouette machine' } : first)
       .replace(/ in cut-files\/ /g, ' in your machine\'s cut-files/ folder ');
     return `${FAMILY[family] || family} (${ids.map((k) => `cut-files/${k}/`).join(', ')}):\n${how}`;
