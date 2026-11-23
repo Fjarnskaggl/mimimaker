@@ -117,3 +117,38 @@ test('build mode fits a phone: big tap targets, no sideways scrolling', async ()
   if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/t4-build-phone.png` });
   await context.close();
 });
+
+test('build mode: bill of materials with cost, difficulty and time', async () => {
+  const context = await browser.newContext({ viewport: { width: 1200, height: 900 } });
+  const page = await openBuild(context);
+  const bom = page.locator('.t4-bom');
+  const summary = await bom.locator('summary').innerText();
+  assert.match(summary, /\$\d+\.\d\d–\d+\.\d\d/, 'estimated cost');
+  assert.match(summary, /Beginner|Intermediate|Advanced/);
+  assert.match(summary, /\d+ h|\d+ min/);
+  await bom.locator('summary').click();
+  const text = await bom.innerText();
+  assert.match(text, /Chipboard 2\.0 mm sheet/);
+  assert.match(text, /PVA/);
+  assert.match(text, /micro LED/);
+  // stays open while moving between steps
+  await page.click('.t4-next');
+  assert.equal(await bom.evaluate((d) => d.open), true);
+  assert.deepEqual(page.errors, []);
+  await context.close();
+});
+
+test('build mode: each step shows its exploded view', async () => {
+  const context = await browser.newContext({ viewport: { width: 1200, height: 900 } });
+  const page = await openBuild(context);
+  const fig = page.locator('.t4-step .t4-exploded svg');
+  assert.equal(await fig.count(), 1);
+  assert.match(await fig.getAttribute('aria-label'), /^Exploded view of step 1: Build the room box/);
+  const box = await fig.boundingBox();
+  assert.ok(box.width > 150 && box.height > 100, 'big enough to read');
+  await page.click('.t4-next');
+  assert.match(await page.locator('.t4-step .t4-exploded svg').getAttribute('aria-label'), /^Exploded view of step 2:/);
+  if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/t4-exploded.png`, fullPage: true });
+  assert.deepEqual(page.errors, []);
+  await context.close();
+});

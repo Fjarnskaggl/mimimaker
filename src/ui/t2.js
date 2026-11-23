@@ -106,6 +106,7 @@ export function shellSection(kit, ui) {
         const value = sh.params?.[p.key] ?? def.defaults[p.key];
         const set = edit((v) => { sh.params = { ...sh.params, [p.key]: v }; });
         if (p.type === 'bool') return tag(checkField(p.label, value, set), 'data-shell-param', p.key);
+        if (p.type === 'choice') return tag(selectField(p.label, value, p.options, set), 'data-shell-param', p.key);
         if (p.type === 'material') {
           const opts = kit.materials.filter((m) => m.kind !== 'fabric').map((m) => [m.id, m.name]);
           return tag(selectField(p.label, value, opts, set), 'data-shell-param', p.key);
