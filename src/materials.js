@@ -36,11 +36,18 @@ export function withMaterialDefaults(m) {
   };
 }
 
+// family decides which files a machine gets (see src/export/machines.js):
+//   cricut     → Design Space SVG
+//   silhouette → SVG (Studio Designer edition) + DXF (Studio Basic edition)
+//   laser      → kerf-compensated laser SVG + DXF; cuts every material
 export const MACHINES = {
-  maker: { name: 'Cricut Maker / Maker 3', cut: [292, 597], tools: ['fine', 'knife', 'rotary'] },
-  explore: { name: 'Cricut Explore Air 2 / Explore 3', cut: [292, 597], tools: ['fine'] },
-  joyxtra: { name: 'Cricut Joy Xtra', cut: [216, 292], tools: ['fine'] },
-  joy: { name: 'Cricut Joy', cut: [108, 292], tools: ['fine'] },
+  maker: { name: 'Cricut Maker / Maker 3', family: 'cricut', cut: [292, 597], tools: ['fine', 'knife', 'rotary'] },
+  explore: { name: 'Cricut Explore Air 2 / Explore 3', family: 'cricut', cut: [292, 597], tools: ['fine'] },
+  joyxtra: { name: 'Cricut Joy Xtra', family: 'cricut', cut: [216, 292], tools: ['fine'] },
+  joy: { name: 'Cricut Joy', family: 'cricut', cut: [108, 292], tools: ['fine'] },
+  cameo: { name: 'Silhouette Cameo 4 / 5', family: 'silhouette', cut: [305, 305], tools: ['fine', 'knife', 'rotary'] },
+  portrait: { name: 'Silhouette Portrait 3 / 4', family: 'silhouette', cut: [203, 305], tools: ['fine'] },
+  laser: { name: 'Laser cutter (generic)', family: 'laser', cut: [400, 400], tools: ['fine', 'knife', 'rotary'], kerf: 0.1 },
 };
 
 export const TOOL_NAMES = { fine: 'Fine-Point Blade', knife: 'Knife Blade', rotary: 'Rotary Blade' };
