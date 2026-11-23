@@ -26,8 +26,12 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site
-          cp -r index.html styles.css src docs _site/
-          node scripts/build-single.js _site/mimimaker.html
+          # Publish the app as one self-contained page so a browser can never
+          # mix cached modules from an older deploy with newer ones.
+          node scripts/build-single.js _site/index.html
+          cp _site/index.html _site/mimimaker.html
+          cp -r docs _site/
+          echo "${GITHUB_SHA}" > _site/version.txt
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

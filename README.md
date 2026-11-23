@@ -42,7 +42,8 @@ It writes `dist/mimimaker.html`.
 `.github/workflows/pages.yml` runs the tests and publishes the site on every
 push to `main` (or from the Actions tab via *Run workflow*). One-time setup:
 **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-The app is then at `https://<user>.github.io/mimimaker/`, with the
+The app is then at `https://<user>.github.io/mimimaker/` (published as one
+bundled page, so browsers never mix old and new files), with the
 single-file build at `…/mimimaker/mimimaker.html`.
 
 ## What it makes

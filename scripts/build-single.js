@@ -62,6 +62,7 @@ const doc = fragment ? page : `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 14 16 5l12 9v13H4z' fill='%23c0603a'/%3E%3Crect x='13' y='18' width='6' height='9' fill='%23fff8ef'/%3E%3C/svg%3E">
 </head>
 <body>
 ${page}</body>
