@@ -3,52 +3,70 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mimimaker Kit Designer</title>
-  <meta name="description" content="Design miniature room kits and export Cricut-ready cut files.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 14 16 5l12 9v13H4z' fill='%23c0603a'/%3E%3Crect x='13' y='18' width='6' height='9' fill='%23fff8ef'/%3E%3C/svg%3E">
+  <title>mimimaker</title>
+  <meta name="description" content="Design miniature room kits, light them with LEDs and cut them on a Cricut or laser. Free, no account.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M8 42V16h6.4v-4h6.4v4h6.4v-4h6.4v4h6.4v26z' fill='%23b98f5e' stroke='%2318211e' stroke-width='2.5' stroke-linejoin='round'/%3E%3Crect x='14' y='22' width='8' height='8' rx='1.5' fill='%23f5f4ef' stroke='%2318211e' stroke-width='2'/%3E%3Crect x='26' y='22' width='8' height='8' rx='1.5' fill='%23f5f4ef' stroke='%2318211e' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 14 16 5l12 9v13H4z" fill="currentColor"/><rect x="13" y="18" width="6" height="9" fill="var(--bg)"/></svg>
-      <span>mimimaker</span>
+      <span id="brand-mark" title="mimimaker"></span>
+      <input id="kit-name" class="kit-name" aria-label="Kit name" spellcheck="false">
     </div>
-    <input id="kit-name" class="kit-name" aria-label="Kit name" spellcheck="false">
-    <div class="actions">
-      <button id="btn-undo" class="ghost" type="button" title="Undo (Ctrl/⌘ Z)" disabled>↶ Undo</button>
-      <button id="btn-redo" class="ghost" type="button" title="Redo (Ctrl/⌘ Shift Z)" disabled>↷ Redo</button>
-      <button id="btn-new" class="ghost" type="button">New</button>
-      <label class="ghost button" for="file-open">Open…</label>
-      <input id="file-open" type="file" accept=".json,application/json" hidden>
-      <button id="btn-save" class="ghost" type="button">Save .json</button>
-      <button id="btn-share" class="ghost" type="button">Share link</button>
-      <button id="btn-zip" class="primary" type="button">Download kit (.zip)</button>
+    <nav class="steps-nav" aria-label="Steps">
+      <ol class="mm-steps">
+        <li><button type="button" data-step="design" aria-current="step"><span class="n">1</span><span class="label">Design</span></button></li>
+        <li class="sep" aria-hidden="true"></li>
+        <li><button type="button" data-step="light"><span class="n">2</span><span class="label">Light</span></button></li>
+        <li class="sep" aria-hidden="true"></li>
+        <li><button type="button" data-step="make"><span class="n">3</span><span class="label">Make</span></button></li>
+        <li class="sep" aria-hidden="true"></li>
+        <li><button type="button" data-step="build"><span class="n">4</span><span class="label">Build</span></button></li>
+      </ol>
+    </nav>
+    <div class="top-right">
+      <div id="summary" class="summary"></div>
+      <div class="checks-wrap">
+        <button id="checks" type="button" class="mm-checks" data-state="ok" aria-haspopup="dialog" aria-expanded="false" aria-controls="checks-pop"><span class="dot"></span><span class="txt">All good</span></button>
+        <div id="checks-pop" class="mm-popover checks-pop" role="dialog" aria-label="Checks" hidden><div id="warnings"></div></div>
+      </div>
+      <button id="btn-undo" type="button" class="mm-btn mm-btn--quiet mm-btn--icon" data-icon="undo" aria-label="Undo" title="Undo (Ctrl/⌘ Z)" disabled></button>
+      <button id="btn-redo" type="button" class="mm-btn mm-btn--quiet mm-btn--icon" data-icon="redo" aria-label="Redo" title="Redo (Ctrl/⌘ Shift Z)" disabled></button>
+      <div class="menu-wrap">
+        <button id="btn-file" type="button" class="mm-btn" data-icon="sheets" aria-haspopup="menu" aria-expanded="false" aria-controls="file-menu" aria-label="File"><span class="label">File</span></button>
+        <div id="file-menu" class="mm-popover menu" role="menu" hidden>
+          <button id="btn-new" type="button" role="menuitem" data-icon="plus">New kit…</button>
+          <label class="menuitem" for="file-open" role="menuitem" data-icon="sheets">Open a file…</label>
+          <button id="btn-save" type="button" role="menuitem" data-icon="download">Save as a file</button>
+        </div>
+        <input id="file-open" type="file" accept=".json,application/json" hidden>
+      </div>
+      <button id="btn-share" type="button" class="mm-btn" data-icon="link" aria-label="Share"><span class="label">Share</span></button>
     </div>
     <div id="share-pop" class="share-pop" hidden role="dialog" aria-label="Share link">
       <label for="share-url">Share this design: free, no account needed</label>
-      <div class="share-row"><input id="share-url" readonly><button id="share-copy" type="button" class="small">Copy</button><button id="share-close" type="button" class="small ghost" aria-label="Close">✕</button></div>
+      <div class="share-row"><input id="share-url" readonly><button id="share-copy" type="button" class="mm-btn mm-btn--sm">Copy</button><button id="share-close" type="button" class="mm-btn mm-btn--sm mm-btn--quiet mm-btn--icon" data-icon="close" aria-label="Close"></button></div>
       <p id="share-note" class="hint"></p>
     </div>
   </header>
 
-  <div class="layout">
-    <aside id="sidebar" class="sidebar" aria-label="Kit settings"></aside>
-    <main class="main">
-      <div class="main-head">
-        <nav class="tabs" role="tablist">
-          <button role="tab" data-tab="preview" aria-selected="true">3D preview</button>
-          <button role="tab" data-tab="plan" aria-selected="false">Floor plan</button>
-          <button role="tab" data-tab="sheets" aria-selected="false">Make</button>
-          <button role="tab" data-tab="ledmap" aria-selected="false">LED map</button>
-          <button role="tab" data-tab="guide" aria-selected="false">Assembly guide</button>
-        </nav>
-        <div id="summary" class="summary"></div>
-      </div>
-      <div id="warnings" class="warnings" aria-live="polite"></div>
-      <section id="view" class="view"></section>
-    </main>
+  <div id="workspace" class="workspace" data-step="design">
+    <nav class="rail" aria-label="Design tools">
+      <button id="rail-pieces" type="button" data-icon="chair" aria-expanded="false" aria-controls="drawer" title="Add a piece">Pieces</button>
+      <button id="rail-window" type="button" data-icon="window" title="Add a window">Window</button>
+      <button id="rail-room" type="button" data-icon="ruler" title="Room settings">Room</button>
+    </nav>
+    <aside id="drawer" class="drawer" aria-label="Add a piece" hidden></aside>
+    <main id="view" class="view"></main>
+    <aside id="sidebar" class="inspector" aria-label="Inspector"></aside>
   </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <dialog id="start" class="start" aria-label="Start a new kit"></dialog>
   <script type="module" src="src/app.js"></script>
 </body>
 </html>

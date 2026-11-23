@@ -160,7 +160,7 @@ test('no sideways scrolling at phone width on any step or view', async () => {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await page.goto(URL);
   await page.waitForFunction(() => window.mimimaker?.kit, null, { timeout: 8000 });
-  for (const tab of ['[data-view=3d]', '[data-view=plan]', '[data-step=light]', '[data-view=wiring]', '[data-step=make]', '[data-step=build]']) {
+  for (const tab of ['[data-view="3d"]', '[data-view=plan]', '[data-step=light]', '[data-view=wiring]', '[data-step=make]', '[data-step=build]']) {
     await page.click(tab);
     await page.waitForTimeout(150);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
