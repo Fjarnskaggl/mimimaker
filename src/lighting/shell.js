@@ -1,6 +1,8 @@
 // LEDs that a shell places itself (#16): the alley's cavity and backdrop
-// lights. The shell gives each one a wire path inside it (along the cavity
-// floor, square runs) ending at a hole it already cuts in its back wall; this
+// lights, the bookshop's, staircase's, greenhouse's and two-storey house's.
+// The shell gives each one a wire path inside it (square runs: along an
+// alley's cavity floor, under shelves, floors and roofs) ending at a hole it
+// cuts in its back wall; this
 // turns that into an LED-map entry with the outside route to the power box
 // and the minimum lead length.
 //

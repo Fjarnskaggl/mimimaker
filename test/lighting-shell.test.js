@@ -79,10 +79,17 @@ test('an alley with lighting on: every shell LED is planned, wired to the power 
   assert.equal(plain.lighting.enabled, false, 'lighting off stays off');
 });
 
-test('shells without wired lights keep the room LEDs set aside', () => {
-  const r = compileKit(withShell('bookshop'));
-  assert.equal(r.lighting.enabled, false);
-  assert.ok(r.shell.lights.length > 0, 'spots still glow in 3D');
+test('every whole-scene shell wires its own lights; the furnishable nook keeps the room LEDs', () => {
+  for (const type of ['alley', 'bookshop', 'staircase', 'greenhouse', 'twostorey']) {
+    const r = compileKit(withShell(type));
+    assert.equal(r.lighting.enabled, true, type);
+    assert.equal(r.lighting.leds.length, r.shell.lights.length, type);
+    assert.ok(r.lighting.leds.every((l) => l.inside), type);
+  }
+  const nook = withShell('nook');
+  const r = compileKit(nook);
+  assert.equal(r.lighting.leds.length, nook.lighting.leds.length);
+  assert.ok(!r.lighting.leds.some((l) => l.inside));
 });
 
 test('LED map and table show alley LEDs inside the shell, with the inside run dashed', () => {

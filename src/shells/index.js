@@ -32,10 +32,10 @@ export const SHELLS = {
   nook: { label: 'Book nook (open box)', params: NOOK_PARAMS, defaults: NOOK_DEFAULTS, build: buildNook, boxHeight: nookBoxHeight, furnishable: true },
   // wiredLights: its LED spots come with wire paths, so the LED planner wires them (#16)
   alley: { label: 'Alley with lit facades', params: ALLEY_PARAMS, defaults: ALLEY_DEFAULTS, build: buildAlley, furnishable: false, wiredLights: true },
-  bookshop: { label: 'Bookshop corner', params: BOOKSHOP_PARAMS, defaults: BOOKSHOP_DEFAULTS, build: buildBookshop, furnishable: false },
-  staircase: { label: 'Staircase to a landing', params: STAIRCASE_PARAMS, defaults: STAIRCASE_DEFAULTS, build: buildStaircase, furnishable: false },
-  greenhouse: { label: 'Greenhouse', params: GREENHOUSE_PARAMS, defaults: GREENHOUSE_DEFAULTS, build: buildGreenhouse, furnishable: false },
-  twostorey: { label: 'Two-storey house', params: TWOSTOREY_PARAMS, defaults: TWOSTOREY_DEFAULTS, build: buildTwoStorey, furnishable: false },
+  bookshop: { label: 'Bookshop corner', params: BOOKSHOP_PARAMS, defaults: BOOKSHOP_DEFAULTS, build: buildBookshop, furnishable: false, wiredLights: true },
+  staircase: { label: 'Staircase to a landing', params: STAIRCASE_PARAMS, defaults: STAIRCASE_DEFAULTS, build: buildStaircase, furnishable: false, wiredLights: true },
+  greenhouse: { label: 'Greenhouse', params: GREENHOUSE_PARAMS, defaults: GREENHOUSE_DEFAULTS, build: buildGreenhouse, furnishable: false, wiredLights: true },
+  twostorey: { label: 'Two-storey house', params: TWOSTOREY_PARAMS, defaults: TWOSTOREY_DEFAULTS, build: buildTwoStorey, furnishable: false, wiredLights: true },
 };
 
 /** `holes`: face → polygons (wall panel coords) to cut through the shell walls. */

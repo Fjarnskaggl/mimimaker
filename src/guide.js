@@ -103,7 +103,7 @@ export function guideHTML(kit, compiled) {
   const lighting = lit ? `
   <h2>Lighting</h2>
   <p>${compiled.lighting.leds.length} LED${compiled.lighting.leds.length === 1 ? '' : 's'} powered by a ${esc(powerName(compiled.lighting).toLowerCase())}. ${compiled.lighting.leds.some((l) => l.inside)
-    ? 'The map shows the shell from behind, unfolded flat. Each LED sits in a cavity inside the shell: its dashed line runs down to the floor channel and along to a small hole in the back wall, already cut, and the solid line is its wire route from there to the power box.'
+    ? 'The map shows the shell from behind, unfolded flat. Each LED sits inside the shell: its dashed line runs inside to a small hole in the back wall, already cut (in an alley, down the cavity and along the floor channel), and the solid line is its wire route from there to the power box.'
     : 'The map shows the room from behind, unfolded flat: wire holes are already cut, and each coloured line is that LED\'s wire route to the power box.'}</p>
   <div class="ledmap">${ledMapSVG(compiled, { standalone: true })}</div>
   <table><tr><th>LED</th><th>Name</th><th>Mounted on</th><th>Colour</th><th>Lead needed</th></tr>${ledRows(compiled).map((r) => `<tr><td><span class="sw" style="background:${r.wireColor}"></span>${r.label}</td><td>${esc(r.name || '—')}</td><td>${r.where}</td><td>${esc(r.color)}</td><td>≥ ${r.leadCm} cm</td></tr>`).join('')}</table>` : '';

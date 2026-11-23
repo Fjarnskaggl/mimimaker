@@ -458,7 +458,7 @@ function lightingInspector() {
       inspHead('Lighting', 'Circuit', `${shellLeds.length} light${shellLeds.length === 1 ? '' : 's'}`),
       on ? renderCircuitSummary(compiled.lighting.circuit) : notice('info', 'Lights are off.', 'Turn them on under Power to wire the shell\'s LEDs.'),
       section('Lights', [
-        h('p', { class: 'hint', 'data-shell-lights': '' }, 'The shell places these LEDs behind its lit windows. Change the windows in the shell panel to move them.'),
+        h('p', { class: 'hint', 'data-shell-lights': '' }, 'The shell places these LEDs itself (behind an alley\'s lit windows, under shelves, floors and roofs). Change the shell in its panel to move them.'),
         h('div', { class: 'insp-list' }, shellLeds.map((led) => h('div', { class: 'insp-row' },
           h('span', { class: 'led-dot', style: `background:${LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex}` }),
           h('span', { class: 'grow' }, `${led.label}${led.name ? ` · ${led.name}` : ''}`),
@@ -851,7 +851,7 @@ function renderWiring(el) {
   el.replaceChildren(
     h('div', { class: 'map-head' },
       h('p', { class: 'hint' }, compiled.lighting.leds.some((l) => l.inside) // T2 shells: LEDs the shell places itself (#16)
-        ? `Seen from behind the shell, the side you wire on. Dashed lines run inside the shell, along the cavity floor to the small holes low in the back wall; from there run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`
+        ? `Seen from behind the shell, the side you wire on. Dashed lines run inside the shell to the small holes in the back wall; from there run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`
         : `Seen from behind the room, the side you wire on. ${compiled.lighting.holeDiameter.toFixed(1)} mm holes are pre-cut at each LED; run each wire along its line to the ${compiled.lighting.power.kind === 'usb' ? 'USB lead' : 'battery box'}.`),
       h('button', { class: 'mm-btn mm-btn--sm', type: 'button', onclick: () => download(`${slug(kit.name)}-led-map.svg`, ledMapSVG(compiled, { standalone: true }), 'image/svg+xml') }, ic('download'), 'SVG')),
     h('div', { class: 'map-wrap', html: ledMapSVG(compiled) }),

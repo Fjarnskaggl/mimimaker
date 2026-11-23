@@ -10,7 +10,7 @@ import { labelAnchor } from './labels.js';
 import { planLighting, LED_COLORS, POWER_KINDS } from './lighting.js';
 import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometry.js';
 // T2 shells
-import { prepareShell, compileShell, compileRoof, shellLights } from './shells/kit.js';
+import { prepareShell, compileShell, compileRoof, shellLighting } from './shells/kit.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
@@ -139,8 +139,9 @@ export function compileKit(kit) {
   });
 
   // LED wire holes go through the structure (and the overlays below)
+  const shellLit = shellLighting(shellPrep, { t }); // T2 shells: LEDs the shell places itself, and its back-wall windows (#16)
   const lighting = planLighting(kit.lighting, { s, t, W, D, H, Wi, Di, Hi, ceiling: room.ceiling, wallInfo, openings,
-    shellLights: shellLights(shellPrep, { t }) }); // T2 shells: LEDs the shell places itself (#16)
+    shellLights: shellLit.lights, shellObstacles: shellLit.obstacles });
   for (const [f, list] of Object.entries(lighting.holes)) (holes[f] ||= []).push(...list);
   for (const w of lighting.warnings) typeof w === 'string' ? warn(w) : warn(w.msg, w.level);
 
@@ -263,8 +264,8 @@ export function compileKit(kit) {
     const lightGroup = newGroup('Lighting', null, { // [T5] kept in a variable for the cable cover
       steps: [
         `You need ${lighting.leds.length} pre-wired 3 V micro LEDs (fairy-light or "grain of wheat" style, with built-in resistors) and a ${powerName.toLowerCase()}. The LED map lists the minimum lead length for each.`,
-        lighting.leds.some((l) => l.inside) // T2 shells: the shell's own LEDs share its cavity holes (#16)
-          ? 'The shell already has small wire holes low in its back wall, one behind each cavity. Lay each LED in its cavity where the map shows it, run its wires down to the floor channel and out through that cavity\'s hole; LEDs in the same cavity share it. A dab of tacky glue holds each bulb.'
+        lighting.leds.some((l) => l.inside) // T2 shells: the shell's own LEDs leave through its back-wall holes (#16)
+          ? 'The shell already has small wire holes in its back wall. Fix each LED where the map shows it and run its wires along its dashed line inside the shell (in an alley: down the cavity to the floor channel) and out through its hole; LEDs in the same cavity share one. A dab of tacky glue holds each bulb, and a dot of glue holds the wire along a shelf or floor edge.'
           : `The ${lighting.holeDiameter.toFixed(1)} mm wire holes are already cut. Poke each LED's wires through its hole from the inside before gluing in furniture; a dab of hot glue or tacky glue holds the bulb.`,
         lighting.power.mount === 'flush'
           ? `Fit the power box behind the ${lighting.power.face} wall so its switch shows through the cut-out, then run each wire along its route on the outside and hold it down with thin tape or tiny staples.`
