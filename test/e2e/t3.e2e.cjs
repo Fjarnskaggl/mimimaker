@@ -212,3 +212,24 @@ test('material library: Delete turns off once a part uses the material', async (
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('kit zip: "All machines" adds every machine’s cut files and a file list', async () => {
+  const page = await open();
+  await page.click('[data-step=make]');
+  const box = page.locator('label', { hasText: 'All machines' }).locator('input[type=checkbox]');
+  await box.check();
+  assert.equal(await page.evaluate(() => window.mimimaker.kit.zipAllMachines), true);
+  // the toggle is its own undo step: undo turns it off, redo back on
+  await page.click('#btn-undo');
+  await page.waitForFunction(() => window.mimimaker.kit.zipAllMachines !== true);
+  await page.click('#btn-redo');
+  await page.waitForFunction(() => window.mimimaker.kit.zipAllMachines === true);
+  assert.equal(await page.locator('label', { hasText: 'All machines' }).locator('input[type=checkbox]').isChecked(), true);
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btn-zip')]);
+  const text = fs.readFileSync(await dl.path()).toString('latin1');
+  for (const id of ['maker', 'joy', 'cameo', 'laser']) assert.ok(text.includes(`cut-files/${id}/`), id);
+  assert.match(text, /Files in this zip/);
+  await shot(page, 'zip-all-machines');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

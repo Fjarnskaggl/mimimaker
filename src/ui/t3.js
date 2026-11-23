@@ -335,3 +335,15 @@ export function materialLibrary({ kit, machine, onChange, onRestructure }) {
   render();
   return root;
 }
+
+// --------------------------------------------------------- kit zip option
+/**
+ * "All machines" checkbox for the Make setup row (kit.zipAllMachines).
+ * `getKit()` is read on each change, since undo replaces the kit object.
+ */
+export function allMachinesField(getKit, onChange) {
+  const box = el('input', { type: 'checkbox', onchange: (e) => { getKit().zipAllMachines = e.target.checked; onChange(); } });
+  box.checked = !!getKit().zipAllMachines;
+  return el('label', { class: 'check zip-all', title: 'Put cut files for every machine in the kit zip, one folder each, so anyone you share it with can cut it' },
+    box, el('span', {}, 'All machines in the kit zip'));
+}
