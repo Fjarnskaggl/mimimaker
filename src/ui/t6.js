@@ -159,15 +159,27 @@ function disposeViewer() {
   state.viewer = null;
 }
 
-/** Wheel zoom on a stage, for both renderers (once per stage). */
+/** Wheel zoom on a stage, for both renderers (once per stage), redrawn once per frame. */
+const ZOOM_MIN = 0.6, ZOOM_MAX = 4;
 function attachZoom(stage) {
   if (stage.t6zoomWired) return;
   stage.t6zoomWired = true;
+  let frame = 0;
   stage.addEventListener('wheel', (e) => {
-    if (state.last?.stage !== stage) return;
+    if (state.last?.stage !== stage || e.metaKey) return; // ⌘-wheel stays the browser's
+    // wheels report pixels, lines (Firefox mice) or pages
+    const px = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? (globalThis.innerHeight || 800) : 1);
+    const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, state.zoom * Math.exp(-px * 0.0015)));
+    if (next === state.zoom) return; // at a limit: let the page scroll
     e.preventDefault();
-    state.zoom = Math.max(0.6, Math.min(4, state.zoom * Math.exp(-e.deltaY * 0.0015)));
-    redrawLast();
+    state.zoom = next;
+    if (!frame) {
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setHover(stage, null); // the zoom moved the pieces under the pointer
+        redrawLast();
+      });
+    }
   }, { passive: false });
 }
 
