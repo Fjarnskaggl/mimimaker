@@ -130,6 +130,9 @@ test('params and defaults must agree', () => {
 test('expressions must parse and only use known names', () => {
   expectError((p) => { p.size[2] = 'max(back, armh'; }, /size\[2\]: expected "\)"/);
   expectError((p) => { p.components[0].size[0] = 'w - 2 * arms'; }, /components\[0\]\.size\[0\]: unknown name "arms"/);
+  expectError((p) => { p.size[2] = 'max(back, armh) + t'; }, /size\[2\]: unknown name "t" \(size only sees parameters\)/);
+  expectError((p) => { p.size[0] = 'a'; }, /size\[0\]: unknown name "a" \(size only sees parameters\)/);
+  expectError((p) => { delete p.size; }, /size: required unless the piece has w, d and h parameters/);
   expectError((p) => { p.let.a = 'min(arm, w / 3) + dd'; }, /let\.a: unknown name "dd"/);
   expectError((p) => { p.let.w = '1'; }, /let\.w: "w" is already a parameter/);
   expectError((p) => { p.components[0].name = 'Seat {k}'; }, /components\[0\]\.name: unknown name "k"/);
