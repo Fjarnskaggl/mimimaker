@@ -87,6 +87,17 @@ test('new pieces compile to cut parts in board and card without errors', () => {
   }
 });
 
+test('new pieces compile without warnings at their defaults on every board', () => {
+  for (const id of Object.keys(NEW)) {
+    for (const material of ['chip2', 'chip15', 'bass16', 'bass08']) {
+      const kit = defaultKit();
+      kit.items = [{ type: id, params: { ...CATALOG[id].defaults }, material, x: 10, y: 10, rot: 0, wall: 'back', pos: 150, elev: 150 }];
+      const warnings = compileKit(kit).warnings.filter((w) => w.level !== 'info').map((w) => w.msg ?? w);
+      assert.deepEqual(warnings, [], `${id} in ${material}`);
+    }
+  }
+});
+
 test('sideboard: a door-fronted body under an overhanging top', () => {
   const [body, top] = build('sideboard');
   assert.equal(body.kind, 'box');
