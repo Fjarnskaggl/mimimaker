@@ -8,6 +8,7 @@
 // (the alley) set the room contents aside with a note.
 
 import { SHELLS, shellSize, buildShell } from './index.js';
+import { buildGableRoof } from './roof.js';
 import { ellipsePoly } from '../geometry.js';
 import { LED_COLORS } from '../lighting.js';
 
@@ -99,4 +100,30 @@ export function compileShell(prep, { t, fingerWidth, holes, getMat, newGroup, ad
     joints: sh.joints.map((j) => ({ a: ids.get(j.a), b: ids.get(j.b), kind: j.kind })),
     lights: sh.lights,
   };
+}
+
+/**
+ * A gable roof on an ordinary room box (kit.room.roof = { type: 'gable', pitch }),
+ * added through the compiler's helpers. Board rooms only; returns null when
+ * there is no roof, so kits without one compile exactly as before.
+ */
+export function compileRoof(room, { W, D, H, t, fingerWidth, rm, newGroup, addPart, add3d, warn, xf }) {
+  const roof = room?.roof;
+  if (!roof || roof.type !== 'gable') return null;
+  if (rm.kind !== 'board') {
+    warn(`Gable roofs are cut from board, so the ${rm.name} room box has none — pick a board for the room's structure to add it.`, 'info');
+    return null;
+  }
+  const pitch = Math.max(20, Math.min(60, Number(roof.pitch) || 40));
+  const res = buildGableRoof({ W, D, t, pitch, z0: H, fingerWidth });
+  const group = newGroup('Roof', rm);
+  for (const p of res.parts) {
+    addPart(group, p.name, rm, p.polys, p.scores);
+    add3d(0, p.polys, p.plane, xf, rm.color, { thickness: t });
+  }
+  group.steps.push(
+    'Glue the gable upright on the back wall\'s top edge, flush with the back.',
+    'Slide the left roof\'s tabs into the notches on the left of the gable, resting it on the left wall, then the right roof the same way — it tucks under the left one at the ridge. Glue along the walls, the gable and the ridge.',
+  );
+  return { pitch, rise: res.rise, joints: res.joints };
 }

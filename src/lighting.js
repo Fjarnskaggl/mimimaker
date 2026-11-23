@@ -17,7 +17,7 @@ import { ellipsePoly, pointInPolygon, bbox } from './geometry.js';
 import { planCircuit, supplyFor } from './lighting/circuit.js';
 import { effectOf, effectLoad, effectWarnings } from './lighting/effects.js';
 import { planCutouts } from './lighting/cutouts.js';
-import { planCover } from './lighting/cover.js';
+import { planCover, coverRange } from './lighting/cover.js';
 
 export const LED_COLORS = {
   warm: { name: 'Warm white', hex: '#ffc767' },
@@ -170,5 +170,6 @@ export function planLighting(lighting, ctx) {
   warnings.push(...circuit.warnings);
   const cover = planCover({ cover: lighting.cover, leds, power, openings: ctx.openings, W: ctx.W, H: ctx.H, s, t });
   warnings.push(...cover.warnings);
-  return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit, parts: cover.parts, steps: cover.steps };
+  return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit, parts: cover.parts, steps: cover.steps,
+    coverRange: coverRange(circuit.supply.id, { W: ctx.W, H: ctx.H, s, t }) };
 }

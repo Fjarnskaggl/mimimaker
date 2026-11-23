@@ -115,3 +115,20 @@ export function shellSection(kit, ui) {
   el.dataset.panel = 'shell';
   return el;
 }
+
+/**
+ * Room box roof controls, appended to the Room section (not while a shell is
+ * on: shells bring their own roof options). `ui` = { h, numberField, checkField, changed, restructured }.
+ */
+export function appendRoofControls(kit, sectionEl, ui) {
+  if (kit.shell) return;
+  const { h, numberField, checkField, changed, restructured } = ui;
+  const roof = kit.room.roof?.type === 'gable' ? kit.room.roof : null;
+  const row = h('div', { class: 'grid2' },
+    tag(checkField('Gable roof', !!roof, (v) => { kit.room.roof = v ? { type: 'gable', pitch: 40 } : null; restructured(); }), 'data-room-roof', 'gable'),
+    roof ? tag(numberField('Roof pitch', roof.pitch, (v) => { roof.pitch = Math.max(20, Math.min(60, v)); changed(); },
+      { min: 20, max: 60, step: 5, unit: '°' }), 'data-room-roof', 'pitch') : h('span'));
+  const body = sectionEl.querySelector('.section-body') || sectionEl;
+  const hint = body.querySelector(':scope > p.hint:last-child');
+  hint ? body.insertBefore(row, hint) : body.append(row);
+}
