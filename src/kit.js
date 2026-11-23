@@ -249,7 +249,9 @@ export function compileKit(kit) {
       steps: [
         `You need ${lighting.leds.length} pre-wired 3 V micro LEDs (fairy-light or "grain of wheat" style, with built-in resistors) and a ${powerName.toLowerCase()}. The LED map lists the minimum lead length for each.`,
         `The ${lighting.holeDiameter.toFixed(1)} mm wire holes are already cut. Poke each LED's wires through its hole from the inside before gluing in furniture; a dab of hot glue or tacky glue holds the bulb.`,
-        `Glue the power box to the outside of the ${lighting.power.face} wall where the map shows it, then run each wire along its route on the outside and hold it down with thin tape or tiny staples.`,
+        lighting.power.mount === 'flush'
+          ? `Fit the power box behind the ${lighting.power.face} wall so its switch shows through the cut-out, then run each wire along its route on the outside and hold it down with thin tape or tiny staples.`
+          : `Glue the power box to the outside of the ${lighting.power.face} wall where the map shows it, then run each wire along its route on the outside and hold it down with thin tape or tiny staples.`,
         'Wire all LEDs in parallel: twist every LED\'s + lead to the power box + lead (red) and every − to − (black), then insulate with heat-shrink or tape. Test before closing up.',
         'Optional: glue a cardstock panel over the back of the room to hide the wiring.',
       ],
