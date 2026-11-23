@@ -11,7 +11,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-const PORT = 5198;
+const PORT = 5196; // each e2e file needs its own port: they run in parallel (studio 5199, shells 5198)
 const URL = `http://localhost:${PORT}/`;
 const CDN = /three(\.js\/r128|@0\.128\.0)\/.*three\.min\.js$/;
 let server, browser;
