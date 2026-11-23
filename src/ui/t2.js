@@ -59,7 +59,11 @@ export function applyRoomLocks(kit, sectionEl, h) {
   const labelled = (names) => [...sectionEl.querySelectorAll('label')]
     .filter((l) => l.querySelector('input') && names.some((n) => l.textContent.trim().startsWith(n)));
   const lock = (labels, withPicker = false) => labels.forEach((l) => {
-    l.querySelector('input').disabled = true;
+    const input = l.querySelector('input');
+    input.disabled = true;
+    // overlays are off under a whole-scene shell: show that, but leave the
+    // room's own setting alone so it returns with the room
+    if (withPicker) input.checked = false;
     // each overlay checkbox is followed by its material picker
     const picker = withPicker && l.nextElementSibling?.querySelector('select');
     if (picker) picker.disabled = true;
