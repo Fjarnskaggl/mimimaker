@@ -66,7 +66,7 @@ export function ledMapSVG(compiled, { standalone = false } = {}) {
   lighting.leds.forEach((led, i) => {
     const [x, y] = P(led.p);
     const c = WIRE_COLORS[i % WIRE_COLORS.length];
-    const glow = LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex;
+    const glow = led.load?.device ? '#b8a990' : LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex; // [T5] motors and sound: no light colour
     const effect = EFFECTS[led.effect] ? led.effect : 'steady';
     const r = fs * 0.9;
     const g = [];
@@ -116,7 +116,7 @@ export function ledRows(compiled) {
   if (!lighting?.enabled) return [];
   const where = { back: 'Back wall', left: 'Left wall', right: 'Right wall', top: 'Ceiling', bottom: 'Floor' };
   return lighting.leds.map((l, i) => ({
-    label: l.label, name: l.name, where: l.where || where[l.face], color: LED_COLORS[l.color]?.name || l.color,
+    label: l.label, name: l.name, where: l.where || where[l.face], color: l.load?.device ? '—' : LED_COLORS[l.color]?.name || l.color,
     wireColor: WIRE_COLORS[i % WIRE_COLORS.length], runCm: l.length / 10, leadCm: l.leadCm,
     effect: (EFFECTS[l.effect] || EFFECTS.steady).name,
   }));

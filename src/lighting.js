@@ -15,11 +15,12 @@
 
 import { ellipsePoly, pointInPolygon, bbox } from './geometry.js';
 import { planCircuit, supplyFor } from './lighting/circuit.js';
-import { effectOf, effectLoad, effectWarnings } from './lighting/effects.js';
+import { EFFECTS, effectOf, effectLoad, effectWarnings } from './lighting/effects.js';
 import { planCutouts } from './lighting/cutouts.js';
 import { planCover, coverRange } from './lighting/cover.js';
 import { wiredLights, planShellLed } from './lighting/shell.js';
 import { baseLayout } from './lighting/base.js';
+import { effectHoles, planMotion } from './lighting/motion.js';
 
 export const LED_COLORS = {
   warm: { name: 'Warm white', hex: '#ffc767' },
@@ -112,7 +113,6 @@ export function planLighting(lighting, ctx) {
   if (!lighting?.enabled) return { enabled: false, leds, holes, warnings, parts: [], steps: [] };
   const { s, t, D, Wi, Di, Hi, wallInfo } = ctx;
   const r = Math.max(0.5, (lighting.holeDiameter || 3) / 2);
-  const addHole = (face, u, v) => (holes[face] ||= []).push(ellipsePoly(u, v, r, r, 20));
 
   const obstacles = ctx.openings.map((o) => {
     const b = bbox([o.poly.map(([u, v]) => netPoint(o.wall, u, v, ctx))]);
@@ -169,7 +169,7 @@ export function planLighting(lighting, ctx) {
       ? { face, mount: led.mount, start: u - t, span: Wi }
       : { face, mount: led.mount, start: u - wallInfo[face].u0, span: wallInfo[face].len };
     warnings.push(...effectWarnings(led, place, title));
-    addHole(face, u, v);
+    for (const h of effectHoles(effectOf(led), u, v, r)) (holes[face] ||= []).push(h); // a motor's shaft hole, a speaker grille
     const p = netPoint(face, u, v, ctx);
     // into a hidden base, a floor light's wires drop straight through its hole
     const route = base && face === 'bottom' ? { points: [p], crossesOpening: false } : routeWire({ face, p }, power, ctx, obstacles);
@@ -179,7 +179,7 @@ export function planLighting(lighting, ctx) {
     leds.push({
       label, name: led.name || '', mount: led.mount, face, u, v, p, color: led.color || 'warm',
       route: route.points, length, leadCm: Math.ceil((length / 10 + 3) / 5) * 5,
-      effect: effectOf(led), load: effectLoad(led),
+      effect: effectOf(led), load: effectLoad(led), size: led.sizeMm,
     });
   });
   // LEDs the shell places itself: its own holes, wired from there (#16)
@@ -201,6 +201,7 @@ export function planLighting(lighting, ctx) {
   warnings.push(...circuit.warnings);
   const cover = planCover({ cover: lighting.cover, leds, power, openings: ctx.openings, W: ctx.W, H: ctx.H, s, t });
   warnings.push(...cover.warnings);
-  return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit, parts: cover.parts, steps: cover.steps,
+  const motion = planMotion(leds.map((l) => ({ ...l, size: l.size ?? EFFECTS[l.effect]?.defaults?.sizeMm })));
+  return { enabled: true, leds, holes, power, holeDiameter: r * 2, warnings, circuit, parts: [...cover.parts, ...motion.parts], steps: [...cover.steps, ...motion.steps],
     coverRange: coverRange(circuit.supply.id, { W: ctx.W, H: ctx.H, s, t }) };
 }

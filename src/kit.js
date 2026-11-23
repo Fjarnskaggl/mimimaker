@@ -12,6 +12,8 @@ import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometr
 // T2 shells
 import { prepareShell, compileShell, compileRoof, shellLighting } from './shells/kit.js';
 import { buildBase } from './lighting/base.js';
+import { EFFECTS } from './lighting/effects.js';
+import { fanRotor, turntableDisc } from './lighting/motion.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
@@ -258,6 +260,14 @@ export function compileKit(kit) {
     for (const led of lighting.leds) {
       if (led.inside) continue; // T2 shells: a shell's own LEDs already glow where they sit (#16)
       const fr = faceFrame(led.face, W, D, H, t + 0.6, 'inner');
+      // >>> [T5] motion and sound: a fan rotor or turntable shows where it turns; no glow
+      if (led.load?.device) {
+        const size = led.size ?? EFFECTS[led.effect]?.defaults?.sizeMm;
+        const shape = led.effect === 'fan' ? fanRotor(led.u, led.v, size) : led.effect === 'turntable' ? turntableDisc(led.u, led.v, size) : null;
+        if (shape) add3d(1.7, shape, faceFrame(led.face, W, D, H, t + (led.effect === 'fan' ? 4 : 1), 'inner'), worldXf, '#b8a990');
+        continue;
+      }
+      // <<< [T5]
       const hex = LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex;
       add3d(1.7, [ellipsePoly(led.u, led.v, 7, 7, 24)], fr, worldXf, hex, { opacity: 0.28, glow: true });
       add3d(1.8, [ellipsePoly(led.u, led.v, 2, 2, 16)], fr, worldXf, hex, { glow: true });
@@ -279,7 +289,7 @@ export function compileKit(kit) {
       ],
       parts: [],
     });
-    for (const p of lighting.parts || []) addPart(lightGroup, p.name, getMat(p.material || (p.role === 'frame' ? room.material : room.trimMaterial), 'Lighting'), p.polys); // [T5] cable cover
+    for (const p of lighting.parts || []) addPart(lightGroup, p.name, getMat(p.material || (p.role === 'frame' || p.role === 'mount' ? room.material : room.trimMaterial), 'Lighting'), p.polys); // [T5] cable cover
     lightGroup.steps.push(...(lighting.steps || [])); // [T5] cable cover
     // >>> [T5] hidden base under the room: battery hatch, wire hole and switch mount
     if (lighting.power.base) {

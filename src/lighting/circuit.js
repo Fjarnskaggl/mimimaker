@@ -79,7 +79,7 @@ export function planCircuit(leds, supplyId) {
   const supply = SUPPLIES[supplyId] || SUPPLIES.aa2;
   const specs = leds.map((l) => {
     const base = ledSpec(l.color);
-    return { vf: base.vf, mA: l.mA ?? base.mA, duty: Math.min(1, Math.max(0, l.duty ?? 1)), bulbs: l.bulbs ?? 1, needs5V: !!l.needs5V };
+    return { vf: l.vf ?? base.vf, mA: l.mA ?? base.mA, duty: Math.min(1, Math.max(0, l.duty ?? 1)), bulbs: l.bulbs ?? 1, needs5V: !!l.needs5V, device: !!l.device, motor: !!l.motor };
   });
   const totalMA = specs.reduce((s, l) => s + l.mA, 0);
   const averageMA = specs.reduce((s, l) => s + l.mA * l.duty, 0);
@@ -87,7 +87,9 @@ export function planCircuit(leds, supplyId) {
   const bulbs = specs.reduce((s, l) => s + l.bulbs, 0);
   const warnings = [];
   let status = 'ok';
-  const what = bulbs === n ? `${n} LED${n === 1 ? '' : 's'}` : `${n} light${n === 1 ? '' : 's'} (${bulbs} LEDs)`;
+  const devices = specs.filter((l) => l.device).length, lights = n - devices;
+  const lit = bulbs === lights ? `${lights} LED${lights === 1 ? '' : 's'}` : `${lights} light${lights === 1 ? '' : 's'} (${bulbs} LEDs)`;
+  const what = !devices ? lit : `${lights ? `${lit} and ` : ''}${devices} motor or sound part${devices === 1 ? '' : 's'}`;
   const draw = `${what} can draw up to ${totalMA} mA`;
   if (supply.id !== 'usb' && specs.some((l) => l.needs5V)) {
     status = 'error';
@@ -102,6 +104,9 @@ export function planCircuit(leds, supplyId) {
   }
   if (n && supply.id === 'usb') {
     warnings.push({ level: 'info', msg: 'USB gives 5 V: use LEDs sold for USB / 5 V (or a USB lead with a 3 V regulator). Plain 3 V LEDs burn out on 5 V.' });
+  }
+  if (specs.some((l) => l.motor)) {
+    warnings.push({ level: 'info', msg: 'Motors draw a short surge (up to about 380 mA) when they start, so lights may blink as they spin up, and weak batteries may not start them.' });
   }
   if (n && supply.volts < 3.5 && specs.some((l) => l.vf >= 2.8)) {
     warnings.push({ level: 'info', msg: `White, pink and green LEDs need nearly the full 3 V, so they dim as the ${supply.id === 'cr2032' ? 'coin cell runs' : 'batteries run'} down.` });
