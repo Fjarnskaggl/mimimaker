@@ -8,7 +8,7 @@
 //   PDF: a how-to page, then each print sheet at 100% with a 1 mm bleed and
 //     thin cut lines, for other printers or cutting by hand.
 
-import { textureShapes, symbolShapes } from '../textures/index.js';
+import { textureShapes, symbolShapes, TEXTURES } from '../textures/index.js';
 import { resolveLook } from '../textures/look.js';
 import { packParts, placementTransform } from '../nest.js';
 import { bbox, polygonArea } from '../geometry.js';
@@ -31,14 +31,18 @@ const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(
 // ------------------------------------------------------------------ paths
 /** Absolute M L H V Q C Z path data → [{ op, pts }]; H and V become L. */
 export function parsePath(d) {
-  const tokens = String(d).match(/[MLHVQCZ]|-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi) || [];
+  const tokens = String(d).match(/[a-zA-Z]|-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/g) || [];
   const cmds = [];
   let i = 0, op = null, cur = [0, 0], start = [0, 0];
-  const num = () => Number(tokens[i++]);
+  const num = () => {
+    const v = Number(tokens[i++]);
+    if (!Number.isFinite(v)) throw new Error(`Bad path data "${d}"`);
+    return v;
+  };
   const ARGS = { M: 2, L: 2, H: 1, V: 1, Q: 4, C: 6, Z: 0 };
   while (i < tokens.length) {
     if (/^[a-z]$/i.test(tokens[i])) {
-      op = tokens[i++].toUpperCase();
+      op = tokens[i++];
       if (!(op in ARGS)) throw new Error(`Unsupported path command "${op}"`);
       if (op === 'Z') { cmds.push({ op: 'Z' }); cur = start; continue; }
     } else if (op === 'M') op = 'L'; // implicit lineto after moveto
@@ -86,9 +90,12 @@ export function clipToRect(loop, x, y, w, h) {
 }
 
 // ------------------------------------------------------------- the parts
+const KNOWN = new Set(TEXTURES.map((t) => t.id));
+const suffix = (k) => (k < 26 ? '' : String.fromCharCode(96 + Math.floor(k / 26))) + String.fromCharCode(97 + (k % 26));
 /** Parts that get printed: [{ part, look }] where the part's material has a look. */
 export function printableParts(compiled, kit) {
   const look = resolveLook(kit);
+  for (const [mat, spec] of Object.entries(look)) if (!KNOWN.has(spec?.id)) delete look[mat]; // e.g. a retired texture in an old kit
   return compiled.parts.filter((p) => look[p.material]).map((part) => ({ part, look: look[part.material] }));
 }
 
@@ -99,8 +106,10 @@ export function printableParts(compiled, kit) {
  * back unchanged.
  */
 export function splitPart(part, W, H) {
-  const fits = (w, h) => (w <= W + 1e-9 && h <= H + 1e-9) || (h <= W + 1e-9 && w <= H + 1e-9);
+  // the same strict test as packParts, so nothing that passes here is rejected there
+  const fits = (w, h) => (w <= W && h <= H) || (h <= W && w <= H);
   if (fits(part.w, part.h)) return [part];
+  W -= 1e-6; H -= 1e-6; // panels a float-hair under the limit
   const grids = [[Math.ceil(part.w / W), Math.ceil(part.h / H)], [Math.ceil(part.w / H), Math.ceil(part.h / W)]];
   const [cols, rows] = grids.sort((a, b) => a[0] * a[1] - b[0] * b[1])[0];
   const pw = part.w / cols, ph = part.h / rows;
@@ -116,7 +125,7 @@ export function splitPart(part, W, H) {
     const w = bb.w, h = bb.h;
     return {
       ...part,
-      id: `${part.id}${String.fromCharCode(97 + k)}`,
+      id: `${part.id}${suffix(k)}`,
       name: `${part.name} (panel ${k + 1} of ${panels.length})`,
       polys: polys.map((l) => l.map(([x, y]) => [x - bb.x0, y - bb.y0])),
       scores: [], w, h,
@@ -128,12 +137,12 @@ export function splitPart(part, W, H) {
 
 /**
  * Textured parts packed onto print-area sheets, one material per sheet.
- * Placements carry their look. Returns { sheets, split } (ids of parts that
- * had to be cut into panels).
+ * Placements carry their look. Returns { sheets, split, oversize }: ids of
+ * parts cut into panels, and of any that still could not be placed.
  */
 export function printSheets(compiled, kit, { area = PRINT_AREA, bleed = PRINT_BLEED, gap = PART_GAP } = {}) {
   const items = printableParts(compiled, kit);
-  const sheets = [], split = [];
+  const sheets = [], split = [], oversize = [];
   const mats = compiled.usedMats || [];
   for (const mat of mats) {
     const mine = items.filter((x) => x.part.material === mat.id);
@@ -146,13 +155,14 @@ export function printSheets(compiled, kit, { area = PRINT_AREA, bleed = PRINT_BL
       return panels;
     });
     const packed = packParts(parts, area.w, area.h, { margin: bleed, gap: 2 * bleed + gap });
+    oversize.push(...packed.oversize.map((p) => p.id)); // should stay empty: splitPart makes everything fit
     packed.sheets.forEach((s, i) => sheets.push({
       ...s,
       placements: s.placements.map((pl) => ({ ...pl, look: lookOf.get(pl.part) })),
       material: mat, index: i + 1, count: packed.sheets.length,
     }));
   }
-  return { sheets, split };
+  return { sheets, split, oversize };
 }
 
 // ---------------------------------------------------------- texture shapes
@@ -255,11 +265,28 @@ const HOWTO = [
   ['The next pages are the 6.75 x 9.25 in print area at 100% (actual size).'],
   ['Turn off "fit to page". Textures run 1 mm past the thin cut lines (bleed).'],
   ['Print on the material named on each page, then cut on the lines.'],
+  ['Sheet pages come after these instructions, in this order:'],
 ];
 
-function howToPage(sheets, title) {
-  const c = new PdfCanvas(PRINT_AREA.w, PRINT_AREA.h);
+function howToPages(sheets, title) {
+  const pages = [];
+  let c = new PdfCanvas(PRINT_AREA.w, PRINT_AREA.h);
   let y = 14;
+  const line = (text) => { // wraps long lines, continues on a new page at the bottom
+    const words = text.split(' ');
+    let cur = '';
+    const flush = () => {
+      if (y > PRINT_AREA.h - 10) { pages.push(c.page()); c = new PdfCanvas(PRINT_AREA.w, PRINT_AREA.h); y = 14; }
+      c.fillColor(0.2, 0.2, 0.2).text(10, y, 7.5, cur);
+      y += 4.6;
+      cur = '    ';
+    };
+    for (const w of words) {
+      if (cur.trim() && (cur + ' ' + w).length > 100) flush();
+      cur = cur.trim() ? `${cur} ${w}` : `${cur}${w}`;
+    }
+    flush();
+  };
   c.fillColor(0, 0, 0).text(10, y, 12, `${title ? `${title} - ` : ''}print then cut`);
   y += 9;
   for (const [line, bold] of HOWTO) {
@@ -269,12 +296,10 @@ function howToPage(sheets, title) {
   y += 4;
   c.fillColor(0, 0, 0).text(10, y, 9, 'Sheets');
   y += 6;
-  sheets.forEach((s, k) => {
-    const ids = s.placements.map((pl) => `#${pl.part.id}`).join(' ');
-    c.fillColor(0.2, 0.2, 0.2).text(10, y, 7.5, `Page ${k + 2}: ${s.material.name} ${s.index}/${s.count} - parts ${ids}`);
-    y += 4.6;
-  });
-  return c.page();
+  const lines = sheets.map((s) => `${s.material.name} ${s.index}/${s.count} - parts ${s.placements.map((pl) => `#${pl.part.id}`).join(' ')}`);
+  lines.forEach((l, k) => line(`Sheet page ${k + 1}: ${l}`));
+  pages.push(c.page());
+  return pages;
 }
 
 function sheetPage(sheet, { scale, bleed }) {
@@ -332,11 +357,11 @@ function sheetPage(sheet, { scale, bleed }) {
 
 /** How-to page plus one print-area page per sheet. */
 export function printCutPDF(sheets, { scale = 12, title = '', bleed = PRINT_BLEED } = {}) {
-  const pages = [howToPage(sheets, title), ...sheets.map((s) => sheetPage(s, { scale, bleed }))];
+  const pages = [...howToPages(sheets, title), ...sheets.map((s) => sheetPage(s, { scale, bleed }))];
   return pdfDocument(pages, { title: title ? `${title} – print then cut` : 'Print then cut' });
 }
 
-export function printCutReadme(sheets, split = []) {
+export function printCutReadme(sheets, split = [], oversize = []) {
   return 'Print then cut: textured parts (wallpaper, flooring) to print on a home printer and cut on a Cricut.\n'
     + 'Every sheet fits Design Space\'s 6.75 × 9.25 in print area.\n\n'
     + 'Design Space: upload each print-sheet SVG, keep its size, select each part and click Flatten,\n'
@@ -345,18 +370,19 @@ export function printCutReadme(sheets, split = []) {
     + 'print-then-cut.pdf has the same sheets at 100% with a 1 mm bleed and thin cut lines,\n'
     + 'for other printers or cutting by hand. Turn off "fit to page" when printing.\n'
     + (split.length ? `\nParts ${split.map((id) => `#${id}`).join(', ')} are bigger than the print area, so they come in panels (a, b, ...). Butt the panels together when you glue them; the pattern lines up across the seam.\n` : '')
+    + (oversize.length ? `\nParts ${oversize.map((id) => `#${id}`).join(', ')} could not be placed in the print area and are missing here: cut them from the plain sheets.\n` : '')
     + '\nThese parts are also on the plain cut sheets: cut either the plain or the printed version.\n'
     + `\nSheets: ${sheets.map((s) => `${s.material.name} ${s.index}/${s.count}`).join(', ')}\n`;
 }
 
 /** The print-then-cut folder for the kit zip; [] when nothing is textured. */
 export function kitPrintCutFiles(compiled, kit) {
-  const { sheets, split } = printSheets(compiled, kit);
+  const { sheets, split, oversize } = printSheets(compiled, kit);
   if (!sheets.length) return [];
   const scale = kit.scale;
   return [
     ...sheets.map((s) => ({ name: `print-then-cut/${printSheetFileName(s)}`, data: printSheetSVG(s, { scale, title: `${kit.name} – print ${s.material.name} ${s.index}` }) })),
     { name: 'print-then-cut/print-then-cut.pdf', data: printCutPDF(sheets, { scale, title: kit.name }) },
-    { name: 'print-then-cut/README.txt', data: printCutReadme(sheets, split) },
+    { name: 'print-then-cut/README.txt', data: printCutReadme(sheets, split, oversize) },
   ];
 }

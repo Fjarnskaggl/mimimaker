@@ -937,7 +937,7 @@ function renderBuild(el) {
 function exportZip() {
   const files = kitCutFiles(compiled.sheets, compiled.machine, { drawLabels: kit.drawLabels, title: (s) => `${kit.name} – ${s.material.name} ${s.index}` }); // T3
   files.push(...kitHandCutFiles(compiled.sheets, { title: kit.name })); // T3
-  files.push(...kitPrintCutFiles(compiled, kit)); // T3
+  try { files.push(...kitPrintCutFiles(compiled, kit)); } catch (e) { console.warn('print-then-cut skipped:', e); } // T3: never block the kit
   files.push({ name: 'assembly-guide.html', data: guideHTML(kit, compiled) });
   if (compiled.lighting?.enabled && compiled.lighting.leds.length) files.push({ name: 'led-map.svg', data: ledMapSVG(compiled, { standalone: true }) });
   if (shoppingFile(compiled.lighting)) files.push(shoppingFile(compiled.lighting)); // [T5] shopping list
