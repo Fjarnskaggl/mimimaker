@@ -5,7 +5,11 @@
 import { archPoly, ellipsePoly, rectPoly } from '../geometry.js';
 
 export const ALL_FACES = ['bottom', 'top', 'front', 'back', 'left', 'right'];
-export const X = [1, 0, 0], Y = [0, 1, 0], Z = [0, 0, 1];
+// One export per statement: the single-file bundler only sees the first name
+// of `export const a = …, b = …`.
+export const X = [1, 0, 0];
+export const Y = [0, 1, 0];
+export const Z = [0, 0, 1];
 
 /** Heights of n evenly spaced shelves inside a box of height H. */
 export function evenShelves(n, H, t, hasTop = true) {
