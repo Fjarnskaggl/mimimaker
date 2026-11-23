@@ -91,9 +91,13 @@ function occlusionSort(items, cam) {
   return order;
 }
 
-function shade(hex, k) {
+// Night: surfaces drop to moonlight (dim, slightly blue); lights get halos.
+const NIGHT_TINT = [0.34, 0.37, 0.48];
+const HALOS = [[4.5, 0.1], [2.6, 0.16]];
+
+function shade(hex, k, tint = [1, 1, 1]) {
   const n = parseInt(hex.slice(1), 16);
-  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => Math.round(Math.min(255, c * k)));
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c, i) => Math.round(Math.min(255, c * k * tint[i])));
   return `rgb(${ch.join(',')})`;
 }
 
@@ -101,7 +105,7 @@ function shade(hex, k) {
  * @param {Array} faces  {layer, polys: [[x,y,z]…][], n, color, opacity, cull}
  * @param {object} view  {yaw, pitch} in degrees
  */
-export function renderScene(faces, { yaw = -32, pitch = 26 } = {}) {
+export function renderScene(faces, { yaw = -32, pitch = 26, night = false } = {}) {
   const ya = (yaw * Math.PI) / 180, pa = (pitch * Math.PI) / 180;
   const cam = [Math.sin(ya) * Math.cos(pa), -Math.cos(ya) * Math.cos(pa), Math.sin(pa)];
   const fwd = cam.map((v) => -v);
@@ -124,9 +128,16 @@ export function renderScene(faces, { yaw = -32, pitch = 26 } = {}) {
     const bb = [Infinity, Infinity, -Infinity, -Infinity];
     for (const [x, y] of outline) { bb[0] = Math.min(bb[0], x); bb[1] = Math.min(bb[1], y); bb[2] = Math.max(bb[2], x); bb[3] = Math.max(bb[3], y); }
     drawn.push({
-      face, depth: dot(c, fwd), opacity, ghost, fill: shade(face.color, k), poly2, outline, bb,
+      face, depth: dot(c, fwd), opacity, ghost, fill: shade(face.color, k, night ? NIGHT_TINT : undefined), poly2, outline, bb,
       pts: face.polys[0], n: face.n, d: dot(face.n, face.polys[0][0]),
     });
+    if (night && face.glow && face.opacity >= 1) {
+      // concentric halos around each bulb, drawn under it
+      for (const [scale, op] of HALOS) {
+        const c2 = outline.reduce((sum, p) => [sum[0] + p[0] / outline.length, sum[1] + p[1] / outline.length], [0, 0]);
+        drawn.push({ face: { ...face, halo: true }, opacity: op, poly2: [outline.map(([x, y]) => [c2[0] + (x - c2[0]) * scale, c2[1] + (y - c2[1]) * scale])], depth: 0 });
+      }
+    }
   }
   // fixed layers: room shell, overlays & decor on surfaces, furniture (occlusion
   // sorted), then ghosted walls (so they never hide anything) and lights on top
@@ -134,6 +145,7 @@ export function renderScene(faces, { yaw = -32, pitch = 26 } = {}) {
   const byRank = [0, 1, 2, 3, 4].map((r) => drawn.filter((d) => rank(d) === r));
   byRank[1].sort((a, b) => a.face.layer - b.face.layer);
   byRank[2] = occlusionSort(byRank[2], cam);
+  byRank[4].sort((a, b) => Number(!a.face.halo) - Number(!b.face.halo)); // halos under bulbs
   drawn.length = 0;
   for (const group of byRank) drawn.push(...group);
 
@@ -146,6 +158,7 @@ export function renderScene(faces, { yaw = -32, pitch = 26 } = {}) {
   const vb = [x0 - pad, y0 - pad, x1 - x0 + 2 * pad, y1 - y0 + 2 * pad].map((v) => v.toFixed(2)).join(' ');
   const paths = drawn.map((d) => {
     const dStr = d.poly2.map((poly) => 'M' + poly.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join('L') + 'Z').join('');
+    if (d.face.halo) return `<path class="halo" d="${dStr}" fill="${d.face.color}" fill-opacity="${d.opacity}"/>`;
     if (d.face.glow) return `<path d="${dStr}" fill="${d.face.color}" fill-opacity="${d.opacity}"/>`;
     return `<path d="${dStr}" fill="${d.fill}" fill-opacity="${d.opacity}" fill-rule="evenodd" stroke="rgba(40,30,20,${d.ghost ? 0.25 : 0.55})" stroke-width="0.25" stroke-linejoin="round"/>`;
   });

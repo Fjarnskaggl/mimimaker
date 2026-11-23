@@ -16,11 +16,19 @@
     </div>
     <input id="kit-name" class="kit-name" aria-label="Kit name" spellcheck="false">
     <div class="actions">
+      <button id="btn-undo" class="ghost" type="button" title="Undo (Ctrl/⌘ Z)" disabled>↶ Undo</button>
+      <button id="btn-redo" class="ghost" type="button" title="Redo (Ctrl/⌘ Shift Z)" disabled>↷ Redo</button>
       <button id="btn-new" class="ghost" type="button">New</button>
       <label class="ghost button" for="file-open">Open…</label>
       <input id="file-open" type="file" accept=".json,application/json" hidden>
       <button id="btn-save" class="ghost" type="button">Save .json</button>
+      <button id="btn-share" class="ghost" type="button">Share link</button>
       <button id="btn-zip" class="primary" type="button">Download kit (.zip)</button>
+    </div>
+    <div id="share-pop" class="share-pop" hidden role="dialog" aria-label="Share link">
+      <label for="share-url">Share this design: free, no account needed</label>
+      <div class="share-row"><input id="share-url" readonly><button id="share-copy" type="button" class="small">Copy</button><button id="share-close" type="button" class="small ghost" aria-label="Close">✕</button></div>
+      <p id="share-note" class="hint"></p>
     </div>
   </header>
 
@@ -30,7 +38,8 @@
       <div class="main-head">
         <nav class="tabs" role="tablist">
           <button role="tab" data-tab="preview" aria-selected="true">3D preview</button>
-          <button role="tab" data-tab="sheets" aria-selected="false">Cut sheets</button>
+          <button role="tab" data-tab="plan" aria-selected="false">Floor plan</button>
+          <button role="tab" data-tab="sheets" aria-selected="false">Make</button>
           <button role="tab" data-tab="ledmap" aria-selected="false">LED map</button>
           <button role="tab" data-tab="guide" aria-selected="false">Assembly guide</button>
         </nav>

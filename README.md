@@ -26,7 +26,15 @@ there.)
 npm test
 ```
 
-runs the geometry and kit tests with Node's built-in test runner (Node 18+).
+runs the unit tests with Node's built-in test runner (Node 18+). Browser tests
+for the studio UI (floor plan, undo, night mode, fit test, share links, phone
+layout) use Playwright with Chromium:
+
+```bash
+npm run test:e2e
+```
+
+New features are written test-first: add a failing test, then the code.
 
 To get a single self-contained HTML file (all CSS/JS inlined, opens from
 `file://` or any host), run:
@@ -76,7 +84,22 @@ Plus the room box itself (optional ceiling), rectangular / arched / round
 windows, doors and arched doors with trim frames, and wallpaper and floor
 overlays cut to match the openings.
 
-**LED lighting** — place micro LEDs on the walls, ceiling or floor (e.g.
+**Studio tools**
+- **Floor plan** tab: drag furniture around the room (snaps to a 5 cm grid; hold Alt
+  for free placement), slide windows, doors, wall pieces and wall lights along
+  their walls. Overlapping pieces are outlined in red. Shortcuts: R rotate,
+  D duplicate, Delete, arrow keys nudge (Shift for 10 cm).
+- **Undo / redo** for every change (Ctrl/⌘ Z, Ctrl/⌘ Shift Z).
+- **Night mode** in the 3D preview to see the LEDs glow.
+- **Fit test** (Make tab): cut a small comb for each board you use, push a scrap
+  into the numbered slots and click the snug one; every joint re-sizes to your
+  actual board.
+- **Cut-time estimates** and the matching Cricut Design Space material setting
+  for every sheet.
+- **Share links**: the whole design is compressed into the link, so anyone can
+  open their own copy. Free, no account, no server.
+
+ — place micro LEDs on the walls, ceiling or floor (e.g.
 inside a floor lamp or fireplace). mimimaker cuts a wire hole through the
 panel and its wallpaper at each light, plans a route for every wire along
 the outside of the box to a battery box or USB lead (avoiding windows and

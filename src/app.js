@@ -5,7 +5,13 @@ import { CATALOG, THEMES, defaultKit, defaultMaterialFor } from './catalog.js';
 import { ROOM_TYPES, applyRoomType } from './templates.js';
 import { LED_COLORS, POWER_KINDS } from './lighting.js';
 import { ledMapSVG, ledRows } from './ledmap.js';
-import { DEFAULT_MATERIALS, MACHINES, SCALES } from './materials.js';
+import { DEFAULT_MATERIALS, MACHINES, SCALES, withMaterialDefaults } from './materials.js';
+import { History } from './history.js';
+import { collisions, moveItem, rotateItem, slideOnWall, snap, itemParams } from './plan.js';
+import { planSVG, posOnWall } from './planview.js';
+import { fitCoupon, couponSVG, calibrate, estimateCutMinutes, formatMinutes } from './make.js';
+import { shareHash, kitFromHash, decodeKit } from './share.js';
+import { itemSize } from './catalog.js';
 import { renderScene } from './preview3d.js';
 import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg.js';
 import { guideHTML } from './guide.js';
@@ -16,7 +22,7 @@ const $ = (sel) => document.querySelector(sel);
 
 let kit = loadKit() || defaultKit();
 let compiled = null;
-const view = { tab: 'preview', yaw: -32, pitch: 26, theme: 'Basics' };
+const view = { tab: 'preview', yaw: -32, pitch: 26, theme: 'Basics', night: false, sel: null, snap: 5 };
 const openCards = new WeakSet(); // item / LED cards the viewer expanded
 
 // ------------------------------------------------------------------ helpers
@@ -70,6 +76,7 @@ function normalizeKit(k) {
   const base = defaultKit();
   const out = { ...base, ...k, room: { ...base.room, ...(k.room || {}) } };
   if (!Array.isArray(out.materials) || !out.materials.length) out.materials = structuredClone(DEFAULT_MATERIALS);
+  out.materials = out.materials.map(withMaterialDefaults);
   out.openings = Array.isArray(k.openings) ? k.openings : [];
   out.items = Array.isArray(k.items) ? k.items : [];
   const L = k.lighting || {};
@@ -127,6 +134,39 @@ function update({ sidebar = false } = {}) {
   renderSummary();
   renderWarnings();
   renderView();
+  if (!restoring) (sidebar ? commitNow() : scheduleCommit());
+}
+
+// ---------------------------------------------------------------- history
+const undoHistory = new History(150);
+let commitTimer = null;
+let restoring = false;
+function commitNow() {
+  clearTimeout(commitTimer);
+  commitTimer = null;
+  undoHistory.push(JSON.stringify(kit));
+  updateUndoButtons();
+}
+function scheduleCommit() {
+  clearTimeout(commitTimer);
+  commitTimer = setTimeout(commitNow, 400); // typing in a field becomes one undo step
+}
+function restore(state) {
+  if (!state) return;
+  restoring = true;
+  kit = normalizeKit(JSON.parse(state));
+  $('#kit-name').value = kit.name;
+  view.sel = null;
+  update({ sidebar: true });
+  restoring = false;
+  updateUndoButtons();
+}
+function undo() { if (commitTimer) commitNow(); restore(undoHistory.undo()); }
+function redo() { if (commitTimer) commitNow(); restore(undoHistory.redo()); }
+function updateUndoButtons() {
+  const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
+  if (u) u.disabled = !undoHistory.canUndo;
+  if (r) r.disabled = !undoHistory.canRedo;
 }
 const changed = () => update();
 const restructured = () => update({ sidebar: true });
@@ -394,6 +434,7 @@ function renderSummary() {
     h('span', {}, 'Model ', h('b', {}, `${dims.W.toFixed(0)} × ${dims.D.toFixed(0)} × ${dims.H.toFixed(0)} mm`)),
     h('span', {}, h('b', {}, parts.length), ' parts'),
     h('span', {}, h('b', {}, sheets.length), ` sheet${sheets.length === 1 ? '' : 's'}`),
+    h('span', {}, 'cut ≈ ', h('b', {}, formatMinutes(sheets.reduce((t, s) => t + estimateCutMinutes(s), 0)))),
   );
 }
 
@@ -405,6 +446,7 @@ function renderView() {
   document.querySelectorAll('.tabs [role=tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === view.tab)));
   const el = $('#view');
   if (view.tab === 'preview') renderPreview(el);
+  else if (view.tab === 'plan') renderPlan(el);
   else if (view.tab === 'sheets') renderSheets(el);
   else if (view.tab === 'ledmap') renderLedMap(el);
   else renderGuide(el);
@@ -416,9 +458,13 @@ function renderPreview(el) {
     stage = h('div', { class: 'stage' });
     const yaw = h('input', { type: 'range', min: -80, max: 80, value: view.yaw, 'aria-label': 'Rotate', oninput: (e) => { view.yaw = Number(e.target.value); drawScene(); } });
     const pitch = h('input', { type: 'range', min: 5, max: 80, value: view.pitch, 'aria-label': 'Tilt', oninput: (e) => { view.pitch = Number(e.target.value); drawScene(); } });
+    const night = h('button', {
+      id: 'night-toggle', type: 'button', class: 'night-toggle', 'aria-pressed': String(view.night),
+      onclick: () => { view.night = !view.night; night.setAttribute('aria-pressed', String(view.night)); night.lastChild.textContent = view.night ? 'Lights on' : 'Lights off'; drawScene(); },
+    }, h('i'), view.night ? 'Lights on' : 'Lights off');
     el.replaceChildren(stage, h('div', { class: 'stage-tools' },
-      h('label', {}, 'Rotate ', yaw), h('label', {}, 'Tilt ', pitch),
-      h('span', {}, 'Drag the model to orbit. Colours follow the material swatches.')));
+      night, h('label', {}, 'Rotate ', yaw), h('label', {}, 'Tilt ', pitch),
+      h('span', {}, 'Drag the model to orbit.')));
     let drag = null;
     stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
     stage.addEventListener('pointermove', (e) => {
@@ -436,7 +482,34 @@ function renderPreview(el) {
 }
 function drawScene() {
   const stage = document.querySelector('.stage');
-  if (stage && compiled) stage.innerHTML = renderScene(compiled.faces3d, view);
+  if (!stage || !compiled) return;
+  stage.classList.toggle('night', view.night);
+  stage.innerHTML = renderScene(compiled.faces3d, view);
+}
+
+function renderCalibration() {
+  const boards = compiled.usedMats.filter((m) => m.kind === 'board');
+  if (!boards.length) return null;
+  const cards = boards.map((m) => {
+    const c = fitCoupon(m);
+    return h('article', { class: 'calib-card', 'data-calibrate': m.id },
+      h('header', {},
+        h('span', { class: 'sw', style: `background:${m.color}` }),
+        h('strong', {}, m.name),
+        m.calibrated ? h('span', { class: 'calibrated' }, `Calibrated · ${m.thickness.toFixed(2)} mm`) : h('span', { class: 'uncal' }, 'Not calibrated'),
+        h('button', { class: 'small', type: 'button', onclick: () => download(`fit-test-${m.id}.svg`, couponSVG(m), 'image/svg+xml') }, 'Fit-test SVG')),
+      h('p', { class: 'hint' }, 'Cut the comb, push a scrap of this board into each numbered slot, and click the first one that holds it snugly without forcing:'),
+      h('div', { class: 'slots' }, c.slots.map((sl) => h('button', {
+        class: 'slot', type: 'button', 'aria-pressed': String(Math.abs(sl.width - m.thickness) < 1e-6 && !!m.calibrated),
+        onclick: () => {
+          const i = kit.materials.findIndex((x) => x.id === m.id);
+          kit.materials[i] = calibrate(kit.materials[i], sl.width);
+          restructured();
+          toast(`${m.name} set to ${sl.width.toFixed(2)} mm — every joint now fits that board.`);
+        },
+      }, h('b', {}, sl.index), ` ${sl.width.toFixed(2)} mm`))));
+  });
+  return h('section', { class: 'calib' }, h('h3', {}, 'Fit test'), h('div', { class: 'calib-grid' }, cards));
 }
 
 function renderSheets(el) {
@@ -451,10 +524,164 @@ function renderSheets(el) {
         h('strong', {}, `${s.material.name} · ${s.index}/${s.count}`),
         h('button', { class: 'small', type: 'button', onclick: () => download(sheetFileName(s), sheetCutSVG(s, { drawLabels: kit.drawLabels, title: `${kit.name} – ${s.material.name} ${s.index}` }), 'image/svg+xml') }, 'SVG')),
       h('div', { html: sheetPreviewSVG(s) }),
+      h('div', { class: 'cut-time' }, `≈ ${formatMinutes(estimateCutMinutes(s))} · Design Space: ${withMaterialDefaults(s.material).cricut}${s.material.tool === 'knife' ? ` · ${withMaterialDefaults(s.material).passes} passes` : ''}`),
       h('div', { class: 'meta' }, `${s.w}×${s.h} mm · ${s.placements.length} parts: ${s.placements.map((p) => '#' + p.part.id).sort((a, b) => a.slice(1) - b.slice(1)).join(' ')}`));
     return card;
   });
-  el.replaceChildren(legend, h('div', { class: 'sheets-grid' }, cards));
+  el.replaceChildren(...[renderCalibration(), legend, h('div', { class: 'sheets-grid' }, cards)].filter(Boolean));
+}
+
+// --------------------------------------------------------------- floor plan
+function selectedEntity() {
+  const s = view.sel;
+  if (!s) return null;
+  if (s.kind === 'item') return kit.items[s.index] ? { ...s, obj: kit.items[s.index], def: CATALOG[kit.items[s.index].type] } : null;
+  if (s.kind === 'opening') return kit.openings[s.index] ? { ...s, obj: kit.openings[s.index] } : null;
+  if (s.kind === 'led') return kit.lighting.leds[s.index] ? { ...s, obj: kit.lighting.leds[s.index] } : null;
+  return null;
+}
+const isFloorItem = (e) => e?.kind === 'item' && e.def?.placement === 'floor';
+
+function drawPlan() {
+  const host = document.querySelector('.plan-canvas');
+  if (!host) return;
+  const clashes = new Set(collisions(kit).flat());
+  host.innerHTML = planSVG(kit, { selected: view.sel, clashes });
+  const side = document.querySelector('.plan-side');
+  if (side) side.replaceChildren(...planSide(clashes));
+}
+
+function planSide(clashes) {
+  const e = selectedEntity();
+  const out = [];
+  if (e) {
+    const label = e.kind === 'item' ? e.def.label : e.kind === 'opening' ? OPENING_KINDS.find((k) => k[0] === e.obj.kind)?.[1] || 'Opening' : `Light L${e.index + 1}`;
+    const where = e.kind === 'item' && e.def.placement === 'floor'
+      ? `${Math.round(e.obj.x)} cm from left · ${Math.round(e.obj.y)} cm from back · ${e.obj.rot || 0}°`
+      : e.obj.wall ? `${e.obj.wall} wall · ${Math.round(e.obj.pos ?? 0)} cm along` : `${Math.round(e.obj.x)} × ${Math.round(e.obj.y)} cm`;
+    out.push(h('div', { class: 'sel-card' },
+      h('div', { class: 'k' }, 'Selected'), h('strong', {}, label), h('span', { class: 'hint' }, where),
+      clashes.has(e.index) && e.kind === 'item' ? h('div', { class: 'warn' }, 'Overlaps another piece.') : null,
+      h('div', { class: 'card-actions' },
+        isFloorItem(e) ? h('button', { class: 'small', type: 'button', onclick: () => planAction('rotate') }, 'Rotate (R)') : null,
+        e.kind === 'item' ? h('button', { class: 'small', type: 'button', onclick: () => planAction('duplicate') }, 'Duplicate (D)') : null,
+        h('button', { class: 'small danger', type: 'button', onclick: () => planAction('delete') }, 'Delete'))));
+  } else {
+    out.push(h('div', { class: 'sel-card' }, h('strong', {}, 'Click a piece to select it'),
+      h('span', { class: 'hint' }, 'Drag furniture around the room; wall pieces, windows, doors and wall lights slide along their wall.')));
+  }
+  out.push(selectField('Snap to grid', view.snap, [[0, 'Off'], [1, '1 cm'], [5, '5 cm'], [10, '10 cm']], (v) => { view.snap = Number(v); }));
+  out.push(h('div', { class: 'shortcuts' },
+    h('div', { class: 'k' }, 'Shortcuts'),
+    ...[['R', 'rotate'], ['D', 'duplicate'], ['Del', 'delete'], ['Arrows', 'nudge 1 cm (Shift: 10)'], ['Alt + drag', 'no snapping'], ['Ctrl/⌘ Z', 'undo'], ['Ctrl/⌘ ⇧ Z', 'redo']]
+      .map(([k, v]) => h('div', {}, h('kbd', {}, k), ` ${v}`))));
+  if (clashes.size) out.push(h('div', { class: 'warn' }, `${clashes.size} pieces overlap — they're outlined in red.`));
+  return out;
+}
+
+function planAction(action) {
+  const e = selectedEntity();
+  if (!e) return;
+  if (action === 'rotate' && isFloorItem(e)) rotateItem(kit, e.index);
+  if (action === 'duplicate' && e.kind === 'item') {
+    const copy = structuredClone(e.obj);
+    if (e.def.placement === 'floor') { copy.x = (copy.x ?? 0) + 10; copy.y = (copy.y ?? 0) + 10; } else copy.pos = (copy.pos ?? 0) + 10;
+    kit.items.splice(e.index + 1, 0, copy);
+    if (e.def.placement === 'floor') moveItem(kit, e.index + 1, copy.x, copy.y);
+    view.sel = { kind: 'item', index: e.index + 1 };
+  }
+  if (action === 'delete') {
+    const list = e.kind === 'item' ? kit.items : e.kind === 'opening' ? kit.openings : kit.lighting.leds;
+    list.splice(e.index, 1);
+    view.sel = null;
+  }
+  restructured();
+}
+
+function nudge(dx, dy) {
+  const e = selectedEntity();
+  if (!e) return;
+  if (isFloorItem(e)) moveItem(kit, e.index, (e.obj.x ?? 0) + dx, (e.obj.y ?? 0) + dy);
+  else if (e.kind === 'led' && e.obj.mount !== 'wall') { e.obj.x = (e.obj.x ?? 0) + dx; e.obj.y = (e.obj.y ?? 0) + dy; }
+  else if (e.obj.wall) {
+    const along = e.obj.wall === 'back' ? dx : -dy;
+    slideOnWall(e.obj, (e.obj.pos ?? 0) + along, kit.room, { width: entityWidth(e) });
+  }
+  changed();
+}
+
+function entityWidth(e) {
+  if (e.kind === 'opening') return e.obj.width;
+  if (e.kind === 'item') return itemSize(e.obj.type, itemParams(e.obj))[0];
+  return 0;
+}
+
+function renderPlan(el) {
+  if (!el.querySelector('.plan-wrap')) {
+    const canvas = h('div', { class: 'plan-canvas', tabindex: '0', 'aria-label': 'Floor plan editor' });
+    el.replaceChildren(h('div', { class: 'plan-wrap' }, canvas, h('aside', { class: 'plan-side' })));
+    canvas.addEventListener('pointerdown', (ev) => {
+      const target = ev.target.closest('[data-index],[data-oi],[data-li]');
+      if (!target) { view.sel = null; drawPlan(); return; }
+      const kind = target.dataset.index != null ? 'item' : target.dataset.oi != null ? 'opening' : 'led';
+      const index = Number(target.dataset.index ?? target.dataset.oi ?? target.dataset.li);
+      view.sel = { kind, index };
+      const e = selectedEntity();
+      const svg = canvas.querySelector('svg');
+      const toPlan = (cx, cy) => {
+        const pt = svg.createSVGPoint();
+        pt.x = cx; pt.y = cy;
+        const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+        return [p.x, p.y];
+      };
+      const p0 = toPlan(ev.clientX, ev.clientY);
+      const start = { x: e.obj.x ?? 0, y: e.obj.y ?? 0, pos: e.obj.pos ?? 0 };
+      let moved = false;
+      const onMove = (mv) => {
+        const p = toPlan(mv.clientX, mv.clientY);
+        const dx = p[0] - p0[0], dy = p[1] - p0[1];
+        if (!moved && Math.hypot(dx, dy) < 1) return;
+        moved = true;
+        const step = mv.altKey ? 0 : view.snap;
+        if (isFloorItem(e)) moveItem(kit, index, start.x + dx, start.y + dy, { step });
+        else if (e.obj.wall && (e.kind !== 'led' || e.obj.mount === 'wall')) slideOnWall(e.obj, posOnWall(e.obj.wall, p, kit.room), kit.room, { width: entityWidth(e), step });
+        else if (e.kind === 'led') {
+          e.obj.x = Math.min(Math.max(snap(start.x + dx, step), 0), kit.room.width);
+          e.obj.y = Math.min(Math.max(snap(start.y + dy, step), 0), kit.room.depth);
+        }
+        drawPlan();
+      };
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        if (moved) restructured(); else drawPlan();
+        canvas.focus({ preventScroll: true });
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      ev.preventDefault();
+      drawPlan();
+    });
+  }
+  drawPlan();
+}
+
+function onKey(ev) {
+  const tag = ev.target?.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  const mod = ev.ctrlKey || ev.metaKey;
+  const key = ev.key.toLowerCase();
+  if (mod && key === 'z') { ev.preventDefault(); ev.shiftKey ? redo() : undo(); return; }
+  if (mod && key === 'y') { ev.preventDefault(); redo(); return; }
+  if (view.tab !== 'plan' || mod || ev.altKey) return;
+  const step = ev.shiftKey ? 10 : 1;
+  const actions = {
+    r: () => planAction('rotate'), d: () => planAction('duplicate'),
+    delete: () => planAction('delete'), backspace: () => planAction('delete'),
+    escape: () => { view.sel = null; drawPlan(); },
+    arrowleft: () => nudge(-step, 0), arrowright: () => nudge(step, 0), arrowup: () => nudge(0, -step), arrowdown: () => nudge(0, step),
+  };
+  if (actions[key] && (view.sel || key === 'escape')) { ev.preventDefault(); actions[key](); }
 }
 
 function renderLedMap(el) {
@@ -511,7 +738,41 @@ function exportZip() {
   download(`${slug(kit.name)}.zip`, makeZip(files), 'application/zip');
 }
 
-function init() {
+async function shareLink() {
+  const pop = $('#share-pop');
+  pop.hidden = false;
+  $('#share-url').value = '';
+  $('#share-url').placeholder = 'Making link…';
+  $('#share-note').textContent = '';
+  const url = location.href.split('#')[0] + await shareHash(kit);
+  $('#share-url').value = url;
+  $('#share-url').select();
+  try { await navigator.clipboard.writeText(url); $('#share-note').textContent = 'Copied. Anyone with the link gets their own copy of this design.'; } catch {
+    $('#share-note').textContent = 'Copy the link above. Anyone with it gets their own copy of this design.';
+  }
+  if (inArtifact) $('#share-note').textContent += ' Links open in the website version of mimimaker.';
+}
+
+async function init() {
+  const shared = kitFromHash(location.hash);
+  if (shared) {
+    try {
+      kit = normalizeKit(await decodeKit(shared));
+      setTimeout(() => toast(`Opened a shared design: ${kit.name}. Your own designs are untouched until you edit this one.`), 0);
+    } catch {
+      setTimeout(() => toast('That share link is damaged, so your last design was opened instead.', 'error'), 0);
+    }
+    try { window.history.replaceState(null, "", location.pathname + location.search); } catch { /* ignore */ }
+  }
+  window.mimimaker = { get kit() { return kit; }, refresh: () => restructured() };
+  document.addEventListener('keydown', onKey);
+  $('#btn-undo').addEventListener('click', undo);
+  $('#btn-redo').addEventListener('click', redo);
+  $('#btn-share').addEventListener('click', shareLink);
+  $('#share-close').addEventListener('click', () => { $('#share-pop').hidden = true; });
+  $('#share-copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('#share-url').value); $('#share-note').textContent = 'Copied.'; } catch { $('#share-url').select(); }
+  });
   const nameInput = $('#kit-name');
   nameInput.value = kit.name;
   nameInput.addEventListener('input', () => { kit.name = nameInput.value; changed(); });

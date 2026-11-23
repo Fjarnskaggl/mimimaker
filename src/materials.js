@@ -5,16 +5,36 @@
 //        'fabric' → flat pieces only (rugs, cushions)
 // tool:  the Cricut blade the material needs.
 
+// cricut: the closest Design Space material setting. passes / speed (mm/s)
+// feed the cut-time estimate; they are rough averages, not machine specs.
 export const DEFAULT_MATERIALS = [
-  { id: 'chip2', name: 'Chipboard 2.0 mm', thickness: 2.0, kind: 'board', tool: 'knife', sheet: [279, 279], color: '#b8956a' },
-  { id: 'chip15', name: 'Chipboard 1.5 mm', thickness: 1.5, kind: 'board', tool: 'knife', sheet: [279, 279], color: '#c9a77d' },
-  { id: 'bass16', name: 'Basswood 1/16" (1.6 mm)', thickness: 1.6, kind: 'board', tool: 'knife', sheet: [279, 279], color: '#e6d2a6' },
-  { id: 'bass08', name: 'Basswood 1/32" (0.8 mm)', thickness: 0.8, kind: 'board', tool: 'knife', sheet: [279, 279], color: '#eedfbf' },
-  { id: 'card110', name: 'Heavy cardstock 110 lb', thickness: 0.38, kind: 'card', tool: 'fine', sheet: [305, 305], color: '#f3efe4' },
-  { id: 'card65', name: 'Cardstock 65 lb', thickness: 0.25, kind: 'card', tool: 'fine', sheet: [216, 279], color: '#c9d8e2' },
-  { id: 'paper', name: 'Patterned paper', thickness: 0.15, kind: 'card', tool: 'fine', sheet: [305, 305], color: '#e8c4bb' },
-  { id: 'felt', name: 'Craft felt 1 mm', thickness: 1.0, kind: 'fabric', tool: 'rotary', sheet: [229, 305], color: '#9db592' },
+  { id: 'chip2', name: 'Chipboard 2.0 mm', thickness: 2.0, kind: 'board', tool: 'knife', sheet: [279, 279], color: '#b8956a', cricut: 'Heavy Chipboard – 2.0 mm', passes: 16, speed: 12 },
+  { id: 'chip15', name: 'Chipboard 1.5 mm', thickness: 1.5, kind: 'board', tool: 'knife', sheet: [279, 279], color: '#c9a77d', cricut: 'Chipboard – 1.5 mm', passes: 13, speed: 12 },
+  { id: 'bass16', name: 'Basswood 1/16" (1.6 mm)', thickness: 1.6, kind: 'board', tool: 'knife', sheet: [279, 279], color: '#e6d2a6', cricut: 'Basswood – 1/16"', passes: 11, speed: 12 },
+  { id: 'bass08', name: 'Basswood 1/32" (0.8 mm)', thickness: 0.8, kind: 'board', tool: 'knife', sheet: [279, 279], color: '#eedfbf', cricut: 'Basswood – 1/32"', passes: 6, speed: 12 },
+  { id: 'card110', name: 'Heavy cardstock 110 lb', thickness: 0.38, kind: 'card', tool: 'fine', sheet: [305, 305], color: '#f3efe4', cricut: 'Heavy Cardstock – 100 lb', passes: 1, speed: 50 },
+  { id: 'card65', name: 'Cardstock 65 lb', thickness: 0.25, kind: 'card', tool: 'fine', sheet: [216, 279], color: '#c9d8e2', cricut: 'Medium Cardstock – 80 lb', passes: 1, speed: 50 },
+  { id: 'paper', name: 'Patterned paper', thickness: 0.15, kind: 'card', tool: 'fine', sheet: [305, 305], color: '#e8c4bb', cricut: 'Patterned Paper', passes: 1, speed: 60 },
+  { id: 'felt', name: 'Craft felt 1 mm', thickness: 1.0, kind: 'fabric', tool: 'rotary', sheet: [229, 305], color: '#9db592', cricut: 'Felt', passes: 1, speed: 35 },
 ];
+
+const TOOL_DEFAULTS = {
+  knife: { cricut: 'Chipboard – 1.5 mm', passes: 12, speed: 12 },
+  fine: { cricut: 'Medium Cardstock – 80 lb', passes: 1, speed: 50 },
+  rotary: { cricut: 'Felt', passes: 1, speed: 35 },
+};
+
+/** Fill in cut settings missing from materials saved by older versions. */
+export function withMaterialDefaults(m) {
+  const preset = DEFAULT_MATERIALS.find((d) => d.id === m.id) || {};
+  const tool = TOOL_DEFAULTS[m.tool] || TOOL_DEFAULTS.fine;
+  return {
+    ...m,
+    cricut: m.cricut || preset.cricut || tool.cricut,
+    passes: m.passes || preset.passes || tool.passes,
+    speed: m.speed || preset.speed || tool.speed,
+  };
+}
 
 export const MACHINES = {
   maker: { name: 'Cricut Maker / Maker 3', cut: [292, 597], tools: ['fine', 'knife', 'rotary'] },
