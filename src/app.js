@@ -33,7 +33,8 @@ import { kitCutFiles, machineReadme } from './export/machines.js';
 // T2 shells
 import { shellSection, applyRoomLocks } from './ui/t2.js';
 // [T5] lighting UI
-import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField } from './ui/t5.js';
+import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton } from './ui/t5.js';
+import { shoppingFile } from './lighting/shopping.js';
 
 const STORE_KEY = 'mimimaker.kit.v1';
 const $ = (sel) => document.querySelector(sel);
@@ -468,6 +469,7 @@ function lightingInspector() {
         renderSupplyField(L.power, changed), // [T5] supply picker
         numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
       renderMountField(L.power, changed), // [T5] mount picker
+      renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
       h('div', { class: 'grid3' },
         selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
         numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
@@ -924,6 +926,7 @@ function exportZip() {
   const files = kitCutFiles(compiled.sheets, compiled.machine, { drawLabels: kit.drawLabels, title: (s) => `${kit.name} – ${s.material.name} ${s.index}` }); // T3
   files.push({ name: 'assembly-guide.html', data: guideHTML(kit, compiled) });
   if (compiled.lighting?.enabled && compiled.lighting.leds.length) files.push({ name: 'led-map.svg', data: ledMapSVG(compiled, { standalone: true }) });
+  if (shoppingFile(compiled.lighting)) files.push(shoppingFile(compiled.lighting)); // [T5] shopping list
   files.push({ name: 'kit.json', data: JSON.stringify(kit, null, 2) });
   files.push({
     name: 'README.txt',

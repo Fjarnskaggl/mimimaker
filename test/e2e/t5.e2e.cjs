@@ -104,6 +104,7 @@ const fs = require('node:fs');
 
 test('the kit zip carries shopping-list.csv when there are lights', async () => {
   const page = await open();
+  await page.click('[data-step=make]');
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btn-zip')]);
   const zip = fs.readFileSync(await dl.path()).toString('latin1');
   assert.ok(zip.includes('shopping-list.csv'), 'file in the zip');

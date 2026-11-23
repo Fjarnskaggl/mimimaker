@@ -175,3 +175,10 @@ export function renderMountField(power, onChange) {
     }));
   return el('label', { class: 'field' }, 'Mounting', sel);
 }
+
+// ------------------------------------------------------------ shopping list
+
+/** "Shopping list" button for the Power section; `onDownload` saves the file. */
+export function renderShoppingButton(onDownload) {
+  return el('button', { type: 'button', class: 'mm-btn mm-btn--sm', 'data-t5': 'shopping', title: 'Parts to buy, with rough prices (CSV)', onclick: onDownload }, 'Shopping list');
+}

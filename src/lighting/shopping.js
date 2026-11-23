@@ -109,3 +109,9 @@ export function shoppingListCSV(list) {
   rows.push(['', 'Total (estimate)', '', money(list.total.low), money(list.total.high)]);
   return rows.map((r) => r.map(csvCell).join(',')).join('\n') + '\n';
 }
+
+/** The shopping list as a file for the kit zip or a download, or null without lights. */
+export function shoppingFile(lighting) {
+  const list = shoppingList(lighting);
+  return list ? { name: 'shopping-list.csv', data: shoppingListCSV(list), type: 'text/csv' } : null;
+}
