@@ -112,4 +112,19 @@ export const DECOR = [
     }],
     note: 'The score lines mark the hour ticks and hands — trace them with a fine black pen, or set the time you like before cutting.',
   },
+  {
+    id: 'pottedtree', label: 'Potted tree', theme: 'Decor', placement: 'floor', mat: 'card',
+    tags: ['plant', 'green'], difficulty: 2,
+    params: [num('p', 'Pot width', 15, 50), num('ph', 'Pot height', 15, 50), num('h', 'Tree height', 80, 220), num('cw', 'Crown width', 40, 120)],
+    defaults: { p: 30, ph: 28, h: 160, cw: 70 },
+    size: ['max(cw, p)', 'max(cw, p)', 'h'],
+    let: { W: 'max(cw, p)', tw: 'max(2, p * 0.15)', ch: 'h * 0.55' },
+    components: [
+      { kind: 'box', name: 'Pot', size: ['p', 'p', 'ph'], faces: ['bottom', 'front', 'back', 'left', 'right'], at: ['(W - p) / 2', '(W - p) / 2', 0] },
+      { kind: 'flat', name: 'Trunk', plane: { upright: { y: 'W / 2', z: 'ph * 0.5' } }, polys: [{ rect: ['(W - tw) / 2', 0, 'tw', 'h - ph * 0.5 - ch * 0.5'] }] },
+      { kind: 'flat', name: 'Crown A', plane: { upright: { x: '(W - cw) / 2', y: 'W / 2', z: 'h - ch' } }, polys: [{ plant: ['cw', 'ch'] }] },
+      { kind: 'flat', name: 'Crown B', plane: { custom: { o: ['W / 2', '(W - cw) / 2', 'h - ch'], U: [0, 1, 0], V: [0, 0, 1], n: [-1, 0, 0] } }, polys: [{ plant: ['cw', 'ch'] }] },
+    ],
+    note: 'Slit one crown from the top and the other from the bottom to the middle, slide them together crosswise, then glue the trunk into the pot with the crowns on top.',
+  },
 ];

@@ -196,6 +196,57 @@
    "max@card": "42a43eb2bdb4f876"
   }
  },
+ "piano": {
+  "label": "Upright piano",
+  "meta": "e66dfc995eb4c11f",
+  "components": [
+   "box:Piano",
+   "box:Keybed",
+   "box:Leg 1",
+   "box:Leg 2"
+  ],
+  "cases": {
+   "defaults@board": "c19d5a81c30df9c0",
+   "defaults@card": "c19d5a81c30df9c0",
+   "min@board": "563e01d1ba21373f",
+   "min@card": "563e01d1ba21373f",
+   "max@board": "58db326c03b30d13",
+   "max@card": "58db326c03b30d13"
+  }
+ },
+ "firescreen": {
+  "label": "Fire screen",
+  "meta": "fb8ae07fecdb9594",
+  "components": [
+   "flat:Panel 1",
+   "flat:Panel 2",
+   "flat:Panel 3"
+  ],
+  "cases": {
+   "defaults@board": "9c9edbc191817895",
+   "defaults@card": "9c9edbc191817895",
+   "min@board": "9350513ac3b1cb20",
+   "min@card": "9350513ac3b1cb20",
+   "max@board": "4b9ff0c3f786ab04",
+   "max@card": "4b9ff0c3f786ab04"
+  }
+ },
+ "lamptable": {
+  "label": "Lamp table",
+  "meta": "497a6df866e76ad8",
+  "components": [
+   "box:Lamp table",
+   "flat:Round top"
+  ],
+  "cases": {
+   "defaults@board": "f736e0bf6b2dc1bf",
+   "defaults@card": "abe83e8b4c241b8b",
+   "min@board": "81d0a8eea0642df7",
+   "min@card": "043360ec6b4d8b9e",
+   "max@board": "8389ac3472138676",
+   "max@card": "a55589e12b775549"
+  }
+ },
  "bed": {
   "label": "Bed",
   "meta": "69a026d740d518b5",
@@ -273,6 +324,41 @@
    "min@card": "8a4152e55e4b5e6f",
    "max@board": "b0eeb5172e158212",
    "max@card": "47c97a2783c72d9f"
+  }
+ },
+ "dressingtable": {
+  "label": "Dressing table",
+  "meta": "9115e6afdf06acac",
+  "components": [
+   "box:Dressing table",
+   "flat:Mirror frame"
+  ],
+  "cases": {
+   "defaults@board": "81753b8048cdaecf",
+   "defaults@card": "81753b8048cdaecf",
+   "min@board": "dc62c0e7a6f62902",
+   "min@card": "dc62c0e7a6f62902",
+   "max@board": "5d25a3fb4aab7f41",
+   "max@card": "5d25a3fb4aab7f41"
+  }
+ },
+ "crib": {
+  "label": "Crib",
+  "meta": "fab39a2c84d26296",
+  "components": [
+   "box:Mattress base",
+   "flat:Side front",
+   "flat:Side back",
+   "flat:End left",
+   "flat:End right"
+  ],
+  "cases": {
+   "defaults@board": "59e775ff5b03fd52",
+   "defaults@card": "59e775ff5b03fd52",
+   "min@board": "ad585db884ce1df3",
+   "min@card": "ad585db884ce1df3",
+   "max@board": "906a81af59fe9fe7",
+   "max@card": "906a81af59fe9fe7"
   }
  },
  "counter": {
@@ -549,6 +635,22 @@
    "max@card": "83bc6857217f438d"
   }
  },
+ "windowseat": {
+  "label": "Window seat",
+  "meta": "8363fafe4ef845f5",
+  "components": [
+   "box:Window seat",
+   "flat:Cushion"
+  ],
+  "cases": {
+   "defaults@board": "b35da4a07b530dfe",
+   "defaults@card": "3ff5bd0483482a67",
+   "min@board": "ec0048534bc1393a",
+   "min@card": "ec0048534bc1393a",
+   "max@board": "532532f3c449ace7",
+   "max@card": "b3b9772d4e5b6314"
+  }
+ },
  "rug": {
   "label": "Rug",
   "meta": "79ad57f327d3875d",
@@ -676,6 +778,24 @@
    "min@card": "29b2aee48fcf4782",
    "max@board": "989ee8b6e73d4c5b",
    "max@card": "989ee8b6e73d4c5b"
+  }
+ },
+ "pottedtree": {
+  "label": "Potted tree",
+  "meta": "403a663b79daf1dc",
+  "components": [
+   "box:Pot",
+   "flat:Trunk",
+   "flat:Crown A",
+   "flat:Crown B"
+  ],
+  "cases": {
+   "defaults@board": "aa4b9f51a7baa1e0",
+   "defaults@card": "aa4b9f51a7baa1e0",
+   "min@board": "677af6395d1c7c45",
+   "min@card": "677af6395d1c7c45",
+   "max@board": "e9aee8aee8a06c6a",
+   "max@card": "e9aee8aee8a06c6a"
   }
  }
 }
