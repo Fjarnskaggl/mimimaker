@@ -104,3 +104,25 @@ test('the library fits a phone screen', async () => {
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('part counts stay on one line, in the design system\'s muted ink', async () => {
+  const page = await open();
+  await page.fill('#t1-piece-search', 'storage'); // many cards with long names in the narrow drawer
+  const counts = await page.$$eval('.piece .t1-parts', (els) => els.map((e) => ({ text: e.textContent, lines: e.getClientRects().length })));
+  assert.ok(counts.length > 5, 'every card shows its part count');
+  for (const c of counts) {
+    assert.match(c.text, /^\d+ parts?$/);
+    assert.equal(c.lines, 1, `"${c.text}" is not split across lines`);
+  }
+  const [meta, token] = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--ink-muted)';
+    document.body.append(probe);
+    const want = getComputedStyle(probe).color;
+    probe.remove();
+    return [getComputedStyle(document.querySelector('.piece .t1-meta')).color, want];
+  });
+  assert.equal(meta, token);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

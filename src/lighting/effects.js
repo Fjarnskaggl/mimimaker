@@ -42,11 +42,13 @@ export function effectLoad(led) {
       return { color, mA: base.mA, duty: EFFECTS.candle.duty, bulbs: 1, needs5V: false };
     case 'fairy': {
       const bulbs = Math.max(1, Math.round(led.bulbs ?? EFFECTS.fairy.defaults.bulbs));
-      return { color, mA: bulbs * EFFECTS.fairy.mAPerBulb, duty: 1, bulbs, needs5V: false };
+      const lengthMm = led.lengthMm ?? EFFECTS.fairy.defaults.lengthMm;
+      return { color, mA: bulbs * EFFECTS.fairy.mAPerBulb, duty: 1, bulbs, needs5V: false, lengthMm };
     }
     case 'strip': {
       const bulbs = stripLeds(led);
-      return { color, mA: bulbs * EFFECTS.strip.mAPerLed, duty: 1, bulbs, needs5V: true };
+      const { lengthMm, ledsPerM } = stripSpec(led);
+      return { color, mA: bulbs * EFFECTS.strip.mAPerLed, duty: 1, bulbs, needs5V: true, lengthMm, ledsPerM };
     }
     default:
       return { color, mA: base.mA, duty: clamp01(led.duty ?? 1), bulbs: 1, needs5V: false };
