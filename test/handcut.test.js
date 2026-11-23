@@ -6,7 +6,7 @@ import { defaultKit } from '../src/catalog.js';
 import { placementTransform } from '../src/nest.js';
 import { rectPoly } from '../src/geometry.js';
 import { PdfCanvas, pdfDocument, MM } from '../src/export/pdf.js';
-import { PAPER, tileGrid, handCutPages, handCutPDF } from '../src/export/handcut.js';
+import { PAPER, tileGrid, handCutPages, handCutPDF, contentBox } from '../src/export/handcut.js';
 
 const latin1 = (bytes) => Buffer.from(bytes).toString('latin1');
 
@@ -86,7 +86,7 @@ const compiled = compileKit(defaultKit());
 test('hand-cut PDF: one page per tile, A4 or Letter, valid structure', () => {
   for (const paper of ['a4', 'letter']) {
     const pages = handCutPages(compiled.sheets, { paper, title: 'Test kit' });
-    const expected = compiled.sheets.reduce((n, s) => n + tileGrid(s.w, s.h, paper).tiles.length, 0);
+    const expected = compiled.sheets.reduce((n, s) => { const b = contentBox(s); return n + tileGrid(b.w, b.h, paper).tiles.length; }, 0);
     assert.equal(pages.length, expected, paper);
     const pdf = parsePDF(handCutPDF(compiled.sheets, { paper, title: 'Test kit' }));
     assert.equal(pdf.pages, expected);
@@ -108,12 +108,27 @@ test('each tile page is clipped, labelled, has a scale check and alignment marks
   for (const p of multi) assert.match(p.content, /\[[\d. ]+\] 0 d/, 'dashed overlap/alignment lines on tiled pages');
 });
 
+test('only the area the parts use is printed (no empty sheet margins)', () => {
+  for (const s of compiled.sheets) {
+    const b = contentBox(s);
+    assert.ok(b.x >= 0 && b.y >= 0 && b.x + b.w <= s.w + 1e-9 && b.y + b.h <= s.h + 1e-9);
+    for (const pl of s.placements) for (const loop of pl.part.polys) for (const [x, y] of loop.map(placementTransform(pl))) {
+      assert.ok(x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h, 'every outline inside the printed box');
+    }
+  }
+  // a full 279 mm chipboard sheet fits two A4 pages instead of four
+  const big = compiled.sheets.find((s) => s.w === 279 && s.h === 279);
+  const b = contentBox(big);
+  assert.ok(tileGrid(b.w, b.h, 'a4').tiles.length < tileGrid(big.w, big.h, 'a4').tiles.length);
+});
+
 test('part outlines land at the right place on a single-tile page', () => {
   const p = { id: 1, polys: [rectPoly(0, 0, 40, 20)], scores: [], w: 40, h: 20, label: { x: 20, y: 10, size: 3 }, name: 'Box', group: 'G' };
   const sheet = { w: 120, h: 80, material: { name: 'Card' }, index: 1, count: 1, placements: [{ part: p, angle: 0, rot: false, x: 15, y: 25, w: 40, h: 20 }] };
   const [page] = handCutPages([sheet], { paper: 'a4', margin: 10 });
   const T = placementTransform(sheet.placements[0]);
   const [sx, sy] = T(p.polys[0][0]); // sheet mm, y-down
-  const want = [(10 + sx) * MM, (297 - (10 + sy)) * MM].map((v) => v.toFixed(2));
+  const b = contentBox(sheet);
+  const want = [(10 + sx - b.x) * MM, (297 - (10 + sy - b.y)) * MM].map((v) => v.toFixed(2));
   assert.ok(page.content.includes(`${want[0]} ${want[1]} m`), `expected moveto ${want.join(' ')}`);
 });
