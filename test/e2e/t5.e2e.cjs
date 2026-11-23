@@ -100,6 +100,31 @@ test('the power box can be mounted flush behind its wall', async () => {
   await page.close();
 });
 
+test('a hidden base shows its switch fields and adds the base parts', async () => {
+  const page = await open();
+  await page.click('[data-step=light]');
+  await page.evaluate(() => { for (const d of document.querySelectorAll('details.section')) d.open = true; });
+  assert.equal(await page.locator('select[data-t5=switch-at]').count(), 0, 'no switch fields before the base');
+  await page.selectOption('select[data-t5=mount]', 'base');
+  await page.evaluate(() => { for (const d of document.querySelectorAll('details.section')) d.open = true; });
+  await page.locator('select[data-t5=switch-at]').waitFor({ timeout: 3000 });
+  await page.selectOption('select[data-t5=switch-at]', 'left');
+  await page.selectOption('select[data-t5=switch-kind]', 'push');
+  const res = await page.evaluate(() => ({
+    power: JSON.parse(JSON.stringify(window.mimimaker.kit.lighting.power)),
+    groups: window.mimimaker.compiled.groups.map((g) => g.title),
+    face: window.mimimaker.compiled.lighting.power.base?.switch.face,
+  }));
+  assert.equal(res.power.mount, 'base');
+  assert.equal(res.power.switchAt, 'left');
+  assert.equal(res.power.switch, 'push');
+  assert.ok(res.groups.includes('Hidden base'));
+  assert.equal(res.face, 'left');
+  if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 't5-hidden-base.png') });
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 const fs = require('node:fs');
 
 test('the kit zip carries shopping-list.csv when there are lights', async () => {

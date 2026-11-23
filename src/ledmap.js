@@ -59,7 +59,9 @@ export function ledMapSVG(compiled, { standalone = false } = {}) {
   const bw = fs * 4.2, bh = fs * 2.4;
   out.push(`<rect x="${f(px - bw / 2)}" y="${f(py - bh / 2)}" width="${f(bw)}" height="${f(bh)}" rx="${f(fs * 0.3)}" fill="#33302c" stroke="#000" stroke-width="${f(fs * 0.05)}"/>`);
   const supplyId = lighting.power.supply || (lighting.power.kind === 'usb' ? 'usb' : 'aa2');
-  out.push(`<text x="${f(px)}" y="${f(py)}" font-size="${f(fs * 0.75)}" fill="#fff" text-anchor="middle" dominant-baseline="central" font-weight="700">${SUPPLY_LABEL[supplyId] || 'BATTERY'}</text>`);
+  // a hidden base: the box marks the wire hole down into the base
+  const boxLabel = lighting.power.face === 'base' ? 'BASE ↓' : SUPPLY_LABEL[supplyId] || 'BATTERY';
+  out.push(`<text x="${f(px)}" y="${f(py)}" font-size="${f(fs * 0.75)}" fill="#fff" text-anchor="middle" dominant-baseline="central" font-weight="700">${boxLabel}</text>`);
   // LEDs
   lighting.leds.forEach((led, i) => {
     const [x, y] = P(led.p);

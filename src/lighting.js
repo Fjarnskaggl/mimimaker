@@ -19,6 +19,7 @@ import { effectOf, effectLoad, effectWarnings } from './lighting/effects.js';
 import { planCutouts } from './lighting/cutouts.js';
 import { planCover, coverRange } from './lighting/cover.js';
 import { wiredLights, planShellLed } from './lighting/shell.js';
+import { baseLayout } from './lighting/base.js';
 
 export const LED_COLORS = {
   warm: { name: 'Warm white', hex: '#ffc767' },
@@ -99,7 +100,8 @@ export function routeWire(a, b, dims, obstacles = []) {
 
 /**
  * @param lighting kit.lighting
- * @param ctx { s, t, W, D, H, Wi, Di, Hi, ceiling, wallInfo, openings, shellLights?, shellObstacles? }
+ * @param ctx { s, t, W, D, H, Wi, Di, Hi, ceiling, wallInfo, openings, shellLights?, shellObstacles?, baseT? }
+ *   baseT: thickness of the board a hidden base is cut from (default t)
  *   shellLights: LEDs a shell places itself, with wire paths to its own back-wall holes (lighting/shell.js)
  *   shellObstacles: windows in a shell's back wall (back panel polygons) for routes and the power box to avoid
  */
@@ -127,11 +129,21 @@ export function planLighting(lighting, ctx) {
   const pw = lighting.power || {};
   const pWall = wallInfo[pw.wall] ? pw.wall : 'back';
   const pu = wallInfo[pWall].u0 + (pw.pos ?? 0) * s, pv = t + (pw.elev ?? 0) * s;
-  const power = { face: pWall, u: pu, v: pv, p: netPoint(pWall, pu, pv, ctx), kind: pw.kind || 'battery' };
-  if (pu < 0 || pu > wallInfo[pWall].u0 + wallInfo[pWall].len || pv < 0 || pv > t + Hi) {
+  // hidden base (Rolife-style): the box sits under the room and the wires come in beside its hatch
+  const base = pw.mount === 'base'
+    ? baseLayout({ supply: supplyFor(pw), pos: pWall === 'back' ? pw.pos : undefined, switchAt: pw.switchAt, switchKind: pw.switch, W: ctx.W, D, t: ctx.baseT ?? t, s })
+    : null;
+  if (base && pWall !== 'back') {
+    warnings.push({ level: 'info', msg: 'In the hidden base the battery box sits under the back of the room, in the middle — set the power box to the back wall to move it along.' });
+  }
+  const power = base
+    ? { face: 'base', u: base.entry.x, v: 0, p: [base.entry.x, 0], kind: pw.kind || 'battery', base }
+    : { face: pWall, u: pu, v: pv, p: netPoint(pWall, pu, pv, ctx), kind: pw.kind || 'battery' };
+  if (base) warnings.push(...base.warnings);
+  else if (pu < 0 || pu > wallInfo[pWall].u0 + wallInfo[pWall].len || pv < 0 || pv > t + Hi) {
     warnings.push(`The power box is off the ${pWall} wall — move it.`);
   }
-  if (pWall === 'back' && obstacles.some((o) => o.window && power.p[0] > o.x0 - 15 && power.p[0] < o.x1 + 15 && power.p[1] > o.y0 - 10 && power.p[1] < o.y1 + 10)) {
+  if (!base && pWall === 'back' && obstacles.some((o) => o.window && power.p[0] > o.x0 - 15 && power.p[0] < o.x1 + 15 && power.p[1] > o.y0 - 10 && power.p[1] < o.y1 + 10)) {
     warnings.push('The power box sits over a window in the back wall — move it lower or to one side.');
   }
 
@@ -159,9 +171,11 @@ export function planLighting(lighting, ctx) {
     warnings.push(...effectWarnings(led, place, title));
     addHole(face, u, v);
     const p = netPoint(face, u, v, ctx);
-    const route = routeWire({ face, p }, power, ctx, obstacles);
+    // into a hidden base, a floor light's wires drop straight through its hole
+    const route = base && face === 'bottom' ? { points: [p], crossesOpening: false } : routeWire({ face, p }, power, ctx, obstacles);
     if (route.crossesOpening) warnings.push(`${label}'s wire would cross a window or door on the outside — tape it around the opening by hand.`);
-    const length = pathLength(route.points) + t;
+    const inBase = !base ? 0 : face === 'bottom' ? base.floorRun(u, v) : base.inRun;
+    const length = pathLength(route.points) + t + inBase;
     leds.push({
       label, name: led.name || '', mount: led.mount, face, u, v, p, color: led.color || 'warm',
       route: route.points, length, leadCm: Math.ceil((length / 10 + 3) / 5) * 5,
@@ -170,17 +184,17 @@ export function planLighting(lighting, ctx) {
   });
   // LEDs the shell places itself: its own holes, wired from there (#16)
   for (const light of wiredLights(ctx.shellLights)) {
-    const led = planShellLed(light, leds.length, { power, t, route: (a, b) => routeWire(a, b, ctx, obstacles) });
+    const led = planShellLed(light, leds.length, { power, t: t + (base ? base.inRun : 0), route: (a, b) => routeWire(a, b, ctx, obstacles) });
     if (led.crossesOpening) warnings.push(`${led.label}'s wire would cross a window or door on the outside — tape it around the opening by hand.`);
     leds.push(led);
   }
-  if (leds.some((l) => l.face === 'bottom')) {
+  if (!base && leds.some((l) => l.face === 'bottom')) {
     warnings.push({ level: 'info', msg: 'Floor lights feed their wires underneath the room — glue 3–4 mm feet (or felt pads) under the floor so the wires aren\'t pinched.' });
   }
   const circuit = planCircuit(leds.map((l) => l.load), supplyFor(pw));
   power.supply = circuit.supply.id;
-  const cut = planCutouts({ ...power, mount: pw.mount }, ctx);
-  power.mount = pw.mount === 'flush' ? 'flush' : 'outside';
+  const cut = planCutouts({ ...power, mount: base ? 'base' : pw.mount }, ctx);
+  power.mount = base ? 'base' : pw.mount === 'flush' ? 'flush' : 'outside';
   power.cutouts = cut.cutouts;
   for (const c of cut.cutouts) (holes[c.face] ||= []).push(c.poly);
   warnings.push(...cut.warnings);
