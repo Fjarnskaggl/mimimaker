@@ -1,0 +1,275 @@
+{
+  "format": "mimimaker-kit",
+  "formatVersion": 1,
+  "meta": {
+    "id": "bathroom",
+    "title": "Seaside Bathroom",
+    "author": "mimimaker",
+    "licence": "CC0",
+    "remixedFrom": null,
+    "description": "Bathtub under a round window, vanity with mirror light, and toilet.",
+    "tags": [
+      "starter"
+    ]
+  },
+  "kit": {
+    "version": 1,
+    "scale": 24,
+    "machine": "maker",
+    "fingerWidth": 0,
+    "tabWidth": 5,
+    "drawLabels": false,
+    "materials": [
+      {
+        "id": "chip2",
+        "name": "Chipboard 2.0 mm",
+        "thickness": 2,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#b8956a",
+        "cricut": "Heavy Chipboard – 2.0 mm",
+        "passes": 16,
+        "speed": 12
+      },
+      {
+        "id": "chip15",
+        "name": "Chipboard 1.5 mm",
+        "thickness": 1.5,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#c9a77d",
+        "cricut": "Chipboard – 1.5 mm",
+        "passes": 13,
+        "speed": 12
+      },
+      {
+        "id": "bass16",
+        "name": "Basswood 1/16\" (1.6 mm)",
+        "thickness": 1.6,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#e6d2a6",
+        "cricut": "Basswood – 1/16\"",
+        "passes": 11,
+        "speed": 12
+      },
+      {
+        "id": "bass08",
+        "name": "Basswood 1/32\" (0.8 mm)",
+        "thickness": 0.8,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#eedfbf",
+        "cricut": "Basswood – 1/32\"",
+        "passes": 6,
+        "speed": 12
+      },
+      {
+        "id": "card110",
+        "name": "Heavy cardstock 110 lb",
+        "thickness": 0.38,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#ffffff",
+        "cricut": "Heavy Cardstock – 100 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "card65",
+        "name": "Cardstock 65 lb",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#f1f1ee",
+        "cricut": "Medium Cardstock – 80 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "paper",
+        "name": "Patterned paper",
+        "thickness": 0.15,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#cde6ec",
+        "cricut": "Patterned Paper",
+        "passes": 1,
+        "speed": 60
+      },
+      {
+        "id": "felt",
+        "name": "Craft felt 1 mm",
+        "thickness": 1,
+        "kind": "fabric",
+        "tool": "rotary",
+        "sheet": [
+          229,
+          305
+        ],
+        "color": "#9db592",
+        "cricut": "Felt",
+        "passes": 1,
+        "speed": 35
+      }
+    ],
+    "name": "Seaside Bathroom",
+    "room": {
+      "width": 240,
+      "depth": 200,
+      "height": 250,
+      "ceiling": false,
+      "material": "chip2",
+      "wallpaper": {
+        "enabled": true,
+        "material": "paper"
+      },
+      "floor": {
+        "enabled": true,
+        "material": "card65"
+      },
+      "trimMaterial": "card110"
+    },
+    "openings": [
+      {
+        "wall": "back",
+        "kind": "round",
+        "pos": 200,
+        "sill": 140,
+        "width": 50,
+        "height": 50,
+        "trim": true
+      },
+      {
+        "wall": "right",
+        "kind": "door",
+        "pos": 150,
+        "sill": 0,
+        "width": 70,
+        "height": 200,
+        "trim": true
+      }
+    ],
+    "items": [
+      {
+        "type": "bathtub",
+        "params": {
+          "w": 170,
+          "d": 75,
+          "h": 55
+        },
+        "material": "card110",
+        "x": 0,
+        "y": 0,
+        "rot": 0
+      },
+      {
+        "type": "vanity",
+        "params": {
+          "w": 80,
+          "d": 45,
+          "h": 85
+        },
+        "material": "chip15",
+        "x": 195,
+        "y": 100,
+        "rot": 270
+      },
+      {
+        "type": "mirror",
+        "params": {
+          "w": 50,
+          "border": 4
+        },
+        "material": "card110",
+        "wall": "right",
+        "pos": 60,
+        "elev": 150
+      },
+      {
+        "type": "toilet",
+        "params": {
+          "w": 40,
+          "d": 68,
+          "h": 78
+        },
+        "material": "card110",
+        "x": 0,
+        "y": 110,
+        "rot": 90
+      },
+      {
+        "type": "rug",
+        "params": {
+          "w": 80,
+          "d": 50,
+          "shape": "rect"
+        },
+        "material": "felt",
+        "x": 90,
+        "y": 110,
+        "rot": 0
+      },
+      {
+        "type": "plant",
+        "params": {
+          "w": 20,
+          "h": 22,
+          "leaf": 50
+        },
+        "material": "card110",
+        "x": 175,
+        "y": 10,
+        "rot": 0
+      }
+    ],
+    "lighting": {
+      "enabled": true,
+      "holeDiameter": 3,
+      "power": {
+        "wall": "right",
+        "pos": 20,
+        "elev": 30,
+        "kind": "battery"
+      },
+      "leds": [
+        {
+          "name": "Mirror light",
+          "mount": "wall",
+          "wall": "right",
+          "pos": 60,
+          "elev": 190,
+          "color": "cool"
+        }
+      ]
+    }
+  }
+}

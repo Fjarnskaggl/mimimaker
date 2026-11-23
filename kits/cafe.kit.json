@@ -1,0 +1,341 @@
+{
+  "format": "mimimaker-kit",
+  "formatVersion": 1,
+  "meta": {
+    "id": "cafe",
+    "title": "Corner Café",
+    "author": "mimimaker",
+    "licence": "CC0",
+    "remixedFrom": null,
+    "description": "Counter with stools, display shelving, menu board, café tables and pendant lights.",
+    "tags": [
+      "starter"
+    ]
+  },
+  "kit": {
+    "version": 1,
+    "scale": 24,
+    "machine": "maker",
+    "fingerWidth": 0,
+    "tabWidth": 5,
+    "drawLabels": false,
+    "materials": [
+      {
+        "id": "chip2",
+        "name": "Chipboard 2.0 mm",
+        "thickness": 2,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#b8956a",
+        "cricut": "Heavy Chipboard – 2.0 mm",
+        "passes": 16,
+        "speed": 12
+      },
+      {
+        "id": "chip15",
+        "name": "Chipboard 1.5 mm",
+        "thickness": 1.5,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#c9a77d",
+        "cricut": "Chipboard – 1.5 mm",
+        "passes": 13,
+        "speed": 12
+      },
+      {
+        "id": "bass16",
+        "name": "Basswood 1/16\" (1.6 mm)",
+        "thickness": 1.6,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#e6d2a6",
+        "cricut": "Basswood – 1/16\"",
+        "passes": 11,
+        "speed": 12
+      },
+      {
+        "id": "bass08",
+        "name": "Basswood 1/32\" (0.8 mm)",
+        "thickness": 0.8,
+        "kind": "board",
+        "tool": "knife",
+        "sheet": [
+          279,
+          279
+        ],
+        "color": "#eedfbf",
+        "cricut": "Basswood – 1/32\"",
+        "passes": 6,
+        "speed": 12
+      },
+      {
+        "id": "card110",
+        "name": "Heavy cardstock 110 lb",
+        "thickness": 0.38,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#2f2b28",
+        "cricut": "Heavy Cardstock – 100 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "card65",
+        "name": "Cardstock 65 lb",
+        "thickness": 0.25,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          216,
+          279
+        ],
+        "color": "#c4a888",
+        "cricut": "Medium Cardstock – 80 lb",
+        "passes": 1,
+        "speed": 50
+      },
+      {
+        "id": "paper",
+        "name": "Patterned paper",
+        "thickness": 0.15,
+        "kind": "card",
+        "tool": "fine",
+        "sheet": [
+          305,
+          305
+        ],
+        "color": "#f2dcc2",
+        "cricut": "Patterned Paper",
+        "passes": 1,
+        "speed": 60
+      },
+      {
+        "id": "felt",
+        "name": "Craft felt 1 mm",
+        "thickness": 1,
+        "kind": "fabric",
+        "tool": "rotary",
+        "sheet": [
+          229,
+          305
+        ],
+        "color": "#9db592",
+        "cricut": "Felt",
+        "passes": 1,
+        "speed": 35
+      }
+    ],
+    "name": "Corner Café",
+    "room": {
+      "width": 340,
+      "depth": 240,
+      "height": 270,
+      "ceiling": true,
+      "material": "chip2",
+      "wallpaper": {
+        "enabled": true,
+        "material": "paper"
+      },
+      "floor": {
+        "enabled": true,
+        "material": "card65"
+      },
+      "trimMaterial": "card110"
+    },
+    "openings": [
+      {
+        "wall": "back",
+        "kind": "arch",
+        "pos": 120,
+        "sill": 100,
+        "width": 50,
+        "height": 100,
+        "trim": true
+      },
+      {
+        "wall": "right",
+        "kind": "archdoor",
+        "pos": 50,
+        "sill": 0,
+        "width": 90,
+        "height": 215,
+        "trim": true
+      }
+    ],
+    "items": [
+      {
+        "type": "displayshelf",
+        "params": {
+          "w": 80,
+          "d": 35,
+          "h": 200,
+          "shelves": 4
+        },
+        "material": "bass16",
+        "x": 10,
+        "y": 0,
+        "rot": 0
+      },
+      {
+        "type": "cafecounter",
+        "params": {
+          "w": 180,
+          "d": 60,
+          "h": 100,
+          "count": 4
+        },
+        "material": "chip15",
+        "x": 150,
+        "y": 0,
+        "rot": 0
+      },
+      {
+        "type": "chalkboard",
+        "params": {
+          "w": 100,
+          "h": 60,
+          "border": 4
+        },
+        "material": "card110",
+        "wall": "back",
+        "pos": 240,
+        "elev": 185
+      },
+      {
+        "type": "stool",
+        "params": {
+          "w": 35,
+          "d": 35,
+          "h": 75
+        },
+        "material": "chip15",
+        "x": 180,
+        "y": 75,
+        "rot": 0
+      },
+      {
+        "type": "stool",
+        "params": {
+          "w": 35,
+          "d": 35,
+          "h": 75
+        },
+        "material": "chip15",
+        "x": 245,
+        "y": 75,
+        "rot": 0
+      },
+      {
+        "type": "cafetable",
+        "params": {
+          "w": 60,
+          "d": 60,
+          "h": 75
+        },
+        "material": "bass16",
+        "x": 55,
+        "y": 150,
+        "rot": 0
+      },
+      {
+        "type": "chair",
+        "params": {
+          "w": 45,
+          "d": 45,
+          "seat": 45,
+          "back": 90
+        },
+        "material": "bass16",
+        "x": 5,
+        "y": 157,
+        "rot": 90
+      },
+      {
+        "type": "cafetable",
+        "params": {
+          "w": 60,
+          "d": 60,
+          "h": 75
+        },
+        "material": "bass16",
+        "x": 200,
+        "y": 150,
+        "rot": 0
+      },
+      {
+        "type": "chair",
+        "params": {
+          "w": 45,
+          "d": 45,
+          "seat": 45,
+          "back": 90
+        },
+        "material": "bass16",
+        "x": 262,
+        "y": 157,
+        "rot": 270
+      },
+      {
+        "type": "plant",
+        "params": {
+          "w": 30,
+          "h": 30,
+          "leaf": 80
+        },
+        "material": "card65",
+        "x": 300,
+        "y": 205,
+        "rot": 0
+      }
+    ],
+    "lighting": {
+      "enabled": true,
+      "holeDiameter": 3,
+      "power": {
+        "wall": "back",
+        "pos": 320,
+        "elev": 240,
+        "kind": "usb"
+      },
+      "leds": [
+        {
+          "name": "Pendant over left table",
+          "mount": "ceiling",
+          "x": 85,
+          "y": 180,
+          "color": "warm"
+        },
+        {
+          "name": "Pendant over right table",
+          "mount": "ceiling",
+          "x": 230,
+          "y": 180,
+          "color": "warm"
+        },
+        {
+          "name": "Counter light",
+          "mount": "ceiling",
+          "x": 240,
+          "y": 40,
+          "color": "amber"
+        }
+      ]
+    }
+  }
+}
