@@ -146,3 +146,16 @@ test('Hide wires behind a cover adds the frame and cover panel to the kit', asyn
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('turning the cover on moves a low power box so it opens without a warning', async () => {
+  const page = await open();
+  await page.evaluate(() => { const k = window.mimimaker.kit; k.lighting.power = { ...k.lighting.power, wall: 'back', pos: 20, elev: 5 }; window.mimimaker.refresh(); });
+  await page.click('[data-step=light]');
+  await page.evaluate(() => { for (const d of document.querySelectorAll('details.section')) d.open = true; });
+  await page.check('input[data-t5=cover]');
+  const p = await page.evaluate(() => ({ ...window.mimimaker.kit.lighting.power }));
+  assert.ok(p.pos > 20 && p.elev > 5, `moved to ${p.pos}, ${p.elev}`);
+  assert.equal(await page.locator('#warnings', { hasText: 'cable cover' }).count(), 0);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
