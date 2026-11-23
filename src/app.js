@@ -627,8 +627,10 @@ function renderPlan(el) {
       const index = Number(target.dataset.index ?? target.dataset.oi ?? target.dataset.li);
       view.sel = { kind, index };
       const e = selectedEntity();
-      const svg = canvas.querySelector('svg');
+      // The plan re-renders while dragging, so always measure against the
+      // SVG that is on screen now (a detached one has no screen position).
       const toPlan = (cx, cy) => {
+        const svg = canvas.querySelector('svg');
         const pt = svg.createSVGPoint();
         pt.x = cx; pt.y = cy;
         const p = pt.matrixTransform(svg.getScreenCTM().inverse());

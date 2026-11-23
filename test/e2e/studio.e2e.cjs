@@ -30,20 +30,42 @@ async function open(url = URL) {
 }
 const kit = (page) => page.evaluate(() => JSON.parse(JSON.stringify(window.mimimaker.kit)));
 
-test('floor plan: drag moves an item on a 5 cm grid', async () => {
+test('floor plan: drag moves an item by the distance dragged, on a 5 cm grid', async () => {
   const page = await open();
   await page.click('[data-tab=plan]');
-  const before = (await kit(page)).items[0];
-  const box = await page.locator('.plan-item[data-index="0"]').boundingBox();
+  const cmPerPx = await page.evaluate(() => 1 / document.querySelector('.plan-canvas svg').getScreenCTM().a);
+  for (const [dxPx, dyPx] of [[60, 30], [-40, 50], [10, 0]]) {
+    const before = (await kit(page)).items[0];
+    const box = await page.locator('.plan-item[data-index="0"]').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + dxPx, box.y + box.height / 2 + dyPx, { steps: 6 });
+    await page.mouse.up();
+    const after = (await kit(page)).items[0];
+    const want = [Math.max(0, before.x + dxPx * cmPerPx), Math.max(0, before.y + dyPx * cmPerPx)];
+    assert.ok(Math.abs(after.x - want[0]) <= 3, `x: dragged ${dxPx}px from ${before.x} → expected ≈${want[0].toFixed(1)}, got ${after.x}`);
+    assert.ok(Math.abs(after.y - want[1]) <= 3, `y: dragged ${dyPx}px from ${before.y} → expected ≈${want[1].toFixed(1)}, got ${after.y}`);
+    assert.equal(after.x % 5, 0, 'snapped');
+    assert.equal(after.y % 5, 0, 'snapped');
+  }
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('floor plan: sliding a wall piece follows the pointer', async () => {
+  const page = await open();
+  await page.click('[data-tab=plan]');
+  const cmPerPx = await page.evaluate(() => 1 / document.querySelector('.plan-canvas svg').getScreenCTM().a);
+  const i = (await kit(page)).items.findIndex((it) => it.wall === 'back');
+  const before = (await kit(page)).items[i];
+  const box = await page.locator(`.plan-item[data-index="${i}"]`).boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2 + 60, { steps: 6 });
+  await page.mouse.move(box.x + box.width / 2 - 50, box.y + box.height / 2, { steps: 6 });
   await page.mouse.up();
-  const after = (await kit(page)).items[0];
-  assert.ok(after.x > before.x, `moved right: ${before.x} → ${after.x}`);
-  assert.equal(after.x % 5, 0, 'snapped');
-  assert.equal(after.y % 5, 0, 'snapped');
-  assert.deepEqual(page.errors, []);
+  const after = (await kit(page)).items[i];
+  const want = before.pos - 50 * cmPerPx;
+  assert.ok(Math.abs(after.pos - want) <= 3, `expected pos ≈${want.toFixed(1)}, got ${after.pos}`);
   await page.close();
 });
 
