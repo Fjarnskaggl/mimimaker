@@ -103,9 +103,10 @@ function shade(hex, k, tint = [1, 1, 1]) {
 
 /**
  * @param {Array} faces  {layer, polys: [[x,y,z]…][], n, color, opacity, cull}
- * @param {object} view  {yaw, pitch} in degrees; night; selected = item index to outline
+ * @param {object} view  {yaw, pitch} in degrees; night; selected = item index to outline;
+ *                       selectedLed = LED index to ring; zoom
  */
-export function renderScene(faces, { yaw = -32, pitch = 26, night = false, selected = null, zoom = 1 } = {}) {
+export function renderScene(faces, { yaw = -32, pitch = 26, night = false, selected = null, selectedLed = null, zoom = 1 } = {}) {
   const ya = (yaw * Math.PI) / 180, pa = (pitch * Math.PI) / 180;
   const cam = [Math.sin(ya) * Math.cos(pa), -Math.cos(ya) * Math.cos(pa), Math.sin(pa)];
   const fwd = cam.map((v) => -v);
@@ -163,7 +164,12 @@ export function renderScene(faces, { yaw = -32, pitch = 26, night = false, selec
   const paths = drawn.map((d) => {
     const dStr = d.poly2.map((poly) => 'M' + poly.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join('L') + 'Z').join('');
     if (d.face.halo) return `<path class="halo" pointer-events="none" d="${dStr}" fill="${d.face.color}" fill-opacity="${d.opacity}"/>`;
-    if (d.face.glow) return `<path d="${dStr}" fill="${d.face.color}" fill-opacity="${d.opacity}"/>`;
+    if (d.face.glow) {
+      // a light's glow carries its LED index so a click can select it; the selected one is ringed
+      const led = d.face.led != null ? ` data-led="${d.face.led}"` : '';
+      const ring = selectedLed != null && d.face.led === selectedLed && d.face.opacity < 1 ? ` class="sel-led" stroke-width="${sw(0.9)}"` : '';
+      return `<path${led}${ring} d="${dStr}" fill="${d.face.color}" fill-opacity="${d.opacity}"/>`;
+    }
     // furniture faces carry their item index so a click can select the piece
     const item = d.face.item != null ? ` data-item="${d.face.item}"` : '';
     if (selected != null && d.face.item === selected) {

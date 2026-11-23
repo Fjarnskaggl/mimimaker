@@ -89,62 +89,72 @@ function syncPicker(kit = picker?.getKit()) {
 // ------------------------------------------------------------ click to select
 const CLICK_SLOP = 5; // px a press may move and still count as a click, not an orbit
 
-/** The piece (item index) under a client point in whichever renderer is showing, or null. */
-function pickAt(stage, x, y) {
-  if (stage.dataset.renderer === 'webgl' && state.viewer) return state.viewer.pick(x, y);
-  const hit = document.elementFromPoint(x, y)?.closest?.('[data-item]');
-  return hit && stage.contains(hit) ? Number(hit.dataset.item) : null;
+/**
+ * What a click at a client point would pick, in whichever renderer is
+ * showing: the index of the piece (kind "item") or light (kind "led") that is
+ * front-most there, or null.
+ */
+function pickAt(stage, x, y, kind = 'item') {
+  if (stage.dataset.renderer === 'webgl' && state.viewer) return state.viewer.pick(x, y, kind);
+  const attr = kind === 'led' ? 'led' : 'item';
+  const hit = document.elementFromPoint(x, y)?.closest?.(`[data-${attr}]`);
+  return hit && stage.contains(hit) ? Number(hit.dataset[attr]) : null;
 }
 
 /**
- * Click a piece in the 3D view to select it. onPick(index) should select it
- * the same way the plan does, and redraw the stage to show it; onPick(null)
- * means a click on empty space. Drags still orbit: only a press that barely
- * moves counts as a click. opts.enabled() turns picking and hover off while
- * pieces can't be edited from this view.
+ * Click a piece (or a light) in the 3D view to select it. opts.picks()
+ * says what this view picks right now: "item", "led", or null for nothing.
+ * onPick(index, kind) should select it the same way the plan does, and
+ * redraw the stage to show it; onPick(null, kind) means a click on empty
+ * space. Drags still orbit: only a press that barely moves counts as a click.
  */
-export function attachPicking(stage, onPick, { enabled = () => true } = {}) {
+export function attachPicking(stage, onPick, { picks = () => 'item' } = {}) {
   let down = null;
-  stage.addEventListener('pointerdown', (e) => { down = enabled() ? { x: e.clientX, y: e.clientY } : null; });
+  stage.addEventListener('pointerdown', (e) => { down = picks() ? { x: e.clientX, y: e.clientY } : null; });
   stage.addEventListener('pointerup', (e) => {
     if (!down) return;
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
     down = null;
-    if (moved > CLICK_SLOP) return;
-    onPick(pickAt(stage, e.clientX, e.clientY)); // null: empty space, which clears the selection
+    const kind = picks();
+    if (moved > CLICK_SLOP || !kind) return;
+    onPick(pickAt(stage, e.clientX, e.clientY, kind), kind); // null: empty space
   });
   stage.addEventListener('pointercancel', () => { down = null; });
   // hover: show which piece a click would pick (checked once per frame)
   let pending = null, frame = 0;
   const clearHover = () => { cancelAnimationFrame(frame); pending = null; setHover(stage, null); };
   stage.addEventListener('pointermove', (e) => {
-    if (e.buttons || !enabled()) { clearHover(); return; } // orbiting, or nothing to pick
+    if (e.buttons || !picks()) { clearHover(); return; } // orbiting, or nothing to pick
     if (pending) { pending.x = e.clientX; pending.y = e.clientY; return; }
     pending = { x: e.clientX, y: e.clientY };
     frame = requestAnimationFrame(() => {
       const { x, y } = pending;
       pending = null;
-      setHover(stage, enabled() ? pickAt(stage, x, y) : null);
+      const kind = picks();
+      setHover(stage, kind ? pickAt(stage, x, y, kind) : null, kind);
     });
   });
   stage.addEventListener('pointerleave', clearHover);
   // tests and tours: a point where the piece is the front-most thing
-  stage.t6pickPoint = (index) => {
-    if (stage.dataset.renderer === 'webgl' && state.viewer) return state.viewer.pointFor(index);
-    for (const path of stage.querySelectorAll(`[data-item="${index}"]`)) {
+  // (a number is a piece; {kind: 'led', index} a light)
+  stage.t6pickPoint = (target) => {
+    const { kind, index } = typeof target === 'object' ? target : { kind: 'item', index: target };
+    if (stage.dataset.renderer === 'webgl' && state.viewer) return state.viewer.pointFor(index, kind);
+    for (const path of stage.querySelectorAll(`[data-${kind === 'led' ? 'led' : 'item'}="${index}"]`)) {
       const r = path.getBoundingClientRect();
       const p = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-      if (pickAt(stage, p.x, p.y) === index) return p;
+      if (pickAt(stage, p.x, p.y, kind) === index) return p;
     }
     return null;
   };
 }
 
 /** Mark the piece under the pointer in whichever renderer is showing (null: none). */
-function setHover(stage, index) {
+function setHover(stage, index, kind = 'item') {
   index = index ?? null;
+  stage.classList.toggle('t6-over-piece', index != null); // pointer cursor: a click would pick something
+  if (kind !== 'item') index = null; // lights only get the cursor
   stage.t6hover = index;
-  stage.classList.toggle('t6-over-piece', index != null);
   if (stage.dataset.renderer === 'webgl' && state.viewer) { state.viewer.hover(index); return; }
   paintSvgHover(stage);
 }
@@ -244,7 +254,11 @@ export function drawStage(stage, faces, view, kit = null) {
   }
   if (!state.want) disposeViewer();
   stage.t6viewer = null;
-  stage.innerHTML = renderScene(faces, { ...view, zoom: state.zoom, selected: view.sel?.kind === 'item' ? view.sel.index : null });
+  stage.innerHTML = renderScene(faces, {
+    ...view, zoom: state.zoom,
+    selected: view.sel?.kind === 'item' ? view.sel.index : null,
+    selectedLed: view.sel?.kind === 'led' ? view.sel.index : null,
+  });
   stage.dataset.renderer = 'svg';
   paintSvgHover(stage); // the redraw replaced the hovered paths
   if (!state.want) { delete stage.dataset.webgl; return; }

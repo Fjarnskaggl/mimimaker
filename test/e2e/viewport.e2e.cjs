@@ -174,10 +174,11 @@ test('Light step: pieces are not pickable in the room view (their inspector live
   await page.mouse.click(p.x, p.y);
   assert.deepEqual(await outlined(page), [], 'no outline on a piece you can’t edit here');
   assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Lighting');
-  // picking a light from the list stays selected after a click in the room
+  // a click on a piece is a click off the lights, as empty space is
   await page.click('[data-select-led="0"]');
   await page.mouse.click(p.x, p.y);
-  assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Light', 'the LED stays selected');
+  assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Lighting', 'back to the circuit');
+  assert.deepEqual(await outlined(page), [], 'and the piece is not outlined');
   assert.deepEqual(page.errors, []);
   await page.close();
 });
