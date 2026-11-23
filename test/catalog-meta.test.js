@@ -34,6 +34,12 @@ test('part counts come from the real compiler, per material kind', () => {
   assert.throws(() => partCount('nope'), /Unknown piece "nope"/);
 });
 
+test('partCount can count just the material kinds asked for', () => {
+  assert.deepEqual(partCount('bookshelf', {}, ['card']), { card: 4 });
+  assert.deepEqual(partCount('sofa', { w: 150 }, ['board', 'fabric']), { board: 19, fabric: 1 });
+  assert.throws(() => partCount('table', {}, ['wood']), /Unknown material kind "wood"/);
+});
+
 test('pieceInfo summarises a piece for the library card', () => {
   assert.deepEqual(pieceInfo('bookshelf'), {
     id: 'bookshelf', label: 'Bookshelf', theme: 'Basics', placement: 'floor', mat: 'board',
