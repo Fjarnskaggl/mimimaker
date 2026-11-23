@@ -69,7 +69,7 @@ export const LIVING = [
     tags: ['storage', 'dining'], difficulty: 2,
     params: [num('w', 'Width', 80, 240), num('d', 'Depth', 30, 60), num('h', 'Height', 50, 110), cnt('count', 'Doors', 2, 6)],
     defaults: { w: 160, d: 45, h: 80, count: 3 },
-    let: { top: 'max(2 * t, h * 0.04)', ov: 'min(w * 0.03, 3)' },
+    let: { top: 'max(2 * t, 3, h * 0.04)', ov: 'min(w * 0.03, 3)' },
     components: [
       {
         kind: 'box', name: 'Sideboard', size: ['w - 2 * ov', 'd - ov', 'h - top'], faces: 'all', at: ['ov', 'ov', 0],
