@@ -6,8 +6,8 @@ import { defaultKit } from '../src/catalog.js';
 
 const leds = (n, color = 'warm') => Array.from({ length: n }, () => ({ color }));
 
-test('supplies: 2×AA, CR2032 and USB with conservative budgets', () => {
-  assert.deepEqual(Object.keys(SUPPLIES).sort(), ['aa2', 'cr2032', 'usb']);
+test('supplies: 2×AA, 2×AAA, CR2032 and USB with conservative budgets', () => {
+  assert.deepEqual(Object.keys(SUPPLIES).sort(), ['aa2', 'aaa2', 'cr2032', 'usb']);
   for (const s of Object.values(SUPPLIES)) {
     assert.ok(s.volts > 0 && s.name);
     assert.ok(s.recommendedMA > 0 && s.recommendedMA < s.maxMA, `${s.name} recommended < max`);
