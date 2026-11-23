@@ -141,3 +141,10 @@ test('with short cavity spacers the default alley cuts in under 5 h', () => {
   const hours = r.sheets.reduce((sum, s) => sum + estimateCutMinutes(s), 0) / 60;
   assert.ok(hours < 5, `estimated ${hours.toFixed(2)} h`);
 });
+
+test('the default greenhouse is light enough to cut: under 5.5 h on 2 mm chipboard', () => {
+  const r = compileKit(withShell('greenhouse'));
+  const hours = r.sheets.reduce((sum, s) => sum + estimateCutMinutes(s), 0) / 60;
+  assert.ok(hours < 5.5, `estimated ${hours.toFixed(2)} h`);
+  assert.ok(!r.warnings.some((w) => w.level === 'error'));
+});
