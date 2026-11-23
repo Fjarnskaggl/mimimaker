@@ -86,3 +86,26 @@ test('textureFrame: wallpaper hangs upright (texture y runs down the wall), floo
     assert.ok(close(uv(q)[0] - uv(p)[0], 5, 1e-9) && close(uv(q)[1] - uv(p)[1], 0, 1e-9));
   }
 });
+
+// ------------------------------------------------- kit.roomType (coordinator ask on #36)
+import { encodeKit, decodeKit } from '../src/share.js';
+
+test('applyRoomType records kit.roomType, replacing any earlier one', () => {
+  for (const rt of ROOM_TYPES) assert.equal(applyRoomType(defaultKit(), rt.id).roomType, rt.id);
+  assert.equal(applyRoomType(applyRoomType(defaultKit(), 'cafe'), 'kitchen').roomType, 'kitchen');
+});
+
+test('kit.roomType survives a share link', async () => {
+  const kit = applyRoomType(defaultKit(), 'library');
+  assert.equal((await decodeKit(await encodeKit(kit))).roomType, 'library');
+});
+
+test('roomTypeOf prefers kit.roomType, so renaming a kit keeps its palette; old kits fall back to the name', () => {
+  const renamed = { ...applyRoomType(defaultKit(), 'cafe'), name: 'Our corner café' };
+  assert.equal(roomTypeOf(renamed), 'cafe');
+  assert.equal(defaultLook(renamed)[renamed.room.wallpaper.material].id, ROOM_PALETTES.cafe.wall.id);
+  const old = applyRoomType(defaultKit(), 'kitchen');
+  delete old.roomType;
+  assert.equal(roomTypeOf(old), 'kitchen', 'name match for kits saved before roomType existed');
+  assert.equal(roomTypeOf({ ...old, roomType: 'no-such-room' }), 'kitchen', 'unknown ids fall back too');
+});
