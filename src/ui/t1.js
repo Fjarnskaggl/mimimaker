@@ -11,7 +11,8 @@ const state = { query: '', difficulty: 0 };
 const CSS = `
 .t1-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
 .t1-controls input, .t1-controls select { min-width: 0; font-size: 12.5px; }
-.t1-meta { display: block; font-size: 10.5px; color: var(--muted); }
+.t1-meta { display: block; font-size: 10.5px; color: var(--ink-muted, var(--muted)); }
+.t1-parts { white-space: nowrap; }
 .t1-diff { font-weight: 600; }
 .t1-diff-1 { color: #3f8a4f; }
 .t1-diff-2 { color: #b5832a; }
@@ -60,7 +61,7 @@ function pieceCard(def, { addPiece, thumb }) {
   el('span', { class: 't1-meta' },
     info.difficultyLabel ? el('span', { class: `t1-diff t1-diff-${info.difficulty}` }, info.difficultyLabel) : null,
     info.difficultyLabel ? ' · ' : null,
-    `${info.parts} ${info.parts === 1 ? 'part' : 'parts'}`));
+    el('span', { class: 't1-parts' }, `${info.parts} ${info.parts === 1 ? 'part' : 'parts'}`)));
 }
 
 /**
