@@ -1,5 +1,5 @@
 // Browser tests for T1's piece library: search, difficulty, part counts.
-// Run with: npm run test:e2e
+// Run with: npm run test:e2e   (SHOT_DIR=… also saves screenshots of the library)
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
@@ -28,6 +28,12 @@ async function open(viewport = { width: 1400, height: 900 }) {
   page.errors = errors;
   return page;
 }
+/** Save a screenshot of the library panel when SHOT_DIR is set (for PR review). */
+async function shot(page, name) {
+  if (!process.env.SHOT_DIR) return;
+  require('node:fs').mkdirSync(process.env.SHOT_DIR, { recursive: true });
+  await page.locator('.library').screenshot({ path: path.join(process.env.SHOT_DIR, name) });
+}
 const shown = (page) => page.$$eval('.piece-grid .piece', (els) => els.map((e) => e.dataset.piece));
 
 test('library cards show difficulty and part count', async () => {
@@ -38,6 +44,7 @@ test('library cards show difficulty and part count', async () => {
   assert.match(meta, /8 parts/);
   assert.match(await page.textContent('.piece[data-piece="table"] .t1-meta'), /Easy.*3 parts/);
   assert.match(await page.getAttribute('.piece[data-piece="bookshelf"]', 'title'), /storage, books/);
+  await shot(page, 't1-piece-library.png');
   assert.deepEqual(page.errors, []);
   await page.close();
 });
@@ -62,6 +69,10 @@ test('search finds pieces across themes while you type, and clearing it restores
 
 test('difficulty filter narrows the pieces and survives switching theme', async () => {
   const page = await open();
+  await page.fill('#t1-piece-search', 'storage');
+  await page.selectOption('#t1-difficulty', '2');
+  await shot(page, 't1-piece-search.png');
+  await page.fill('#t1-piece-search', '');
   await page.selectOption('#t1-difficulty', '1');
   const easy = await page.$$eval('.piece-grid .piece', (els) => els.map((e) => e.dataset.difficulty));
   assert.ok(easy.length > 0 && easy.every((d) => d === '1'), `all easy: ${easy}`);
