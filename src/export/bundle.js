@@ -1,7 +1,7 @@
 // The kit zip's cut files: the chosen machine's, or every machine's in its
 // own folder, plus README text that explains them and lists every file.
 
-import { MACHINES, TOOL_NAMES } from '../materials.js';
+import { MACHINES, TOOL_NAMES, machineFor } from '../materials.js';
 import { kitCutFiles, machineReadme } from './machines.js';
 
 const idOf = (machine) => Object.keys(MACHINES).find((k) => MACHINES[k] === machine || MACHINES[k].name === machine?.name);
@@ -33,10 +33,11 @@ export function zipCutFiles(kit, compiled, compileFor, { allMachines = false, ..
   if (!allMachines) {
     return { files: kitCutFiles(compiled.sheets, compiled.machine, opts), readme: machineReadme(compiled.machine) };
   }
-  const chosen = idOf(compiled.machine);
+  const chosen = MACHINES[kit.machine] ? kit.machine : idOf(compiled.machine);
   const files = [];
   const lines = ['Cut files for every machine are in cut-files/<machine>/. Use the folder for yours:'];
-  for (const [id, machine] of Object.entries(MACHINES)) {
+  for (const id of Object.keys(MACHINES)) {
+    const machine = machineFor(kit, id);
     // the chosen machine keeps its (possibly true-shape nested) sheets; one
     // machine failing to lay the kit out never blocks the download
     let c;

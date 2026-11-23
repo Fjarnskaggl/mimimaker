@@ -7,7 +7,7 @@ import { handCutPDF, handCutFileName, defaultPaper, PAPER_NAMES } from '../expor
 import { kitPrintCutFiles, printableParts } from '../export/printcut.js';
 import { makeZip } from '../zip.js';
 import { kitMaterialCost } from '../export/cost.js';
-import { DEFAULT_MATERIALS, TOOL_NAMES, withMaterialDefaults, newMaterial, duplicateMaterial, materialInUse, defaultCurrency, formatMoney, toolSettings } from '../materials.js';
+import { DEFAULT_MATERIALS, TOOL_NAMES, withMaterialDefaults, newMaterial, duplicateMaterial, materialInUse, defaultCurrency, formatMoney, toolSettings, MACHINES, machineFor, BED_LIMITS } from '../materials.js';
 
 function el(tag, attrs = {}, ...children) {
   const e = document.createElement(tag);
@@ -346,4 +346,55 @@ export function allMachinesField(getKit, onChange) {
   box.checked = !!getKit().zipAllMachines;
   return el('label', { class: 'check zip-all', title: 'Put cut files for every machine in the kit zip, one folder each, so anyone you share it with can cut it' },
     box, el('span', {}, 'All machines in the kit zip'));
+}
+
+// ------------------------------------------------------------ machine bed
+/**
+ * Bed (mat) size and, for a laser, kerf of the kit's machine, for Make →
+ * Advanced. Edits go to kit.machineOverrides[machineId]. Call `.update()`
+ * after each render: it rebuilds only when the machine or its values changed.
+ */
+export function machineBedFields(getKit, onChange) {
+  const root = el('div', { class: 'bed-fields' });
+  let key = '';
+  const edit = (fn) => {
+    const kit = getKit();
+    const id = MACHINES[kit.machine] ? kit.machine : 'maker';
+    const all = { ...(kit.machineOverrides || {}) };
+    const o = { ...(all[id] || {}) };
+    fn(o, MACHINES[id]);
+    if (o.cut && o.cut[0] === MACHINES[id].cut[0] && o.cut[1] === MACHINES[id].cut[1]) delete o.cut;
+    if (o.kerf === MACHINES[id].kerf) delete o.kerf;
+    if (Object.keys(o).length) all[id] = o; else delete all[id];
+    kit.machineOverrides = all;
+    onChange();
+  };
+  const num = (label, value, set, { min, max, step }) => {
+    const input = el('input', { type: 'number', min, max, step, value, 'aria-label': label,
+      onchange: (e) => {
+        const v = parseFloat(e.target.value);
+        if (Number.isFinite(v) && v >= min && v <= max) set(v);
+        else e.target.value = value; // out of range: show what is in use
+      } });
+    return input;
+  };
+  root.update = () => {
+    const kit = getKit();
+    const id = MACHINES[kit.machine] ? kit.machine : 'maker';
+    const base = MACHINES[id], m = machineFor(kit, id);
+    const next = JSON.stringify([id, m.cut, m.kerf]);
+    if (next === key) return;
+    key = next;
+    const changedFromPreset = m !== base;
+    root.replaceChildren(
+      el('div', { class: 'grid2' },
+        el('label', { class: 'field' }, 'Bed width', el('span', { class: 'unit-wrap' }, num('Bed width (mm)', m.cut[0], (v) => edit((o, b) => { o.cut = [v, o.cut?.[1] ?? b.cut[1]]; }), { min: BED_LIMITS.min, max: BED_LIMITS.max, step: 1 }), el('span', { class: 'unit' }, 'mm'))),
+        el('label', { class: 'field' }, 'Bed height', el('span', { class: 'unit-wrap' }, num('Bed height (mm)', m.cut[1], (v) => edit((o, b) => { o.cut = [o.cut?.[0] ?? b.cut[0], v]; }), { min: BED_LIMITS.min, max: BED_LIMITS.max, step: 1 }), el('span', { class: 'unit' }, 'mm')))),
+      ...(base.family === 'laser' ? [el('label', { class: 'field' }, 'Kerf (materials can set their own)', el('span', { class: 'unit-wrap' }, num('Laser kerf (mm)', m.kerf, (v) => edit((o) => { o.kerf = v; }), { min: 0, max: BED_LIMITS.maxKerf, step: 0.01 }), el('span', { class: 'unit' }, 'mm')))] : []),
+      el('p', { class: 'hint' }, `The area your ${base.name} can cut. Sheets are clipped to it.`,
+        ...(changedFromPreset ? [' ', el('button', { type: 'button', class: 'mm-btn mm-btn--sm',
+          onclick: () => edit((o) => { delete o.cut; delete o.kerf; }) }, `Reset to ${base.cut[0]} × ${base.cut[1]} mm${base.kerf != null ? `, kerf ${base.kerf} mm` : ''}`)] : [])));
+  };
+  root.update();
+  return root;
 }

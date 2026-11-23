@@ -4,7 +4,7 @@
 import { buildBox, faceFrame, autoFingerWidth, minJointFeature } from './box.js';
 import { foldNet, tabbedRect } from './fold.js';
 import { CATALOG, itemSize } from './catalog.js';
-import { MACHINES, TOOL_NAMES, effectiveSheet } from './materials.js';
+import { TOOL_NAMES, effectiveSheet, machineFor } from './materials.js';
 import { packParts, SHEET_MARGIN } from './nest.js';
 import { labelAnchor } from './labels.js';
 import { planLighting, LED_COLORS, POWER_KINDS } from './lighting.js';
@@ -42,7 +42,7 @@ export function compileKit(kit) {
   const warnings = [];
   const warn = (msg, level = 'warn') => warnings.push({ level, msg });
   const mats = new Map(kit.materials.map((m) => [m.id, m]));
-  const machine = MACHINES[kit.machine] || MACHINES.maker;
+  const machine = machineFor(kit); // T3: the preset plus the kit's bed size / kerf edits
   const s = 10 / kit.scale; // real cm → model mm
   const tabWidth = kit.tabWidth || 5;
   const fingerWidth = kit.fingerWidth || 0;
