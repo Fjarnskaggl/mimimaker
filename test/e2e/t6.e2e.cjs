@@ -154,6 +154,50 @@ test('texture picker: its selects fit the screen at phone width', async () => {
   await page.close();
 });
 
+// Click a piece in 3D: the inspector opens on it, like clicking it on the plan.
+async function clickPiece(page, index) {
+  const pt = await page.evaluate((i) => document.querySelector('.stage').t6pickPoint(i), index);
+  assert.ok(pt, `piece ${index} has a clickable spot`);
+  await page.mouse.click(pt.x, pt.y);
+}
+const inspectorTitle = (page) => page.locator('#sidebar .insp-title').first().innerText();
+
+test('click to select in the SVG preview: the inspector opens on the piece and it is outlined', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await page.click('[data-view="3d"]');
+  assert.equal(await inspectorTitle(page), 'The room');
+  await clickPiece(page, 1); // armchair
+  assert.equal(await inspectorTitle(page), 'Armchair');
+  assert.ok(await page.locator('.stage svg path.sel[data-item="1"]').count() > 0, 'outlined');
+  await clickPiece(page, 0);
+  assert.equal(await inspectorTitle(page), 'Bookshelf');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('click to select in Realistic 3D; a drag orbits instead of selecting', async () => {
+  const page = await open();
+  await page.click('[data-step=design]');
+  await page.click('[data-view="3d"]');
+  await switchOn(page);
+  // a drag that starts on a piece orbits and selects nothing
+  const pt = await page.evaluate(() => document.querySelector('.stage').t6pickPoint(1));
+  const yaw0 = Number(await page.locator('input[aria-label=Rotate]').inputValue());
+  await page.mouse.move(pt.x, pt.y);
+  await page.mouse.down();
+  await page.mouse.move(pt.x + 80, pt.y, { steps: 5 });
+  await page.mouse.up();
+  assert.notEqual(Number(await page.locator('input[aria-label=Rotate]').inputValue()), yaw0, 'orbited');
+  assert.equal(await inspectorTitle(page), 'The room', 'nothing selected');
+  // a click selects
+  await clickPiece(page, 1);
+  assert.equal(await inspectorTitle(page), 'Armchair');
+  assert.equal(await page.evaluate(() => document.querySelector('.stage').t6viewer.sample().selected), 1, 'highlighted');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('WebGL viewer: dragging orbits the camera and the picture changes', async () => {
   const page = await open();
   await switchOn(page);
