@@ -25,6 +25,15 @@ sit inside their ranges, and floor/wall rules hold.
 }
 ```
 
+## Library metadata
+
+Every catalogue piece also has `tags` (lower-case search words such as
+`storage`, `seating`, `wall-mounted`) and a `difficulty` of 1 (Easy),
+2 (Medium) or 3 (Tricky). Part counts are not written by hand:
+`partCount()` in `meta.js` compiles the piece to count them, so they always
+match the cut files. `searchPieces(query, { theme, tag, difficulty })` and
+`allTags()` feed the piece library.
+
 ## Numbers are expressions
 
 Anywhere a number goes you may write a string expression (`src/pieces/expr.js`):

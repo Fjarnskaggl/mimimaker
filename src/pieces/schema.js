@@ -55,7 +55,13 @@ export function validatePiece(piece) {
   oneOf('placement', piece.placement, PLACEMENTS);
   oneOf('mat', piece.mat, MATS);
   if (piece.note !== undefined && typeof piece.note !== 'string') err('note', 'must be text');
-  if (piece.tags !== undefined && !(Array.isArray(piece.tags) && piece.tags.every(str))) err('tags', 'must be a list of words');
+  if (piece.tags !== undefined) {
+    if (!Array.isArray(piece.tags)) err('tags', 'must be a list of words');
+    else piece.tags.forEach((tag, i) => {
+      if (typeof tag !== 'string' || !ID_RE.test(tag)) err(`tags[${i}]`, 'lower-case words only (letters, digits, dashes)');
+      else if (piece.tags.indexOf(tag) !== i) err(`tags[${i}]`, `duplicate "${tag}"`);
+    });
+  }
   if (piece.difficulty !== undefined && ![1, 2, 3].includes(piece.difficulty)) err('difficulty', 'must be 1, 2 or 3');
 
   // ------------------------------------------------------------- params
