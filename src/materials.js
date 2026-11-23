@@ -91,15 +91,29 @@ export function duplicateMaterial(m, list) {
   return { ...copy, id: uniqueId(list, `${m.id}-copy`), name: uniqueName(list, `${m.name} copy`) };
 }
 
-/** True when anything in the kit other than its material list names `id`. */
-export function materialInUse(kit, id) {
+const MATERIAL_KEY = /^(material|\w+Material)$/;
+
+/**
+ * True when a material field anywhere in the kit (`material`, `trimMaterial`,
+ * `glazingMaterial`, …) names `id`. Pass `compiled` to also count materials
+ * the compiler picked from code defaults (a greenhouse's acetate, a window
+ * seat's felt cushion).
+ */
+export function materialInUse(kit, id, compiled = null) {
+  if (compiled?.sheets?.some((s) => s.material?.id === id)) return true;
+  if (compiled?.usedMats?.some((m) => m?.id === id)) return true;
   const seen = (v) => {
-    if (v === id) return true;
     if (Array.isArray(v)) return v.some(seen);
-    if (v && typeof v === 'object') return Object.values(v).some(seen);
+    if (v && typeof v === 'object') return Object.entries(v).some(([k, x]) => (MATERIAL_KEY.test(k) ? x === id : seen(x)));
     return false;
   };
   return Object.entries(kit).some(([k, v]) => k !== 'materials' && seen(v));
+}
+
+/** Cut settings for a blade, to reset a material when its blade changes. */
+export function toolSettings(tool) {
+  const t = TOOL_DEFAULTS[tool] || TOOL_DEFAULTS.fine;
+  return { cricut: t.cricut, passes: t.passes, speed: t.speed, silhouette: { ...t.silhouette }, laser: { ...t.laser } };
 }
 
 /**
@@ -119,14 +133,15 @@ export function machineSettings(m, machine) {
 }
 
 // ------------------------------------------------------------------- money
-const EURO = /^(de|fr|nl|es|it|pt|fi|el|sk|sl|et|lv|lt|ga|mt|hr)\b/i;
+// Eurozone regions (plus a few that use the euro without being members).
+const EURO_REGIONS = new Set('AT BE HR CY EE FI FR DE GR IE IT LV LT LU MT NL PT SK SI ES AD MC SM VA ME XK'.split(' '));
+const REGION_SYMBOLS = { GB: '£', UK: '£', JP: '¥', IN: '₹', KR: '₩', CH: 'CHF ', SE: 'kr ', NO: 'kr ', DK: 'kr ', PL: 'zł ', BR: 'R$', CA: '$', AU: '$', NZ: '$', MX: '$', US: '$' };
 
-/** A currency symbol guessed from a language tag ('$' when unsure). */
+/** A currency symbol guessed from a language tag's region ('$' when unsure). */
 export function defaultCurrency(lang = '') {
-  if (/^en-(GB|UK)\b/i.test(lang)) return '£';
-  if (/^ja\b/i.test(lang)) return '¥';
-  if (EURO.test(lang) && !/-(CH)\b/i.test(lang)) return '€';
-  return '$';
+  const region = (lang.split(/[-_]/).slice(1).find((p) => /^[A-Za-z]{2}$/.test(p)) || '').toUpperCase();
+  if (EURO_REGIONS.has(region)) return '€';
+  return REGION_SYMBOLS[region] || '$';
 }
 
 export function formatMoney(amount, currency = '$') {

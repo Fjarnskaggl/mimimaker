@@ -7,7 +7,7 @@ import { handCutPDF, handCutFileName, defaultPaper, PAPER_NAMES } from '../expor
 import { kitMaterialCost } from '../export/cost.js';
 import {
   DEFAULT_MATERIALS, TOOL_NAMES, withMaterialDefaults, newMaterial, duplicateMaterial,
-  materialInUse, defaultCurrency, formatMoney,
+  materialInUse, defaultCurrency, formatMoney, toolSettings,
 } from '../materials.js';
 
 function el(tag, attrs = {}, ...children) {
@@ -189,7 +189,12 @@ export function materialLibrary({ kit, machine, onChange, onRestructure }) {
     return el('div', { class: 'mat-settings', 'data-material': m.id },
       group('Material',
         field('Kind', selectInput('Kind', m.kind, Object.entries(KINDS), (v) => { m.kind = v; restructure(); })),
-        field('Blade', selectInput('Blade', m.tool, Object.entries(TOOL_NAMES), (v) => { m.tool = v; restructure(); }))),
+        field('Blade', selectInput('Blade', m.tool, Object.entries(TOOL_NAMES), (v) => {
+          // a new blade means new cut settings; the old blade's would mislead
+          if (v !== m.tool) Object.assign(m, toolSettings(v));
+          m.tool = v;
+          restructure();
+        }))),
       group('Cricut',
         field('Design Space', textInput('Design Space setting', d.cricut, (v) => { m.cricut = v || d.cricut; onChange(); })),
         field('Passes', numInput('Cricut passes', d.passes, (v) => { m.passes = Math.max(1, Math.round(v)); onChange(); }, { min: 1, max: 50 })),
@@ -206,8 +211,25 @@ export function materialLibrary({ kit, machine, onChange, onRestructure }) {
           { min: 0, max: 1, step: 0.01, placeholder: String(machine()?.kerf ?? 0.1) }))));
   }
 
+  const deleteTitle = (m, inUse, only) => (inUse ? `Delete ${m.name} (in use: pick another material for its parts first)`
+    : only ? `Delete ${m.name} (the last material)` : `Delete ${m.name}`);
+
+  function deleteButton(m, inUse, only) {
+    const b = el('button', {
+      type: 'button', class: 'mm-btn mm-btn--sm mat-delete', 'data-material': m.id, title: deleteTitle(m, inUse, only),
+      onclick: () => {
+        if (materialInUse(kit, m.id, last) || kit.materials.length === 1) { render(); return; } // went into use since the last render
+        kit.materials = kit.materials.filter((x) => x !== m);
+        open.delete(m.id);
+        restructure();
+      },
+    }, 'Delete');
+    b.disabled = inUse || only;
+    return b;
+  }
+
   function row(m) {
-    const inUse = materialInUse(kit, m.id);
+    const inUse = materialInUse(kit, m.id, last);
     const only = kit.materials.length === 1;
     const d = withMaterialDefaults(m);
     const isOpen = open.has(m.id);
@@ -224,11 +246,7 @@ export function materialLibrary({ kit, machine, onChange, onRestructure }) {
             onclick: () => { if (isOpen) open.delete(m.id); else open.add(m.id); render(); } }, 'Settings'),
           el('button', { type: 'button', class: 'mm-btn mm-btn--sm', title: `Duplicate ${m.name}`,
             onclick: () => { const i = kit.materials.indexOf(m); kit.materials.splice(i + 1, 0, duplicateMaterial(withMaterialDefaults(m), kit.materials)); restructure(); } }, 'Duplicate'),
-          Object.assign(el('button', {
-            type: 'button', class: 'mm-btn mm-btn--sm',
-            title: inUse ? `Delete ${m.name} (in use: pick another material for its parts first)` : only ? `Delete ${m.name} (the last material)` : `Delete ${m.name}`,
-            onclick: () => { kit.materials = kit.materials.filter((x) => x !== m); open.delete(m.id); restructure(); },
-          }, 'Delete'), { disabled: inUse || only }))),
+          deleteButton(m, inUse, only))),
       ...(isOpen ? [settingsPanel(m)] : []),
     ];
   }
@@ -274,6 +292,14 @@ export function materialLibrary({ kit, machine, onChange, onRestructure }) {
     last = compiled;
     // materials replaced elsewhere (fit-test calibration, kit.json import): rebuild the rows
     if (shown.length !== kit.materials.length || shown.some((m, i) => m !== kit.materials[i])) { render(); return; }
+    // parts may have switched material since the rows were built
+    for (const b of root.querySelectorAll('button.mat-delete')) {
+      const m = kit.materials.find((x) => x.id === b.dataset.material);
+      if (!m) continue;
+      const inUse = materialInUse(kit, m.id, compiled), only = kit.materials.length === 1;
+      b.disabled = inUse || only;
+      b.title = deleteTitle(m, inUse, only);
+    }
     const c = kitCost(kit, compiled);
     cost.replaceChildren(
       el('ul', {}, ...c.lines.map((l) => el('li', {},
