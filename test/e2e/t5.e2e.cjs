@@ -35,9 +35,9 @@ async function open() {
   return page;
 }
 
-test('LED map tab shows the circuit summary', async () => {
+test('the Light step shows the circuit summary', async () => {
   const page = await open();
-  await page.click('[data-tab=ledmap]');
+  await page.click('[data-step=light]');
   const card = page.locator('.t5-circuit');
   await card.waitFor({ timeout: 3000 });
   const text = await card.innerText();
@@ -53,12 +53,13 @@ test('LED map tab shows the circuit summary', async () => {
 
 test('choosing a coin cell updates the kit and flags the overload', async () => {
   const page = await open();
+  await page.click('[data-step=light]');
   await page.evaluate(() => { for (const d of document.querySelectorAll('details.section')) d.open = true; });
   await page.selectOption('select[data-t5=supply]', 'cr2032');
   const k = await page.evaluate(() => JSON.parse(JSON.stringify(window.mimimaker.kit.lighting.power)));
   assert.equal(k.supply, 'cr2032');
   assert.equal(k.kind, 'battery');
-  await page.click('[data-tab=ledmap]');
+  await page.click('[data-step=light]');
   const card = page.locator('.t5-circuit');
   assert.equal(await card.getAttribute('data-status'), 'warn');
   assert.match(await card.innerText(), /CR2032/);
