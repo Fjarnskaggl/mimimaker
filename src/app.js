@@ -21,7 +21,7 @@ import { sheetCutSVG, sheetPreviewSVG, sheetFileName, LAYER_COLORS } from './svg
 import { guideHTML } from './guide.js';
 import { makeZip } from './zip.js';
 // T3 wiring: per-machine cut files
-import { sheetDownloadButtons, sheetSettings, sheetLegend } from './ui/t3.js';
+import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground } from './ui/t3.js';
 import { kitCutFiles, machineReadme } from './export/machines.js';
 // T2 shells
 import { shellSection, applyRoomLocks } from './ui/t2.js';
@@ -145,6 +145,7 @@ function update({ sidebar = false } = {}) {
   renderSummary();
   renderWarnings();
   renderView();
+  nestInBackground(compiled, (c) => { if (c !== compiled) return; renderSummary(); if (view.tab === 'sheets' || view.tab === 'guide') renderView(); }); // T3
   if (!restoring) (sidebar ? commitNow() : scheduleCommit());
 }
 
@@ -520,7 +521,7 @@ function renderCalibration() {
 }
 
 function renderSheets(el) {
-  const legend = sheetLegend(compiled.machine, 'Numbers match the assembly guide. Hover a part for details.'); // T3
+  const legend = sheetLegend(compiled.machine, 'Numbers match the assembly guide. Hover a part for details.', compiled.nesting); // T3
   const fileOpts = { drawLabels: kit.drawLabels, title: (s) => `${kit.name} – ${s.material.name} ${s.index}` };
   const cards = compiled.sheets.map((s) => {
     const card = h('article', { class: 'sheet-card' },
