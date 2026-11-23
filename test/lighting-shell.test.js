@@ -134,6 +134,6 @@ test('review: alley build steps describe the shared cavity holes, not one hole p
 test('review: the printed guide explains the dashed inside runs for an alley', () => {
   const kit = withShell('alley');
   const html = guideHTML(kit, compileKit(kit));
-  assert.match(html, /dashed/i);
-  assert.doesNotMatch(guideHTML(defaultKit(), compileKit(defaultKit())), /dashed/i);
+  assert.match(html, /dashed line runs/i);
+  assert.doesNotMatch(guideHTML(defaultKit(), compileKit(defaultKit())), /dashed line runs/i);
 });

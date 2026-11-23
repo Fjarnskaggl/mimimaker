@@ -34,7 +34,7 @@ import { sheetDownloadButtons, sheetSettings, sheetLegend, nestInBackground, han
 import { kitCutFiles, machineReadme } from './export/machines.js';
 import { kitHandCutFiles } from './export/handcut.js';
 // T2 shells
-import { shellSection, applyRoomLocks, appendRoofControls, syncShellRoom } from './ui/t2.js';
+import { shellSection, applyRoomLocks, appendRoofControls, syncShellRoom, shellWiresLights } from './ui/t2.js';
 // [T5] lighting UI
 import { renderSupplyField, renderCircuitSummary, renderEffectFields, renderMountField, renderShoppingButton, renderCoverField } from './ui/t5.js';
 import { shoppingFile } from './lighting/shopping.js';
@@ -446,12 +446,13 @@ function addLed(mount, { selectIt = true } = {}) {
 function lightingInspector() {
   const L = kit.lighting;
   // >>> T2 shells: a shell that places its own LEDs (#16) lists them instead of the room's
-  const shellLeds = (compiled?.lighting?.leds || []).filter((l) => l.inside);
-  if (shellLeds.length) {
+  if (shellWiresLights(kit)) {
+    const shellLeds = (compiled?.lighting?.leds || []).filter((l) => l.inside);
     const powerFields = lightingInspectorPower(L);
+    const on = L.enabled && compiled?.lighting?.enabled;
     return [
       inspHead('Lighting', 'Circuit', `${shellLeds.length} light${shellLeds.length === 1 ? '' : 's'}`),
-      renderCircuitSummary(compiled.lighting.circuit),
+      on ? renderCircuitSummary(compiled.lighting.circuit) : notice('info', 'Lights are off.', 'Turn them on under Power to wire the shell\'s LEDs.'),
       section('Lights', [
         h('p', { class: 'hint', 'data-shell-lights': '' }, 'The shell places these LEDs behind its lit windows. Change the windows in the shell panel to move them.'),
         h('div', { class: 'insp-list' }, shellLeds.map((led) => h('div', { class: 'insp-row' },

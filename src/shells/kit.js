@@ -43,10 +43,8 @@ export function shellRoom(kit) {
     out.items = [];
     out.openings = [];
     if (def.wiredLights) {
-      // the shell's own LEDs replace the room's; keep the power box on the back wall
-      const pw = kit.lighting?.power || {};
-      const onWall = (pw.wall || 'back') === 'back' && pw.pos >= 0 && pw.pos <= room.width && pw.elev >= 0 && pw.elev <= room.height;
-      out.lighting = { ...kit.lighting, leds: [], power: { ...pw, wall: 'back', ...(onWall ? {} : { pos: room.width / 2, elev: room.height / 2 }) } };
+      // the shell's own LEDs replace the room's; the power box goes on the back wall
+      out.lighting = { ...kit.lighting, leds: [], power: shellPower(kit.lighting?.power, room) };
     } else {
       out.lighting = { ...kit.lighting, enabled: false, leds: [] };
     }
@@ -58,6 +56,21 @@ export function shellRoom(kit) {
     }
   }
   return { kit: out, room, spec: { ...spec, material: mat.id }, def, notes };
+}
+
+/**
+ * Where the power box goes on a shell that wires its own LEDs: always the
+ * back wall (the wire holes are there); a position off the wall moves to its
+ * middle, one on it is kept so the Power fields still move the box.
+ */
+export function shellPower(power = {}, room) {
+  const ok = (v, max) => Number.isFinite(v) && v >= 0 && v <= max;
+  return {
+    ...power,
+    wall: 'back',
+    pos: ok(power.pos, room.width) ? power.pos : room.width / 2,
+    elev: ok(power.elev, room.height) ? power.elev : room.height / 2,
+  };
 }
 
 /**
