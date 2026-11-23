@@ -1,0 +1,548 @@
+{
+ "bookshelf": {
+  "label": "Bookshelf",
+  "components": [
+   "box:Bookshelf"
+  ],
+  "cases": {
+   "defaults@board": "58990c02a41511e7",
+   "defaults@card": "eb8698ebbaf348e2",
+   "min@board": "3c3e61f692919090",
+   "min@card": "3c3e61f692919090",
+   "max@board": "5711ad945791d313",
+   "max@card": "17f39e2b8296c465"
+  }
+ },
+ "cabinet": {
+  "label": "Cabinet / dresser",
+  "components": [
+   "box:Cabinet"
+  ],
+  "cases": {
+   "defaults@board": "5f3c3c2bda3ce22b",
+   "defaults@card": "83094235ce57c6e1",
+   "min@board": "a6560a385da2302b",
+   "min@card": "a6560a385da2302b",
+   "max@board": "c20eb3d14251f4d5",
+   "max@card": "c20eb3d14251f4d5",
+   "style=drawers@board": "5f3c3c2bda3ce22b",
+   "style=drawers@card": "83094235ce57c6e1",
+   "style=doors@board": "b0338c41676bf44a",
+   "style=doors@card": "70c2b1d84b7e1a11",
+   "style=plain@board": "09cd9d1bae98d326",
+   "style=plain@card": "09cd9d1bae98d326"
+  }
+ },
+ "table": {
+  "label": "Table",
+  "components": [
+   "box:Table"
+  ],
+  "cases": {
+   "defaults@board": "d2bcb882006439f6",
+   "defaults@card": "d2bcb882006439f6",
+   "min@board": "aab93a93fd04b5f0",
+   "min@card": "aab93a93fd04b5f0",
+   "max@board": "9fb01b005c6e65cb",
+   "max@card": "9fb01b005c6e65cb"
+  }
+ },
+ "chair": {
+  "label": "Chair",
+  "components": [
+   "box:Seat",
+   "flat:Backrest"
+  ],
+  "cases": {
+   "defaults@board": "74313bc3f22cabe0",
+   "defaults@card": "ec6448aeccbd1489",
+   "min@board": "add6ab5ee15ade9d",
+   "min@card": "b3ce94e3feebd052",
+   "max@board": "c1e5ee63d4d13999",
+   "max@card": "323fe4b574f829a4"
+  }
+ },
+ "bench": {
+  "label": "Bench / coffee table",
+  "components": [
+   "box:Bench"
+  ],
+  "cases": {
+   "defaults@board": "1802ff8efb834934",
+   "defaults@card": "1802ff8efb834934",
+   "min@board": "b4765b827541afe6",
+   "min@card": "b4765b827541afe6",
+   "max@board": "7501e687a69215c8",
+   "max@card": "7501e687a69215c8"
+  }
+ },
+ "desk": {
+  "label": "Desk",
+  "components": [
+   "box:Desk"
+  ],
+  "cases": {
+   "defaults@board": "feb0bcb344c179bd",
+   "defaults@card": "feb0bcb344c179bd",
+   "min@board": "f9afdd527546030e",
+   "min@card": "f9afdd527546030e",
+   "max@board": "a791fa06d6aa4609",
+   "max@card": "a791fa06d6aa4609"
+  }
+ },
+ "sofa": {
+  "label": "Sofa",
+  "components": [
+   "box:Seat",
+   "box:Left arm",
+   "box:Right arm",
+   "flat:Back"
+  ],
+  "cases": {
+   "defaults@board": "2d5a24169344c9d3",
+   "defaults@card": "ffbd7d3a0731689d",
+   "min@board": "d53c468483eb8d1c",
+   "min@card": "daab1d0b952a91a1",
+   "max@board": "c2fc2d1ec3a6a9a0",
+   "max@card": "eed7a276aa3a2154"
+  }
+ },
+ "armchair": {
+  "label": "Armchair",
+  "components": [
+   "box:Seat",
+   "box:Left arm",
+   "box:Right arm",
+   "flat:Back"
+  ],
+  "cases": {
+   "defaults@board": "a019589c14cc5a94",
+   "defaults@card": "83a240e723262148",
+   "min@board": "e9dcad2aa6251b3a",
+   "min@card": "dc13b822aed89341",
+   "max@board": "92568727a1ddc957",
+   "max@card": "15e3834a74f2e7cc"
+  }
+ },
+ "fireplace": {
+  "label": "Fireplace",
+  "components": [
+   "box:Fireplace",
+   "box:Mantel"
+  ],
+  "cases": {
+   "defaults@board": "8da1b88eee3c1d33",
+   "defaults@card": "e82889d4eada652f",
+   "min@board": "2668e070c17ef0aa",
+   "min@card": "9d970559fac8acfb",
+   "max@board": "d5ecbcf6865a7cd9",
+   "max@card": "8223b90ba7173f6e"
+  }
+ },
+ "tvstand": {
+  "label": "TV / media unit",
+  "components": [
+   "box:Media unit"
+  ],
+  "cases": {
+   "defaults@board": "9b7f9da528b262fc",
+   "defaults@card": "5521e724106048be",
+   "min@board": "a8d10b89b7955ccf",
+   "min@card": "a8d10b89b7955ccf",
+   "max@board": "43a5da96da39849f",
+   "max@card": "52df708f40659127"
+  }
+ },
+ "floorlamp": {
+  "label": "Floor lamp",
+  "components": [
+   "box:Base",
+   "flat:Pole",
+   "box:Shade"
+  ],
+  "cases": {
+   "defaults@board": "b4de0a262638ff90",
+   "defaults@card": "b4de0a262638ff90",
+   "min@board": "2a7d2c8841de5c01",
+   "min@card": "2a7d2c8841de5c01",
+   "max@board": "a82e3f7225b14a69",
+   "max@card": "a82e3f7225b14a69"
+  }
+ },
+ "bed": {
+  "label": "Bed",
+  "components": [
+   "box:Bed base",
+   "flat:Headboard"
+  ],
+  "cases": {
+   "defaults@board": "3c706c51ce645311",
+   "defaults@card": "2672daf12e09b872",
+   "min@board": "b87cfdd9b2057397",
+   "min@card": "00f3867880ec3de8",
+   "max@board": "3afba49d7b7ad57e",
+   "max@card": "0fc829ceb0df627e"
+  }
+ },
+ "nightstand": {
+  "label": "Nightstand",
+  "components": [
+   "box:Nightstand"
+  ],
+  "cases": {
+   "defaults@board": "95dab2a341cb6e58",
+   "defaults@card": "be2f86343cb0b228",
+   "min@board": "0a1602bb172f79fe",
+   "min@card": "0a1602bb172f79fe",
+   "max@board": "81675f2dc717bdac",
+   "max@card": "cec6ece764614265"
+  }
+ },
+ "dresser": {
+  "label": "Chest of drawers",
+  "components": [
+   "box:Dresser"
+  ],
+  "cases": {
+   "defaults@board": "2e273a2f83c603da",
+   "defaults@card": "492acb2f6a380d4c",
+   "min@board": "14292fa2170d47ed",
+   "min@card": "fe045af9bf0bf797",
+   "max@board": "a527e81eeeaca1a4",
+   "max@card": "b8a1b9032f88eff7"
+  }
+ },
+ "wardrobe": {
+  "label": "Wardrobe",
+  "components": [
+   "box:Wardrobe"
+  ],
+  "cases": {
+   "defaults@board": "6018519e258e057f",
+   "defaults@card": "83b5daec361ddb87",
+   "min@board": "3cad881a7dccb40d",
+   "min@card": "3cad881a7dccb40d",
+   "max@board": "27ab650507b4b202",
+   "max@card": "fbb75900eb47b3e9"
+  }
+ },
+ "counter": {
+  "label": "Base cabinet",
+  "components": [
+   "box:Base cabinet"
+  ],
+  "cases": {
+   "defaults@board": "45811a8c8568b899",
+   "defaults@card": "8ef4cbdb2087294e",
+   "min@board": "98e830234150af65",
+   "min@card": "98e830234150af65",
+   "max@board": "1e372b4f6611cdbd",
+   "max@card": "62b8af107dd612bf"
+  }
+ },
+ "sink": {
+  "label": "Sink unit",
+  "components": [
+   "box:Sink unit"
+  ],
+  "cases": {
+   "defaults@board": "90e7d2a6fc3617c4",
+   "defaults@card": "4d0511b4d1145eab",
+   "min@board": "eea72d887f2b0952",
+   "min@card": "1c206fc94fb85bfe",
+   "max@board": "a542772e3487aeb3",
+   "max@card": "66b12c5b76485e19"
+  }
+ },
+ "stove": {
+  "label": "Stove",
+  "components": [
+   "box:Stove"
+  ],
+  "cases": {
+   "defaults@board": "b45ee95bc5bf32e3",
+   "defaults@card": "9cf506178dd39a15",
+   "min@board": "4a803feba4f5c949",
+   "min@card": "2a5835186bf043b9",
+   "max@board": "ce5425e80455676f",
+   "max@card": "1c91c9340dfaaf8d"
+  }
+ },
+ "fridge": {
+  "label": "Fridge",
+  "components": [
+   "box:Fridge"
+  ],
+  "cases": {
+   "defaults@board": "2033dd80c5bd5470",
+   "defaults@card": "919ef1c7ce5c07c3",
+   "min@board": "222e8dea5bc8ce81",
+   "min@card": "7dffaeaa88dec7e6",
+   "max@board": "f5aab170770823de",
+   "max@card": "cc1a6538852c7ea9"
+  }
+ },
+ "uppercabinet": {
+  "label": "Wall cabinet",
+  "components": [
+   "box:Wall cabinet"
+  ],
+  "cases": {
+   "defaults@board": "8957a28dad62f980",
+   "defaults@card": "2623d7e65cfd206a",
+   "min@board": "131544840154aa9f",
+   "min@card": "131544840154aa9f",
+   "max@board": "c5add26bebeb0ea6",
+   "max@card": "443c9d8e4953bd54"
+  }
+ },
+ "wallshelf": {
+  "label": "Open wall shelf",
+  "components": [
+   "box:Wall shelf"
+  ],
+  "cases": {
+   "defaults@board": "55ac3a11ce128be8",
+   "defaults@card": "282324da3af33a63",
+   "min@board": "18e035091bb05d3c",
+   "min@card": "18e035091bb05d3c",
+   "max@board": "38ddd591155b5257",
+   "max@card": "686c169349fdb28f"
+  }
+ },
+ "bathtub": {
+  "label": "Bathtub",
+  "components": [
+   "box:Bathtub"
+  ],
+  "cases": {
+   "defaults@board": "b85a03b000ec7b86",
+   "defaults@card": "b85a03b000ec7b86",
+   "min@board": "ece32c342b521c84",
+   "min@card": "ece32c342b521c84",
+   "max@board": "76eb82676d78392b",
+   "max@card": "76eb82676d78392b"
+  }
+ },
+ "vanity": {
+  "label": "Vanity",
+  "components": [
+   "box:Vanity"
+  ],
+  "cases": {
+   "defaults@board": "664736178c7ddaa9",
+   "defaults@card": "5a8e0314bd1a27ee",
+   "min@board": "ff140b081eb24c72",
+   "min@card": "05f3961756e56691",
+   "max@board": "da0dc9c05424a109",
+   "max@card": "944a7c2b9db43597"
+  }
+ },
+ "toilet": {
+  "label": "Toilet",
+  "components": [
+   "box:Bowl",
+   "box:Tank"
+  ],
+  "cases": {
+   "defaults@board": "44fd18790e411777",
+   "defaults@card": "44fd18790e411777",
+   "min@board": "97d1c7d3596317fa",
+   "min@card": "97d1c7d3596317fa",
+   "max@board": "2aa1bae3937e69af",
+   "max@card": "2aa1bae3937e69af"
+  }
+ },
+ "cafecounter": {
+  "label": "Shop counter",
+  "components": [
+   "box:Counter"
+  ],
+  "cases": {
+   "defaults@board": "567b30795d3e22a1",
+   "defaults@card": "4136a048eeefb216",
+   "min@board": "edc2725a662f2b0f",
+   "min@card": "edc2725a662f2b0f",
+   "max@board": "851250cf292c8d6c",
+   "max@card": "69a68bf6c360cc66"
+  }
+ },
+ "stool": {
+  "label": "Bar stool",
+  "components": [
+   "box:Stool"
+  ],
+  "cases": {
+   "defaults@board": "5c7a64989f948ac1",
+   "defaults@card": "5c7a64989f948ac1",
+   "min@board": "257bedc508e71fab",
+   "min@card": "257bedc508e71fab",
+   "max@board": "101268a6c33b3ef2",
+   "max@card": "101268a6c33b3ef2"
+  }
+ },
+ "cafetable": {
+  "label": "Café table",
+  "components": [
+   "box:Café table"
+  ],
+  "cases": {
+   "defaults@board": "df2e40307c03611d",
+   "defaults@card": "df2e40307c03611d",
+   "min@board": "8c7e410eb6210dfc",
+   "min@card": "8c7e410eb6210dfc",
+   "max@board": "b86772d1a627a900",
+   "max@card": "b86772d1a627a900"
+  }
+ },
+ "displayshelf": {
+  "label": "Display shelving",
+  "components": [
+   "box:Display shelving"
+  ],
+  "cases": {
+   "defaults@board": "b344b619700e4234",
+   "defaults@card": "f6a5955ef60729fd",
+   "min@board": "d8a56d17eda51d09",
+   "min@card": "3f12e93be668d0ff",
+   "max@board": "ec332d2e55936f3c",
+   "max@card": "740835dd97dcdb6d"
+  }
+ },
+ "chalkboard": {
+  "label": "Menu board",
+  "components": [
+   "flat:Menu board"
+  ],
+  "cases": {
+   "defaults@board": "ba0e731c9254c5dd",
+   "defaults@card": "ba0e731c9254c5dd",
+   "min@board": "f9e6ee1734a29bad",
+   "min@card": "f9e6ee1734a29bad",
+   "max@board": "af88f35ff379088a",
+   "max@card": "af88f35ff379088a"
+  }
+ },
+ "ladder": {
+  "label": "Library ladder",
+  "components": [
+   "flat:Ladder"
+  ],
+  "cases": {
+   "defaults@board": "a91ac86ed33e5741",
+   "defaults@card": "a91ac86ed33e5741",
+   "min@board": "f792354b324853c0",
+   "min@card": "f792354b324853c0",
+   "max@board": "92d5bae319cccf07",
+   "max@card": "92d5bae319cccf07"
+  }
+ },
+ "books": {
+  "label": "Book stack",
+  "components": [
+   "box:Book 1",
+   "box:Book 2",
+   "box:Book 3"
+  ],
+  "cases": {
+   "defaults@board": "d04bc782365786ee",
+   "defaults@card": "d04bc782365786ee",
+   "min@board": "969ab71212310325",
+   "min@card": "969ab71212310325",
+   "max@board": "b827f70f316fc348",
+   "max@card": "b827f70f316fc348"
+  }
+ },
+ "rug": {
+  "label": "Rug",
+  "components": [
+   "flat:Rug"
+  ],
+  "cases": {
+   "defaults@board": "90c8dec30a9258ce",
+   "defaults@card": "90c8dec30a9258ce",
+   "min@board": "618e704178a39511",
+   "min@card": "618e704178a39511",
+   "max@board": "a27a5d465ee56f75",
+   "max@card": "a27a5d465ee56f75",
+   "shape=oval@board": "90c8dec30a9258ce",
+   "shape=oval@card": "90c8dec30a9258ce",
+   "shape=rect@board": "50ea44d1f04622a9",
+   "shape=rect@card": "50ea44d1f04622a9",
+   "shape=round@board": "e3cce92326964df1",
+   "shape=round@card": "e3cce92326964df1"
+  }
+ },
+ "plant": {
+  "label": "Potted plant",
+  "components": [
+   "box:Pot",
+   "flat:Leaves"
+  ],
+  "cases": {
+   "defaults@board": "6061a86933026033",
+   "defaults@card": "6061a86933026033",
+   "min@board": "73ebd47d7a404c81",
+   "min@card": "73ebd47d7a404c81",
+   "max@board": "f6f366b959c182b7",
+   "max@card": "f6f366b959c182b7"
+  }
+ },
+ "frame": {
+  "label": "Picture frame",
+  "components": [
+   "flat:Frame"
+  ],
+  "cases": {
+   "defaults@board": "b5526fc08a5c2ad7",
+   "defaults@card": "b5526fc08a5c2ad7",
+   "min@board": "7b29a95a751889c3",
+   "min@card": "7b29a95a751889c3",
+   "max@board": "f8a75612b7f7a3a8",
+   "max@card": "f8a75612b7f7a3a8"
+  }
+ },
+ "mirror": {
+  "label": "Round mirror / clock",
+  "components": [
+   "flat:Mirror rim"
+  ],
+  "cases": {
+   "defaults@board": "12057c965754d113",
+   "defaults@card": "12057c965754d113",
+   "min@board": "4669dd74b7282218",
+   "min@card": "4669dd74b7282218",
+   "max@board": "3444a979eaca23b5",
+   "max@card": "3444a979eaca23b5"
+  }
+ },
+ "tv": {
+  "label": "Wall TV",
+  "components": [
+   "flat:TV"
+  ],
+  "cases": {
+   "defaults@board": "f08d6e216ee00c0f",
+   "defaults@card": "f08d6e216ee00c0f",
+   "min@board": "08a43e135fb9ade9",
+   "min@card": "08a43e135fb9ade9",
+   "max@board": "fc55d93f90afb78a",
+   "max@card": "fc55d93f90afb78a"
+  }
+ },
+ "curtains": {
+  "label": "Curtains",
+  "components": [
+   "flat:Left curtain",
+   "flat:Right curtain"
+  ],
+  "cases": {
+   "defaults@board": "d69167be55556861",
+   "defaults@card": "d69167be55556861",
+   "min@board": "174d664be4dd4718",
+   "min@card": "174d664be4dd4718",
+   "max@board": "c9e6baa59d98bf9e",
+   "max@card": "c9e6baa59d98bf9e"
+  }
+ }
+}
