@@ -113,10 +113,10 @@ export function prepareShell(kit, warn) {
  * Build the shell and add its parts through the compiler's own helpers.
  * Returns what the rest of the app needs: joints by part id and LED spots.
  */
-export function compileShell(prep, { t, fingerWidth, holes, getMat, newGroup, addPart, add3d, warn, xf }) {
+export function compileShell(prep, { t, fingerWidth, minFeature, cutter, holes, getMat, newGroup, addPart, add3d, warn, xf }) {
   let sh;
   try {
-    sh = buildShell(prep.spec, { t, fingerWidth, holes, materials: prep.kit.materials });
+    sh = buildShell(prep.spec, { t, fingerWidth, minFeature, cutter, holes, materials: prep.kit.materials });
   } catch (err) {
     warn(err.message, 'error');
     return { type: prep.spec.type, joints: [], lights: [] };

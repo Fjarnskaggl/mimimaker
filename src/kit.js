@@ -148,7 +148,7 @@ export function compileKit(kit) {
   // >>> T2 shells
   const roomGroup = shellPrep ? null : newGroup('Room box', rm);
   if (shellPrep) {
-    shell = compileShell(shellPrep, { t, fingerWidth: jointWidth(rm), holes, getMat, newGroup, addPart, add3d, warn, xf: worldXf });
+    shell = compileShell(shellPrep, { t, fingerWidth: jointWidth(rm), minFeature: minJointFeature(machine, rm), cutter: cutterName(rm), holes, getMat, newGroup, addPart, add3d, warn, xf: worldXf });
   } else if (rm.kind === 'board') { // <<< T2 shells
     const res = buildBox({ W, D, H, t, faces: roomFaces, holes, fingerWidth: jointWidth(rm), minFeature: minJointFeature(machine, rm) });
     checkFingers(res.minFinger, rm, 'Room box');
