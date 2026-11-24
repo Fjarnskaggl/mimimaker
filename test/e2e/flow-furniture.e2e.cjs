@@ -311,3 +311,23 @@ test('flow: turning a piece with the ring shows where it will land in the positi
   F.assertClean(page);
   await page.context().close();
 });
+
+test('flow: on the Plan tab, hovering or focusing a pieces-list row marks that piece on the plan', async () => {
+  const page = await F.openApp(browser, URL);
+  await page.click('[data-view=plan]');
+  const marked = () => page.evaluate(() => [...document.querySelectorAll('.plan-canvas .plan-item.over')].map((g) => Number(g.dataset.index)));
+  await page.hover('[data-select-item="3"]');
+  assert.deepEqual(await marked(), [3], 'the hovered row marks its piece');
+  const stroke = await page.evaluate(() => getComputedStyle(document.querySelector('.plan-canvas .plan-item.over rect, .plan-canvas .plan-item.over ellipse')).stroke);
+  const plain = await page.evaluate(() => getComputedStyle(document.querySelector('.plan-canvas .plan-item:not(.over):not(.sel) rect')).stroke);
+  assert.notEqual(stroke, plain, 'and it looks different from the others');
+  await page.mouse.move(2, 2);
+  assert.deepEqual(await marked(), [], 'cleared when the pointer leaves');
+  await page.focus('[data-select-item="1"]');
+  assert.deepEqual(await marked(), [1], 'a focused row marks its piece too');
+  await page.keyboard.press('Space'); // pick it: the plan redraws with it selected, and the row mark goes
+  assert.deepEqual(await marked(), []);
+  assert.equal(await page.locator('.plan-canvas .plan-item.sel[data-index="1"]').count(), 1);
+  F.assertClean(page);
+  await page.context().close();
+});
