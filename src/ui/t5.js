@@ -56,18 +56,18 @@ function el(tag, attrs = {}, ...children) {
 }
 
 const CSS = `
-.t5-circuit { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius, 8px); padding: 10px 12px; margin: 0 0 12px; font-size: 13px; }
+.t5-circuit { background: var(--panel); border: 2px dashed var(--line-control, var(--line)); border-radius: var(--radius-cut-md, var(--radius, 8px)); padding: 10px 12px; margin: 0 0 12px; font-size: 13px; }
 .t5-circuit h3 { margin: 0 0 6px; font-size: 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.t5-circuit .t5-badge { font-size: 11px; padding: 1px 7px; border-radius: 999px; background: #2aa36b; color: #fff; text-transform: uppercase; letter-spacing: .04em; }
-.t5-circuit[data-status=warn] .t5-badge { background: #c98a06; }
-.t5-circuit[data-status=error] .t5-badge { background: #c8402a; }
+.t5-circuit .t5-badge { font-size: 11px; padding: 1px 7px; border-radius: var(--radius-cut-sm, 999px); background: var(--success-soft); color: var(--success); border: 1.5px solid var(--success); text-transform: uppercase; letter-spacing: .04em; }
+.t5-circuit[data-status=warn] .t5-badge { background: var(--warning-soft); color: var(--warning); border-color: var(--warning); }
+.t5-circuit[data-status=error] .t5-badge { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
 .t5-circuit dl { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 0; }
 .t5-circuit dt { color: var(--muted); }
 .t5-circuit dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .t5-meter { height: 6px; border-radius: 3px; background: var(--line); margin: 8px 0; overflow: hidden; }
-.t5-meter span { display: block; height: 100%; background: #2aa36b; }
-.t5-circuit[data-status=warn] .t5-meter span { background: #c98a06; }
-.t5-circuit[data-status=error] .t5-meter span { background: #c8402a; }
+.t5-meter span { display: block; height: 100%; background: var(--success); }
+.t5-circuit[data-status=warn] .t5-meter span { background: var(--warning); }
+.t5-circuit[data-status=error] .t5-meter span { background: var(--danger); }
 .t5-circuit ul { margin: 6px 0 0; padding-left: 18px; }
 .t5-circuit .t5-note { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
 `;
