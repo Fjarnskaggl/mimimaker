@@ -54,6 +54,7 @@ const view = {
   step: 'design', views: { design: '3d', light: '3d' }, tab: 'preview',
   yaw: -32, pitch: 26, theme: 'Basics', night: false, sel: null, snap: 5,
 };
+const stats = { compiles: 0 }; // work counters for the perf budgets (test/e2e/perf-*.e2e.cjs)
 const sectionOpen = new Map(); // inspector sections the viewer opened or closed, by title
 
 // ------------------------------------------------------------------ helpers
@@ -174,6 +175,7 @@ const slug = (s) => (s || 'kit').toLowerCase().replace(/[^a-z0-9]+/g, '-').repla
 function update({ sidebar = false } = {}) {
   syncShellRoom(kit); // T2 shells: the room follows the shell after any edit (scale, board thickness, undo)
   try {
+    stats.compiles++;
     compiled = compileKit(kit);
   } catch (err) {
     console.error(err);
@@ -1145,7 +1147,7 @@ async function init() {
     }
     try { window.history.replaceState(null, "", location.pathname + location.search); } catch { /* ignore */ }
   }
-  window.mimimaker = { get kit() { return kit; }, get compiled() { return compiled; }, refresh: () => restructured() };
+  window.mimimaker = { get kit() { return kit; }, get compiled() { return compiled; }, refresh: () => restructured(), stats };
 
   $('#brand-mark').innerHTML = MARK;
   document.querySelectorAll('[data-icon]').forEach((el) => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon)));
@@ -1171,7 +1173,13 @@ async function init() {
 
   const nameInput = $('#kit-name');
   nameInput.value = kit.name;
-  nameInput.addEventListener('input', () => { kit.name = nameInput.value; changed(); });
+  // the name changes no part, so typing it saves without recompiling the kit
+  nameInput.addEventListener('input', () => {
+    kit.name = nameInput.value;
+    saveKit();
+    if (view.step === 'build' || view.step === 'make') renderView(); // the guide's title, the sheet files' titles
+    scheduleCommit();
+  });
   $('#btn-new').addEventListener('click', openStart);
   $('#btn-submit').addEventListener('click', () => { closePops(); openSubmitDialog($('#submit'), kit, { h, download, ic }); }); // T7
   $('#btn-bundle').addEventListener('click', () => { closePops(); openBundleDialog($('#bundle'), kit, { h, download, ic, bundle: creatorBundle, zip: makeZip }); }); // T7
