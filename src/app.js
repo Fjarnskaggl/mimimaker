@@ -494,7 +494,7 @@ function lightingInspector() {
     const on = L.enabled && compiled?.lighting?.enabled;
     return [
       inspHead('Lighting', 'Circuit', `${shellLeds.length} light${shellLeds.length === 1 ? '' : 's'}`),
-      on ? renderCircuitSummary(compiled.lighting.circuit) : lightsOffNotice('to wire the shell\'s LEDs'),
+      on ? renderCircuitSummary(compiled.lighting.circuit) : !L.enabled ? lightsOffNotice('to wire the shell\'s LEDs') : null,
       section('Lights', [
         h('p', { class: 'hint', 'data-shell-lights': '' }, 'The shell places these LEDs itself (behind an alley\'s lit windows, under shelves, floors and roofs). Change the shell in its panel to move them.'),
         h('div', { class: 'insp-list' }, shellLeds.map((led) => h('div', { class: 'insp-row' },
@@ -522,7 +522,7 @@ function lightingInspector() {
   const on = L.enabled && compiled?.lighting?.enabled;
   return [
     inspHead('Lighting', 'Circuit', `${L.leds.length} light${L.leds.length === 1 ? '' : 's'}`),
-    on ? renderCircuitSummary(compiled.lighting.circuit) : lightsOffNotice('to cut the wire holes'), // [T5] circuit summary
+    on ? renderCircuitSummary(compiled.lighting.circuit) : !L.enabled ? lightsOffNotice('to cut the wire holes') : null, // [T5] circuit summary
     section('Lights', [
       h('div', { class: 'insp-list' }, rows),
       h('div', { class: 'add-row' },
@@ -550,9 +550,9 @@ function lightingInspectorPower(L) {
       numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
     renderMountField(L.power, restructured), // [T5] mount picker (restructured: the base adds switch fields)
     renderSwitchFields(L.power, changed), // [T5] hidden base switch
-    renderCoverField(L, { checkField, restructured, toast, range: compiled.lighting?.coverRange }), // [T5] cable cover
+    renderCoverField(L, { checkField, restructured, toast, range: () => compiled?.lighting?.coverRange }), // read on change: the supply may have changed since // [T5] cable cover
     renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
-    // a hidden base sits on the floor, so only where along the back wall matters there
+    // a hidden base sits on the floor, so its height does nothing there
     h('div', { class: L.power.mount === 'base' ? 'grid2' : 'grid3' },
       selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
       numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
@@ -949,7 +949,7 @@ function onKey(ev) {
   // a checkbox, radio or select has no text of its own to undo, so the app's
   // undo works there too, the same as the Undo button
   const textEntry = tag === 'TEXTAREA' || (tag === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color)$/.test(ev.target.type));
-  if (mod && !textEntry && (key === 'z' || key === 'y')) { ev.preventDefault(); key === 'y' || ev.shiftKey ? redo() : undo(); return; }
+  if (mod && !textEntry && !document.querySelector('dialog[open]') && (key === 'z' || key === 'y')) { ev.preventDefault(); key === 'y' || ev.shiftKey ? redo() : undo(); return; }
   if (typing) return;
   if (mod || ev.altKey) return;
   // the plan and Design's 3D view share the shortcuts; in 3D only while nothing

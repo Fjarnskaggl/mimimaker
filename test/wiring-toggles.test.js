@@ -39,12 +39,12 @@ test('cover off leaves a box the user moved after turning it on', () => {
   assert.deepEqual([wall.power.pos, wall.power.elev], [270, 50], 'nor one moved to another wall');
 });
 
-test('a box with no position yet gets none back', () => {
+test('a box with no position yet goes back to where it was drawn (0, 0), not to nowhere', () => {
   const L = { power: { wall: 'back' } };
   setCover(L, true, range);
   assert.deepEqual([L.power.pos, L.power.elev], [80, 50]);
   setCover(L, false, range);
-  assert.ok(!('pos' in L.power) && !('elev' in L.power));
+  assert.deepEqual([L.power.pos, L.power.elev], [0, 0]);
 });
 
 test('the cover move reads as a sentence for the toast', () => {

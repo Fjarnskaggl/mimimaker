@@ -241,17 +241,14 @@ export function setCover(lighting, on, range) {
   lighting.cover = { ...rest, enabled: true };
   if (!range || !glued) return null;
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v ?? lo));
-  const from = [p.pos ?? null, p.elev ?? null];
+  const from = [p.pos ?? 0, p.elev ?? 0]; // where the box is drawn when it has no position yet
   const to = [clamp(p.pos, range.pos), clamp(p.elev, range.elev)];
   if (from[0] === to[0] && from[1] === to[1]) return null;
   put(p, to);
   lighting.cover.moved = { from, to };
   return { from, to };
 }
-const put = (p, [pos, elev]) => {
-  if (pos == null) delete p.pos; else p.pos = pos;
-  if (elev == null) delete p.elev; else p.elev = elev;
-};
+const put = (p, [pos, elev]) => { p.pos = pos; p.elev = elev; };
 
 /** Plain words for a power box move made by setCover, for a toast. */
 export function coverMoveText(move, on) {
@@ -259,16 +256,16 @@ export function coverMoveText(move, on) {
   const [pos, elev] = move.to;
   return on
     ? `Moved the power box to ${pos} cm along, ${elev} cm up, so the cover fits round it.`
-    : `Moved the power box back to ${pos ?? 0} cm along, ${elev ?? 0} cm up.`;
+    : `Moved the power box back to ${pos} cm along, ${elev} cm up.`;
 }
 
 /**
  * "Hide wires behind a cover" checkbox, built with the app's checkField.
- * ui: { checkField, restructured, range, toast? }
+ * ui: { checkField, restructured, range (or a function giving it, read on change), toast? }
  */
 export function renderCoverField(lighting, ui) {
   const field = ui.checkField('Hide wires behind a cover (back wall)', !!lighting.cover?.enabled, (v) => {
-    const text = coverMoveText(setCover(lighting, v, ui.range), v);
+    const text = coverMoveText(setCover(lighting, v, typeof ui.range === 'function' ? ui.range() : ui.range), v);
     ui.restructured();
     if (text) ui.toast?.(text);
   });
