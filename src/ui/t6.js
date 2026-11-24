@@ -5,7 +5,7 @@
 import { renderScene } from '../preview3d.js';
 import { loadThree, webglSupported } from '../render/three-loader.js';
 import { createViewer } from '../render/webgl.js';
-import { resolveLook, faceMaterial, textureChoices, textureChoice, setTextureChoice } from '../textures/look.js';
+import { resolveLook, faceTexture, textureChoices, textureChoice, setTextureChoice } from '../textures/look.js';
 
 const PREF_KEY = 'mimimaker.t6.webgl';
 // zoom is the viewer's own (wheel), kept here so every redraw uses it: the app
@@ -233,8 +233,9 @@ export function drawStage(stage, faces, view, kit = null) {
     state.viewer.mount(stage);
     const look = kit ? resolveLook(kit) : {};
     state.viewer.update(faces, { ...view, zoom: state.zoom }, {
-      textureOf: (face) => look[faceMaterial(face, kit)] || null,
-      lookKey: JSON.stringify([look, kit?.scale]),
+      // printed parts show their print pattern, the rest their raw material (T6)
+      textureOf: (face) => faceTexture(face, kit, look),
+      lookKey: JSON.stringify([look, kit?.scale, (kit?.materials || []).map((m) => [m.id, m.kind, m.color, m.name])]),
       scale: kit?.scale,
     });
     stage.dataset.renderer = 'webgl';

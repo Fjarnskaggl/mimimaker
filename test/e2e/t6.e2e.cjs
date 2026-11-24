@@ -89,13 +89,51 @@ test('WebGL viewer: walls and floor wear the room palette’s textures; the caf�
   await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().texturesReady, null, { timeout: 10000 });
   const s = await sample(page);
   assert.ok(s.textured >= 4, `textured meshes: ${s.textured}`);
-  assert.ok(s.textures.length >= 2, `textures: ${s.textures}`);
+  // the reading nook's palette: sprig wallpaper and plank floor (raw finishes alone don't count)
+  for (const id of ['wallpaper-sprig', 'wood-planks']) assert.ok(s.textures.includes(id), `${id} in ${s.textures}`);
   // switch to the café: its walls are brick
   await page.locator('.rt-card[aria-label="Start from Little café"]').evaluate((e) => { e.click(); e.click(); });
   await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().textures.includes('brick'), null, { timeout: 10000 });
   // the SVG preview is untouched by textures
   await page.click('#renderer-toggle');
   assert.equal(await page.locator('.stage svg.scene-svg image, .stage svg.scene-svg pattern').count(), 0);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('WebGL viewer: every mesh but the LED glows wears a texture, in each room type and a shell (raw board, card and felt where nothing prints)', async () => {
+  const page = await open();
+  await switchOn(page);
+  const check = async (what) => {
+    await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().texturesReady, null, { timeout: 15000 });
+    const s = await sample(page);
+    assert.equal(s.untextured, 0, `${what}: ${s.untextured} of ${s.meshes} meshes have no texture`);
+    return s;
+  };
+  const first = await check('reading nook');
+  for (const id of ['chipboard', 'wood-grain', 'card-fibre', 'felt']) assert.ok(first.textures.includes(id), `${id} in ${first.textures}`);
+  for (const id of ['cafe', 'bakery', 'music-room']) {
+    await page.locator(`.rt-card[data-room="${id}"]`).evaluate((e) => { e.click(); e.click(); });
+    await page.waitForFunction((rt) => window.mimimaker.kit.roomType === rt, id);
+    await check(id);
+  }
+  await page.locator('[data-panel=shell] select[data-shell=type]').selectOption('twostorey');
+  await page.waitForFunction(() => window.mimimaker.kit.shell?.type === 'twostorey');
+  await check('two-storey shell');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('WebGL viewer: a rebuild of the same room reuses its texture images instead of drawing them again', async () => {
+  const page = await open();
+  await switchOn(page);
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().texturesReady, null, { timeout: 15000 });
+  const made = (await sample(page)).texturesMade;
+  assert.ok(made >= 4, `textures drawn: ${made}`);
+  // the same kit again (new faces, same look): nothing new to draw
+  await page.evaluate(() => window.mimimaker.refresh());
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().texturesReady);
+  assert.equal((await sample(page)).texturesMade, made);
   assert.deepEqual(page.errors, []);
   await page.close();
 });
@@ -120,8 +158,9 @@ test('texture picker: change the floor, switch a texture off, undo; only shown w
   assert.deepEqual(await page.evaluate((m) => window.mimimaker.kit.look.textures[m], floorMat), { id: 'tiles' });
 
   await floor.selectOption('none');
-  await page.waitForFunction((n) => document.querySelector('.stage').t6viewer.sample().textured < n, before);
-  assert.ok(!(await textures()).includes('tiles'));
+  // no printed pattern: the floor shows its plain cardstock instead
+  await page.waitForFunction(() => !document.querySelector('.stage').t6viewer.sample().textures.includes('tiles'));
+  assert.equal(await page.evaluate(() => document.querySelector('.stage').t6viewer.sample().textured), before, 'still textured, as plain card');
 
   // undo goes back to tiles, and the picker follows
   await page.waitForTimeout(500); // let the edit settle into its own undo step

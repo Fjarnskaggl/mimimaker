@@ -84,6 +84,8 @@ export function compileKit(kit) {
     faces3d.push({
       layer, color, opacity: opts.opacity ?? 1, cull: opts.cull ?? false, glow: !!opts.glow, item: currentItem,
       thickness: opts.thickness, // mm of material behind the face (solid parts only; WebGL viewer)
+      ...(opts.material ? { material: opts.material } : {}), // the material it is cut from: picks its texture (T6)
+      ...(opts.print ? { print: true } : {}), // wallpaper / floor covering: wears the printed pattern
       polys: polys2d.map((poly) => poly.map((p) => xf.p(map(p)))), n: xf.n(plane.n),
     });
   };
@@ -157,7 +159,7 @@ export function compileKit(kit) {
     checkFingers(res.minFinger, rm, 'Room box');
     for (const p of res.panels) {
       addPart(roomGroup, ROOM_FACE_NAMES[p.face], rm, [p.outline, ...p.holes]);
-      add3d(0, [p.outline, ...p.holes], faceFrame(p.face, W, D, H, t, 'inner'), worldXf, rm.color, { thickness: t });
+      add3d(0, [p.outline, ...p.holes], faceFrame(p.face, W, D, H, t, 'inner'), worldXf, rm.color, { thickness: t, material: rm.id });
     }
     roomGroup.steps.push(
       `Dry-fit the walls into the floor (${fmtIds(roomGroup.parts)}). The tabs only go together one way — the floor${room.ceiling ? ' and ceiling' : ''} own the corners.`,
@@ -170,7 +172,7 @@ export function compileKit(kit) {
     }
     for (const f of roomFaces) {
       const [a, b] = f === 'bottom' || f === 'top' ? [W, D] : f === 'back' ? [W, H] : [D, H];
-      add3d(0, [rectPoly(0, 0, a, b), ...(holes[f] || [])], faceFrame(f, W, D, H, 0, 'inner'), worldXf, rm.color, { thickness: t });
+      add3d(0, [rectPoly(0, 0, a, b), ...(holes[f] || [])], faceFrame(f, W, D, H, 0, 'inner'), worldXf, rm.color, { thickness: t, material: rm.id });
     }
     roomGroup.steps.push(
       `Fold each glue tab on ${fmtIds(roomGroup.parts)} along its score line and glue the walls to the floor and to each other, tabs on the inside.`,
@@ -209,7 +211,7 @@ export function compileKit(kit) {
       }
       const id = addPart(g, `${cap(o.wall)} ${o.door ? 'door frame' : 'window frame'}`, tm, polys);
       const fr = faceFrame(o.wall, W, D, H, t + 0.3, 'inner');
-      add3d(1.5, polys, fr, worldXf, tm.color);
+      add3d(1.5, polys, fr, worldXf, tm.color, { material: tm.id });
       g.steps.push(`Glue ${o.door ? 'door' : 'window'} frame #${id} around the ${o.wall} wall opening on the inside face.`);
     }
     if (trimOpenings.some((o) => !o.door)) g.steps.push('Optional: glue clear acetate behind window frames for glass.');
@@ -238,8 +240,9 @@ export function compileKit(kit) {
         .map((poly) => poly.map(([x, y]) => [x - u0, y - v0]));
       const polys = [outline, ...windowHoles];
       addPart(g, `${cap(wall)} wallpaper`, wm, polys);
+      parts.at(-1).print = true; // T3 prints the wallpaper pattern on it
       const fr = faceFrame(wall, W, D, H, t + 0.15, 'inner');
-      add3d(1, polys, { ...fr, o: v3.add(fr.o, v3.add(v3.mul(fr.U, u0), v3.mul(fr.V, v0))) }, worldXf, wm.color);
+      add3d(1, polys, { ...fr, o: v3.add(fr.o, v3.add(v3.mul(fr.U, u0), v3.mul(fr.V, v0))) }, worldXf, wm.color, { material: wm.id, print: true });
     }
     g.steps.push(`Glue wallpaper ${fmtIds(g.parts)} to the inside of each wall with a glue stick or spray adhesive before adding furniture. Line the cut-outs up with the window and door openings.`);
   }
@@ -250,7 +253,8 @@ export function compileKit(kit) {
     const poly = rectPoly(0, 0, Wi - 2 * m, Di - m);
     const ledHoles = (lighting.holes.bottom || []).map((h) => h.map(([x, y]) => [x - t - m, y]));
     addPart(g, 'Floor covering', fm, [poly, ...ledHoles]);
-    add3d(1, [poly, ...ledHoles], { o: [t + m, 0, t + 0.1], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, worldXf, fm.color);
+    parts.at(-1).print = true; // T3 prints the floor pattern on it
+    add3d(1, [poly, ...ledHoles], { o: [t + m, 0, t + 0.1], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, worldXf, fm.color, { material: fm.id, print: true });
     g.steps.push(`Glue floor covering #${g.parts[0]} onto the floor. Tip: score faint lines across it every few mm for floorboards.`);
   }
 
@@ -263,7 +267,7 @@ export function compileKit(kit) {
       if (led.load?.device) {
         const size = led.size;
         const shape = led.effect === 'fan' ? fanRotor(led.u, led.v, size) : led.effect === 'turntable' ? turntableDisc(led.u, led.v, size) : null;
-        if (shape && !led.misplaced) add3d(1.7, shape, faceFrame(led.face, W, D, H, t + (led.effect === 'fan' ? 4 : 1), 'inner'), worldXf, '#b8a990');
+        if (shape && !led.misplaced) add3d(1.7, shape, faceFrame(led.face, W, D, H, t + (led.effect === 'fan' ? 4 : 1), 'inner'), worldXf, '#b8a990', { material: (mats.get(room.trimMaterial) || kit.materials[0]).id }); // cut from trim, as in lighting.parts
         continue;
       }
       // <<< [T5]
@@ -304,12 +308,12 @@ export function compileKit(kit) {
         const ids = { base: [], stops: [], hatch: [], mount: [] };
         for (const p of b.panels) {
           ids.base.push(addPart(bg, p.name, bm, p.polys));
-          add3d(0, p.polys, faceFrame(p.face, L.W, L.D, L.H, bm.thickness, 'inner'), under, bm.color, { thickness: bm.thickness });
+          add3d(0, p.polys, faceFrame(p.face, L.W, L.D, L.H, bm.thickness, 'inner'), under, bm.color, { thickness: bm.thickness, material: bm.id });
         }
         for (const p of b.parts) {
           const id = addPart(bg, p.name, bm, p.polys);
           ids[p.key === 'stop' ? 'stops' : p.key].push(id);
-          if (p.view) add3d(0.5, p.polys, faceFrame(p.view.face, L.W, L.D, L.H, bm.thickness, 'inner'), under, bm.color, { thickness: bm.thickness });
+          if (p.view) add3d(0.5, p.polys, faceFrame(p.view.face, L.W, L.D, L.H, bm.thickness, 'inner'), under, bm.color, { thickness: bm.thickness, material: bm.id });
         }
         bg.steps.push(...b.steps.map((st) => st.replace(/\{(\w+)\}/g, (m, k) => (ids[k] ? fmtIds(ids[k]) : m))));
       }
@@ -368,7 +372,7 @@ export function compileKit(kit) {
         const plane = c.wall ? wallPlane : c.plane;
         const fmat = c.material ? getMat(c.material, title) : mat;
         const pid = addPart(group, c.name, fmat, c.polys, c.scores || []);
-        add3d(c.surface ? 1.5 : 2, c.polys, plane, c.wall ? worldXf : cxf, fmat.color, { cull: false, thickness: c.surface ? undefined : fmat.thickness });
+        add3d(c.surface ? 1.5 : 2, c.polys, plane, c.wall ? worldXf : cxf, fmat.color, { cull: false, thickness: c.surface ? undefined : fmat.thickness, material: fmat.id });
         group.steps.push(`Glue the ${c.name.toLowerCase()} (#${pid}) in place.`);
       }
     }
@@ -388,11 +392,11 @@ export function compileKit(kit) {
       const res = buildBox({ W: bw, D: bd, H: bh, t: mt, faces: c.faces, shelves: c.shelves || [], scores: c.scores || {}, holes: c.holes || {}, fingerWidth: jointWidth(mat), minFeature: minJointFeature(machine, mat) });
       checkFingers(res.minFinger, mat, title);
       const ids = res.panels.map((pn) => {
-        add3d(2, [pn.outline, ...pn.holes], faceFrame(pn.face, bw, bd, bh), xf, mat.color, { cull: closed, thickness: mt });
+        add3d(2, [pn.outline, ...pn.holes], faceFrame(pn.face, bw, bd, bh), xf, mat.color, { cull: closed, thickness: mt, material: mat.id });
         return addPart(group, `${c.name} ${pn.face}`, mat, [pn.outline, ...pn.holes], pn.scores);
       });
       const shelfIds = res.shelves.map((sp, k) => {
-        add3d(2, [sp.outline], { o: [sp.x0, sp.y0, sp.z + mt], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, xf, mat.color, { cull: true, thickness: mt });
+        add3d(2, [sp.outline], { o: [sp.x0, sp.y0, sp.z + mt], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, xf, mat.color, { cull: true, thickness: mt, material: mat.id });
         return addPart(group, `${c.name} shelf ${k + 1}`, mat, [sp.outline]);
       });
       group.steps.push(`${c.name}: dry-fit panels ${fmtIds(ids)} — the tabs drop into their notches. Glue and hold square until set.`);
@@ -408,7 +412,7 @@ export function compileKit(kit) {
     const ids = net.pieces.map((pc, k) => addPart(group, net.pieces.length > 1 ? `${c.name} ${pc.faces[0]}` : `${c.name} net`, mat, pc.polys, pc.scores));
     for (const f of c.faces) {
       const [a, b] = f === 'bottom' || f === 'top' ? [bw, bd] : f === 'front' || f === 'back' ? [bw, bh] : [bd, bh];
-      add3d(2, [rectPoly(0, 0, a, b), ...((c.holes || {})[f] || [])], faceFrame(f, bw, bd, bh), xf, mat.color, { cull: c.faces.length === 6, thickness: mt });
+      add3d(2, [rectPoly(0, 0, a, b), ...((c.holes || {})[f] || [])], faceFrame(f, bw, bd, bh), xf, mat.color, { cull: c.faces.length === 6, thickness: mt, material: mat.id });
     }
     const shelfIds = (c.shelves || []).map((z, k) => {
       const sw = bw - 2 * mt, sd = bd - (c.faces.includes('back') ? mt : 0);
