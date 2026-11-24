@@ -15,6 +15,7 @@ import { plantPoly } from '../src/pieces/shapes.js';
 import { billOfMaterials, bomText } from '../src/build/bom.js';
 import { faceParts } from '../src/build/exploded.js';
 import { validatePiece } from '../src/pieces/schema.js';
+import { loadPiece } from '../src/pieces/load.js';
 
 /** Pieces from the audit still waiting for their fix (each later PR empties this). */
 const PENDING = new Set([]);
@@ -318,4 +319,30 @@ test('solid: is validated as true or false', () => {
   });
   assert.deepEqual(validatePiece(piece(true)), []);
   assert.match(validatePiece(piece('yes')).join(), /solid: must be true or false/);
+});
+
+test('a laminated block keeps its outside score lines, open boxes stay open, slots keep a floor', () => {
+  const compile = (type, params = {}, mat) => compileKit(soloKit(base, type, params, mat ?? defaultMaterialFor(CATALOG[type], base.materials)));
+  // the piano's keybed is a block, and its keys are still scored on it
+  const keybed = compile('piano').parts.filter((p) => /^Keybed layer/.test(p.name));
+  assert.ok(keybed.length >= 1 && keybed.some((p) => (p.scores || []).length), 'keybed keeps its key scores');
+  // a bookshelf too thin to joint warns; it never becomes a solid block
+  for (const [label, params] of sizes(CATALOG.bookshelf)) {
+    const c = compile('bookshelf', params);
+    assert.ok(!c.parts.some((p) => p.build?.role === 'layer'), `bookshelf ${label} is not a block`);
+  }
+  // a block with a slot in its top has at least two layers, so the slot has a floor
+  const def = { id: 'test-slotblock', label: 'Slot block', theme: 'Basics', placement: 'floor', mat: 'board', params: [], defaults: {}, size: [20, 20, 2],
+    components: [{ kind: 'box', name: 'Base', size: [20, 20, 2], faces: 'all', solid: true, at: [0, 0, 0], holes: { top: [{ rect: [8, 9, 4, 2] }] } }] };
+  CATALOG['test-slotblock'] = loadPiece(def);
+  try {
+    const layers = compileKit(soloKit(base, 'test-slotblock', {}, 'chip2')).parts.filter((p) => /^Base layer/.test(p.name));
+    assert.equal(layers.length, 2);
+    assert.equal(layers[0].polys.length, 1, 'the first layer is the floor of the slot');
+    assert.equal(layers[1].polys.length, 2);
+  } finally { delete CATALOG['test-slotblock']; }
+  // books are as thick as their layers, so a row on board doesn't run together
+  const row = compile('bookrow', { th: 2 }, 'chip2');
+  const r = attachmentReport(soloKit(base, 'bookrow', { th: 2 }, 'chip2'), row)[0];
+  assert.deepEqual(r.crossings, []);
 });
