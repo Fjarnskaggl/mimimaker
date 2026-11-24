@@ -138,3 +138,209 @@ test('plan: Snap Off moves freely, past other pieces too, and the sidebar keeps 
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+// ------------------------------------------------------------ 3D move handles
+/** Client centre of a gizmo handle. */
+const handle = async (page, name) => {
+  const el = page.locator(`.t6-gizmo [data-handle="${name}"]`);
+  await el.waitFor({ state: 'attached', timeout: 10000 });
+  return page.evaluate((n) => {
+    const h = document.querySelector(`.t6-gizmo [data-handle="${n}"]`);
+    const r = (h.querySelector('.knob') || h).getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, name);
+};
+/** Screen direction (px per cm) of a handle's axis, from the gizmo's own data. */
+const axisPx = async (page, name) => {
+  await page.locator(`.t6-gizmo [data-handle="${name}"]`).waitFor({ state: 'attached', timeout: 10000 });
+  return page.evaluate((n) => JSON.parse(document.querySelector(`.t6-gizmo [data-handle="${n}"]`).dataset.pxPerCm), name);
+};
+async function dragBy(page, from, dx, dy, { alt = false, steps = 8 } = {}) {
+  if (alt) await page.keyboard.down('Alt');
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + dx, from.y + dy, { steps });
+  return async () => { await page.mouse.up(); if (alt) await page.keyboard.up('Alt'); };
+}
+
+for (const webgl of [false, true]) {
+  const which = webgl ? 'Realistic 3D' : 'sketch view';
+  test(`3D handles (${which}): a selected piece shows move arrows, a floor plane and a rotate ring`, async () => {
+    const page = await open({ webgl });
+    if (webgl) await page.waitForSelector('.stage[data-renderer=webgl] canvas', { timeout: 15000 });
+    assert.equal(await page.locator('.t6-gizmo [data-handle]').count(), 0, 'nothing selected, no handles');
+    await page.click('[data-select-item="2"]');
+    for (const h of ['x', 'y', 'xy', 'rot']) assert.ok(await handle(page, h), `handle ${h}`);
+    await shot(page, `gizmo-${webgl ? 'webgl' : 'svg'}`);
+    await page.click('[data-action=back]');
+    assert.equal(await page.locator('.t6-gizmo [data-handle]').count(), 0, 'handles go with the selection');
+    assert.deepEqual(page.errors, []);
+    await page.close();
+  });
+
+  test(`3D handles (${which}): dragging the x arrow moves along x only, snapping flush to the bookshelf with a guide`, async () => {
+    const page = await open({ webgl });
+    if (webgl) await page.waitForSelector('.stage[data-renderer=webgl] canvas', { timeout: 15000 });
+    await page.click('[data-select-item="2"]');
+    const n = await item(page, 2);
+    const shelfRight = await page.evaluate(() => { const it = window.mimimaker.kit.items[0]; return it.x + 80; }); // bookshelf: 80 cm wide
+    const k = await axisPx(page, 'x');
+    const want = shelfRight + 1.4 - n.x; // cm to the left edge 1.4 cm past the shelf
+    const end = await dragBy(page, await handle(page, 'x'), want * k[0], want * k[1]);
+    await page.waitForFunction(() => document.querySelectorAll('.t6-gizmo .gizmo-guide').length > 0, null, { timeout: 10000 });
+    await shot(page, `gizmo-guide-${webgl ? 'webgl' : 'svg'}`);
+    await end();
+    const done = await item(page, 2);
+    assert.equal(done.x, shelfRight, 'flush with the shelf');
+    assert.equal(done.y, n.y, 'y untouched by the x arrow');
+    assert.equal(await page.locator('.t6-gizmo .gizmo-guide').count(), 0, 'guides go on release');
+    assert.deepEqual(page.errors, []);
+    await page.close();
+  });
+}
+
+test('3D handles: the floor plane moves in both directions on the grid; Alt moves freely', async () => {
+  const page = await open();
+  await page.click('[data-select-item="1"]'); // armchair, in the open
+  const a = await item(page, 1);
+  const kx = await axisPx(page, 'x'), ky = await axisPx(page, 'y');
+  // 12.3 cm right and 8.6 cm toward the front
+  const dx = 12.3 * kx[0] + 8.6 * ky[0], dy = 12.3 * kx[1] + 8.6 * ky[1];
+  let end = await dragBy(page, await handle(page, 'xy'), dx, dy);
+  await end();
+  const b = await item(page, 1);
+  // each side lands on the grid or lines up with another piece's edge or centre
+  const lines = await page.evaluate(async () => {
+    const { footprint } = await import('./src/plan.js');
+    const k = window.mimimaker.kit, xs = [], ys = [];
+    k.items.forEach((it, i) => { const f = i !== 1 && footprint(it); if (f) { xs.push(f.x0, (f.x0 + f.x1) / 2, f.x1); ys.push(f.y0, (f.y0 + f.y1) / 2, f.y1); } });
+    const me = footprint(k.items[1]);
+    return { xs, ys, w: me.x1 - me.x0, d: me.y1 - me.y0 };
+  });
+  const snapped = (v, size, targets) => v % 5 === 0 || [0, size / 2, size].some((o) => targets.some((t) => Math.abs(v + o - t) < 1e-6));
+  assert.ok(snapped(b.x, lines.w, lines.xs), `x snapped (${b.x})`);
+  assert.ok(snapped(b.y, lines.d, lines.ys), `y snapped (${b.y})`);
+  assert.ok(b.x > a.x && b.y > a.y, 'moved right and forward');
+  end = await dragBy(page, await handle(page, 'xy'), dx, dy, { alt: true });
+  await end();
+  const c = await item(page, 1);
+  assert.ok(c.x % 5 !== 0 || c.y % 5 !== 0, `off the grid with Alt (${c.x}, ${c.y})`);
+  await page.close();
+});
+
+test('3D handles: the rotate ring turns a piece in quarter turns, one undo step', async () => {
+  const page = await open();
+  await page.click('[data-select-item="1"]');
+  const r0 = (await item(page, 1)).rot || 0;
+  const ring = await page.evaluate(() => JSON.parse(document.querySelector('.t6-gizmo [data-handle="rot"]').dataset.ring)); // {cx, cy, rx, ry}
+  // drag the knob a quarter of the way round the ring
+  const from = await handle(page, 'rot');
+  const a0 = Math.atan2(from.y - ring.cy, from.x - ring.cx);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) {
+    const a = a0 + (i / 10) * (Math.PI / 2) * 1.1;
+    await page.mouse.move(ring.cx + Math.cos(a) * ring.rx, ring.cy + Math.sin(a) * ring.ry);
+  }
+  await page.mouse.up();
+  const r1 = (await item(page, 1)).rot;
+  assert.notEqual(r1, r0, 'turned');
+  assert.equal(r1 % 90, 0, 'a whole quarter turn');
+  await page.keyboard.press('Control+z');
+  assert.equal((await item(page, 1)).rot || 0, r0, 'one undo puts it back');
+  await page.close();
+});
+
+/** Where the armchair's tall back sits, from its centre, in world mm (x right, y toward the back wall). */
+const backSide = (page, i) => page.evaluate((k) => {
+  const pts = window.mimimaker.compiled.faces3d.filter((f) => f.item === k).flatMap((f) => f.polys.flat());
+  const top = Math.max(...pts.map((p) => p[2]));
+  const mid = (j) => (Math.min(...pts.map((p) => p[j])) + Math.max(...pts.map((p) => p[j]))) / 2;
+  const hi = pts.filter((p) => p[2] > top - 1);
+  return { x: hi.reduce((a, p) => a + p[0], 0) / hi.length - mid(0), y: hi.reduce((a, p) => a + p[1], 0) / hi.length - mid(1) };
+}, i);
+
+test('3D handles: the ring turns the way you drag it (clockwise on screen turns it clockwise)', async () => {
+  const page = await open();
+  await page.click('[data-select-item="1"]'); // the armchair, its back to the back wall
+  const b0 = await backSide(page, 1);
+  assert.ok(b0.y > 0 && Math.abs(b0.x) < 1, `the back faces the back wall (${JSON.stringify(b0)})`);
+  const ring = await page.evaluate(() => JSON.parse(document.querySelector('.t6-gizmo [data-handle="rot"]').dataset.ring));
+  const from = await handle(page, 'rot');
+  const a0 = Math.atan2(from.y - ring.cy, from.x - ring.cx);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) { // screen y runs down, so a growing angle is clockwise on screen
+    const a = a0 + (i / 10) * (Math.PI / 2) * 1.1;
+    await page.mouse.move(ring.cx + Math.cos(a) * ring.rx, ring.cy + Math.sin(a) * ring.ry);
+  }
+  await page.mouse.up();
+  const b1 = await backSide(page, 1);
+  assert.ok(b1.x > 0 && Math.abs(b1.y) < 1, `turned clockwise seen from above: the back now faces right (${JSON.stringify(b1)})`);
+  await page.close();
+});
+
+test('3D handles: a click on a handle without a drag leaves the piece where it is', async () => {
+  const page = await open();
+  await page.evaluate(() => { const k = window.mimimaker.kit; k.items[2].x = 237.3; window.mimimaker.refresh(); }); // off the grid
+  await page.click('[data-select-item="2"]');
+  const before = await item(page, 2);
+  const from = await handle(page, 'x');
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 1, from.y); // a 1 px wobble
+  await page.mouse.up();
+  const after1 = await item(page, 2);
+  assert.equal(after1.x, before.x, 'not pulled onto the grid');
+  await page.close();
+});
+
+test('3D handles: Delete during a drag does not land the move on another piece', async () => {
+  const page = await open();
+  await page.click('[data-select-item="2"]');
+  const n = (await page.evaluate(() => window.mimimaker.kit.items.length));
+  const next = await item(page, 3);
+  const from = await handle(page, 'x');
+  const release = await dragBy(page, from, 40, 0);
+  await page.keyboard.press('Delete');
+  await release();
+  assert.equal(await page.evaluate(() => window.mimimaker.kit.items.length), n - 1, 'the piece was removed');
+  const moved = await item(page, 2); // what was piece 3
+  assert.equal(moved.type, next.type);
+  assert.deepEqual([moved.x, moved.y], [next.x, next.y], 'the piece that slid into its place did not move');
+  await page.close();
+});
+
+test('3D handles: a wall piece moves along its wall and up it, snapping to the window edge', async () => {
+  const page = await open();
+  await page.click('[data-select-item="5"]'); // the frame on the back wall
+  for (const h of ['pos', 'up', 'plane']) assert.ok(await handle(page, h), `handle ${h}`);
+  const fr = await item(page, 5);
+  const w = await page.evaluate(() => { const r = document.querySelector('.t6-gizmo').dataset.size; return JSON.parse(r)[0]; });
+  const k = await axisPx(page, 'pos');
+  const want = 215 + w / 2 + 1.2 - fr.pos;
+  const end = await dragBy(page, await handle(page, 'pos'), want * k[0], want * k[1]);
+  await end();
+  const done = await item(page, 5);
+  assert.ok(Math.abs(done.pos - (215 + w / 2)) < 1e-6, `left edge on the window's right edge (${done.pos})`);
+  assert.equal(done.elev, fr.elev, 'height untouched');
+  const ku = await axisPx(page, 'up');
+  const end2 = await dragBy(page, await handle(page, 'up'), 17.2 * ku[0], 17.2 * ku[1]);
+  await end2();
+  const up = await item(page, 5);
+  assert.notEqual(up.elev, fr.elev, 'moved up');
+  assert.equal(up.pos, done.pos, 'along-wall untouched');
+  await page.close();
+});
+
+test('3D handles: dragging never orbits the camera, and the Light step shows no handles', async () => {
+  const page = await open();
+  await page.click('[data-select-item="1"]');
+  const yaw0 = await page.locator('input[aria-label=Rotate]').inputValue();
+  const end = await dragBy(page, await handle(page, 'x'), 40, 0);
+  await end();
+  assert.equal(await page.locator('input[aria-label=Rotate]').inputValue(), yaw0, 'the camera stayed put');
+  await page.click('[data-step=light]');
+  assert.equal(await page.locator('.t6-gizmo [data-handle]').count(), 0);
+  await page.close();
+});

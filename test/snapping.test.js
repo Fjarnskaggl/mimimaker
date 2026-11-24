@@ -116,3 +116,15 @@ test('snapFloorMove: no guide when the room edge pushes the piece off the line i
     assert.ok([f.x0, (f.x0 + f.x1) / 2, f.x1].some((v) => Math.abs(v - g.at) < 1e-6), `guide at ${g.at} touches the piece (${f.x0}–${f.x1})`);
   }
 });
+
+test('rotateItem: several quarter turns at once turn about the centre once, then keep it in the room', async () => {
+  const { rotateItem } = await import('../src/plan.js');
+  const kit = kitWith([{ type: 'bookshelf', x: 0, y: 0, rot: 0 }]);
+  const f0 = footprint(kit.items[0]);
+  rotateItem(kit, 0, 3);
+  const f1 = footprint(kit.items[0]);
+  assert.equal(kit.items[0].rot, 270);
+  const cy0 = (f0.y0 + f0.y1) / 2, cy1 = (f1.y0 + f1.y1) / 2;
+  assert.ok(f1.x0 >= 0 && f1.y0 >= 0, 'inside the room');
+  assert.ok(Math.abs(cy1 - Math.max(cy0, (f1.y1 - f1.y0) / 2)) < 1e-6, 'centred where it was, as far as the walls allow');
+});
