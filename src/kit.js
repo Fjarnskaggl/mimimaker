@@ -430,6 +430,32 @@ export function compileKit(kit) {
       warn(`${title}: ${mat.name} can't make boxes — choose board or cardstock.`);
       return;
     }
+    // A block too thin to joint (the panels across it would be slivers the
+    // cutter can't make), or one the piece asks to be solid, is laminated:
+    // layers of the material stacked across its thinnest side.
+    const dims = [bw, bd, bh];
+    const ax = dims.indexOf(Math.min(...dims));
+    const sliver = mat.kind === 'board' && c.faces.length >= 4 && dims[ax] - 2 * mt < minJointFeature(machine, mat);
+    if (c.solid || sliver) {
+      const k = Math.max(1, Math.round(dims[ax] / mt));
+      const X = [1, 0, 0], Y = [0, 1, 0], Z = [0, 0, 1];
+      // holes in the far face (top, right, back) go through every layer but
+      // the first, so whatever stands in them rests on that first layer
+      const far = (c.holes || {})[['right', 'back', 'top'][ax]] || [];
+      const ids = [];
+      for (let i = 0; i < k; i++) {
+        const [plane, poly] = ax === 2 ? [{ o: [0, 0, (i + 1) * mt], U: X, V: Y, n: Z }, rectPoly(0, 0, bw, bd)]
+          : ax === 0 ? [{ o: [i * mt, 0, 0], U: Y, V: Z, n: [-1, 0, 0] }, rectPoly(0, 0, bd, bh)]
+          : [{ o: [0, i * mt, 0], U: X, V: Z, n: [0, -1, 0] }, rectPoly(0, 0, bw, bh)];
+        const polys = [poly, ...(i > 0 || k === 1 ? far : [])];
+        const pid = addPart(group, `${c.name} layer ${i + 1}`, mat, polys);
+        parts.at(-1).build = { unit: `${group.title}/${c.name}`, role: 'layer' }; // T4: one block, glued up in a stack
+        add3d(2, polys, plane, xf, mat.color, { cull: false, thickness: mt, material: mat.id, part: pid });
+        ids.push(pid);
+      }
+      group.steps.push(`${c.name}: glue layers ${fmtIds(ids)} into a stack, edges flush, and press it flat under a book while it sets.`);
+      return;
+    }
     if (mat.kind === 'board') {
       // open boxes show their insides, so only cull back faces of closed ones
       const closed = c.faces.length === 6;

@@ -28,7 +28,7 @@ export const SCORES = [...Object.keys(SCORE_ARGS), 'line', 'loop', 'fronts'];
 export const PLANES = ['upright', 'floor', 'custom'];
 
 const HEADER = ['id', 'label', 'theme', 'placement', 'mat', 'params', 'defaults', 'size', 'let', 'components', 'note', 'tags', 'difficulty'];
-const BOX_FIELDS = ['kind', 'name', 'size', 'at', 'faces', 'shelves', 'scores', 'holes', 'when', 'material'];
+const BOX_FIELDS = ['kind', 'name', 'size', 'at', 'faces', 'shelves', 'scores', 'holes', 'when', 'material', 'solid'];
 const FLAT_FIELDS = ['kind', 'name', 'polys', 'scores', 'plane', 'wall', 'surface', 'at', 'when', 'material'];
 const ROD_FIELDS = ['kind', 'name', 'stock', 'd', 'from', 'to', 'at', 'when'];
 const REPEAT_FIELDS = ['repeat', 'as', 'let', 'each', 'when'];
@@ -281,6 +281,7 @@ export function validatePiece(piece) {
       }
       if (c.scores !== undefined) faceMap(`${path}.scores`, c.scores, scope, score);
       if (c.holes !== undefined) faceMap(`${path}.holes`, c.holes, scope, shape);
+      if (c.solid !== undefined && typeof c.solid !== 'boolean') err(`${path}.solid`, 'must be true or false');
     } else {
       for (const k of Object.keys(c)) {
         if (!FLAT_FIELDS.includes(k)) err(`${path}.${k}`, BOX_FIELDS.includes(k) ? 'only box parts have this' : 'unknown field');

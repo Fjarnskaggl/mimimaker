@@ -38,7 +38,7 @@ export const LIVING = [
     size: ['w', 'd', 'h + 4'],
     let: { ow: 'w * 0.56', oh: 'h * 0.58', ov: 'min(w * 0.05, 6)' },
     components: [
-      { kind: 'box', name: 'Fireplace', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0], holes: { front: [{ arch: ['(w - ow) / 2', 't + 1', 'ow', 'oh'] }] } },
+      { kind: 'box', name: 'Fireplace', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0], holes: { front: [{ arch: ['(w - ow) / 2', 't + 3', 'ow', 'oh'] }] } },
       { kind: 'box', name: 'Mantel', size: ['w + 2 * ov', 'd + ov', 'max(3 * t, h * 0.05)'], faces: 'all', at: ['-ov', '-ov', 'h'] },
     ],
     note: 'Put an amber LED on the floor inside the opening for a glowing fire. Glue the mantel on top, overhanging the front and sides.',

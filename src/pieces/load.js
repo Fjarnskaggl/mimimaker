@@ -80,6 +80,7 @@ function component(c, env) {
     }
     if (c.scores) out.scores = byFace(c.scores, env, scores);
     if (c.holes) out.holes = byFace(c.holes, env, shapes);
+    if (c.solid) out.solid = true;
   } else {
     out.polys = shapes(c.polys, env);
     if (c.scores) out.scores = scores(c.scores, env);

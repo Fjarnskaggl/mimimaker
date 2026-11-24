@@ -9,18 +9,14 @@ export const ACCESSORIES = [
   {
     id: 'bookrow', label: 'Row of books', theme: 'Accessories', placement: 'floor', mat: 'card',
     tags: ['accessory', 'books'], difficulty: 1,
-    params: [cnt('count', 'Books', 3, 20), num('h', 'Tallest book', 10, 35), num('th', 'Spine thickness', 1, 6), num('d', 'Depth', 10, 25), cnt('seed', 'Variation', 1, 99)],
+    params: [cnt('count', 'Books', 3, 20), num('h', 'Tallest book', 10, 35), num('th', 'Spine thickness', 2, 6), num('d', 'Depth', 10, 25), cnt('seed', 'Variation', 1, 99)],
     defaults: { count: 8, h: 24, th: 3, d: 17, seed: 7 },
     size: ['th * round(count)', 'd', 'h'],
     components: [{
       repeat: 'round(count)', as: 'k', let: { bh: 'h * (0.68 + 0.32 * hash(k, seed))' },
-      each: {
-        kind: 'flat', name: 'Book {k + 1}', plane: { upright: { y: 'd / 2' } },
-        polys: [{ rect: ['k * th', 0, 'th', 'bh'] }],
-        scores: [{ line: [['k * th', 'bh * 0.12'], ['(k + 1) * th', 'bh * 0.12']] }, { line: [['k * th', 'bh * 0.86'], ['(k + 1) * th', 'bh * 0.86']] }],
-      },
+      each: { kind: 'box', name: 'Book {k + 1}', size: ['th', 'd', 'bh'], faces: 'all', solid: true, at: ['k * th', 0, 0] },
     }],
-    note: 'Cut the spines from several colours of card, ink a title between the two score bands, and glue them side by side on a shelf. Change "Variation" for a different row.',
+    note: 'Each book is a few card layers glued into a little block: use a coloured layer on each side for the covers and ink a title on the spine. Glue the books side by side on a shelf. Change "Variation" for a different row.',
   },
   {
     id: 'bakery', label: 'Bakery treats', theme: 'Accessories', placement: 'floor', mat: 'card',

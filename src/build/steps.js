@@ -167,6 +167,14 @@ export function buildSteps(kit, compiled, graph = jointGraph(kit, compiled)) {
       const net = un.find((n) => n.role === 'net');
       const faces = Object.fromEntries(un.filter((n) => n.face).map((n) => [n.face, n]));
       const name = unitName(unit);
+      const layers = un.filter((n) => n.role === 'layer');
+      if (layers.length) {
+        push({
+          title: `Glue up the ${lc(name)}`, group: g.title, unit, parts: layers.map((n) => n.id), cureMin: CURE.flat,
+          text: [`Glue layers ${ids(layers)} into a stack, edges flush, and press it flat under a book while it sets.`],
+        });
+        continue;
+      }
       if (net || un.some((n) => n.role === 'piece')) {
         const body = net ? [net] : BOX_ORDER.map((f) => faces[f]).filter(Boolean);
         push({

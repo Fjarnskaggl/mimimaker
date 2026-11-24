@@ -51,7 +51,7 @@ There is no `eval`; unknown names and functions are errors.
 
 | kind | fields |
 | --- | --- |
-| `box` | `name`, `size: [w, d, h]`, `faces: "all"` or a list of `bottom top front back left right`, optional `at`, `shelves` (`{ "even": n, "h": height, "top": true }` or a list of heights), `scores` and `holes` keyed by face |
+| `box` | `name`, `size: [w, d, h]`, `faces: "all"` or a list of `bottom top front back left right`, optional `at`, `shelves` (`{ "even": n, "h": height, "top": true }` or a list of heights), `scores` and `holes` keyed by face, `solid: true` (laminated from layers stacked across its thinnest side; board blocks too thin to joint are laminated anyway) |
 | `flat` | `name`, `polys` (first shape = outline, the rest = holes), optional `scores`, `at`, `surface`, and either `plane` (floor pieces) or `wall: true` (wall pieces) |
 | `rod` | `name`, `stock` (`dowel`, `wire` or `tube`), `d` (diameter, mm), `from` and `to` (end points), optional `at`. Bought round stock cut to length: not on the cut sheets, drawn in 3D and listed in the bill of materials. Floor pieces only. |
 

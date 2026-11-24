@@ -17,7 +17,7 @@ export const BATHROOM = [
     components: [{
       kind: 'box', name: 'Vanity', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0],
       scores: { front: [{ fronts: { style: "'doors'", count: 2, w: 'w', h: 'h' } }] },
-      holes: { top: [{ ellipse: ['w / 2', 'd * 0.5', 'w * 0.25', 'd * 0.27', 32] }] },
+      holes: { top: [{ ellipse: ['w / 2', 'd * 0.5', 'w * 0.25', 'd * 0.22', 32] }] },
     }],
   },
   {
