@@ -9,7 +9,8 @@
     "test": "node --test test/*.test.js",
     "build": "node scripts/build-single.js",
     "test:e2e": "node --test test/e2e/*.e2e.cjs",
-    "check:test-first": "node scripts/check-test-first.js origin/main"
+    "check:test-first": "node scripts/check-test-first.js origin/main",
+    "readme:art": "node docs/readme/make-art.cjs"
   },
   "license": "MIT"
 }
