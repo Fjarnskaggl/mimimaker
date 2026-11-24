@@ -8,7 +8,7 @@ A full-screen choice with `display-xl` heading "Make a tiny world": every room t
 
 ## 1 · Design
 
-- **Stage:** the room, in Plan or 3D (Segmented). Click to select; drag to move; the selection gets a `mat` outline.
+- **Stage:** the room, in Plan or 3D (Segmented). Click to select; drag to move; the selection gets a blue ballpoint (`select`) outline over a `select-halo`.
 - **Tool rail:** Pieces (opens the library drawer: search, theme chips, PieceCards), Windows & doors (adds an opening to the selected wall), Room size.
 - **Inspector:** the selected thing only. Nothing selected shows the room (size, structure board, wallpaper, floor, shell).
 - **Hidden here:** materials table, machines, sheets, lighting, the guide.

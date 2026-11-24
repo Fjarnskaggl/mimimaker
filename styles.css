@@ -1,21 +1,21 @@
 /* mimimaker — styles built on the mimimaker design system.
-   Tokens first (light "Workbench", dark "Night workshop"), then the app
+   Tokens first (light "Card and chipboard", dark "Cardboard at night"), then the app
    shell, then components (mm-*), then the pieces the threads' modules use. */
 
 :root {
-  /* colour: Workbench */
-  --paper: #f5f4ef; --surface: #ffffff; --surface-sunken: #ecebe4;
-  --line: #dedcd3; --line-control: #86837a;
-  --ink: #18211e; --ink-muted: #5a635f;
-  --mat: #1d5c52; --on-mat: #ffffff; --mat-soft: #dcebe6;
-  --glow: #f2b13a; --on-glow: #2b1d00; --glow-soft: #fdf0d3;
-  --kraft: #b98f5e; --basswood: #e8d3a6; --score: #c8336a;
-  --success: #1b6c8a; --success-soft: #dff0f6;
-  --warning: #8a5300; --warning-soft: #fdf0d3;
+  /* colour: Card and chipboard (kraft desk, cardstock panels, cardboard stage) */
+  --paper: #c29a66; --surface: #f6eedc; --surface-sunken: #ebdfc4; --stage: #dcc7a0;
+  --line: #e0d1b0; --line-control: #6d5a43; --ink: #24190e; --ink-muted: #5b4934;
+  --primary: #2a1d10; --on-primary: #f6eedc; --primary-soft: #efe2c2;
+  --caramel: #e2b47e; --on-caramel: #24190e; --caramel-edge: #8a6337;
+  --select: #2340a8; --select-halo: #f6eedc; --focus: #2340a8;
+  --flute-shade: #8a6337; --flute-face: #c59c62; --stitch: rgba(60,40,15,0.28);
+  --glow: #f2b13a; --on-glow: #2b1d00; --glow-soft: #f8e6bd; --kraft: #b98f5e; --basswood: #e8d3a6; --score: #c8336a;
+  --success: #4a3a28; --success-soft: #ebdfc4; --warning: #7d4b00; --warning-soft: #f6e3bb;
   --danger: #b5341b; --danger-soft: #fbe5df;
-  --focus: #1d5c52;
-  --shadow-float: 0 1px 2px rgba(24,33,30,.08), 0 8px 24px rgba(24,33,30,.12);
-  --shadow-raise: 0 1px 2px rgba(24,33,30,.08);
+  --shadow-panel: 0 16px 22px -10px rgba(50,30,5,0.55), 0 4px 6px -2px rgba(50,30,5,0.25);
+  --shadow-float: 0 2px 0 rgba(40,22,5,0.18), 0 18px 32px -8px rgba(50,30,5,0.5);
+  --shadow-raise: 0 2px 0 rgba(40,22,5,0.25), 0 3px 6px -2px rgba(40,22,5,0.3);
   /* type */
   --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --font-sans: Figtree, "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -23,54 +23,63 @@
   /* space, shape, layout */
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px; --space-7: 48px;
   --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-pill: 999px;
+  --radius-cut-sm: 8px 10px 7px 9px; --radius-cut-md: 10px 12px 9px 11px; --radius-cut-lg: 14px 18px 12px 17px / 16px 12px 18px 13px;
   --control-h: 36px; --control-h-sm: 28px; --topbar-h: 60px; --rail-w: 64px; --drawer-w: 340px; --inspector-w: 340px;
   /* app-specific */
-  --night-bg: radial-gradient(ellipse at 50% 38%, #1f2a27, #0a0f0d);
-  --map-face: #efe9dc; --map-edge: #8f8576;
-  --plan-floor: #fbfaf6; --plan-grid: #e7e5dc; --plan-grid-major: #d3d0c4; --plan-wall-fill: #4a4f4b;
-  --plan-piece: #e8d3a6; --plan-piece-line: #7a5c36; --clash: #b5341b;
+  --night-bg: radial-gradient(ellipse 60% 60% at 52% 45%, #3a2a1a, #120d09 75%);
+  --map-face: #f6eedc; --map-edge: #8a7a62;
+  --plan-floor: #f6eedc; --plan-grid: #e6d8b9; --plan-grid-major: #cdb88f; --plan-wall-fill: #4a3a28;
+  --plan-piece: #e8d3a6; --plan-piece-line: #7a5c36; --plan-rug: #c9a27a; --plan-window: #cfe3ee; --clash: #b5341b;
   --sheet: #ffffff;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #0f1513; --surface: #171f1c; --surface-sunken: #0b100e;
-    --line: #2a3531; --line-control: #6b7a74;
-    --ink: #e9efeb; --ink-muted: #a2afa9;
-    --mat: #5cbca8; --on-mat: #0a1b17; --mat-soft: #163a33;
-    --glow-soft: #3a2c10; --kraft: #c49a69; --basswood: #d7c094; --score: #ff7aa8;
-    --success: #6cc3e2; --success-soft: #12313d; --warning: #f5c46b; --warning-soft: #3a2c10;
-    --danger: #ff8b6e; --danger-soft: #3d1d15; --focus: #f2b13a;
-    --shadow-float: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.45);
-    --shadow-raise: 0 1px 2px rgba(0,0,0,.4);
-    --map-face: #26302c; --map-edge: #7b8a83;
-    --plan-floor: #1a2320; --plan-grid: #24302c; --plan-grid-major: #33413b; --plan-wall-fill: #a9b6b0;
-    --plan-piece: #5a4a34; --plan-piece-line: #d7c094; --clash: #ff8b6e;
+    --paper: #17120e; --surface: #2c241d; --surface-sunken: #221c16; --stage: #211a14;
+    --line: #40352b; --line-control: #a8957a; --ink: #f6ecd9; --ink-muted: #cdbca1;
+    --primary: #e2b47e; --on-primary: #24190e; --primary-soft: #3d3125;
+    --caramel: #e2b47e; --on-caramel: #24190e; --caramel-edge: #8a6337;
+    --select: #a9baff; --select-halo: #1a140f; --focus: #a9baff;
+    --flute-shade: #3a2b1c; --flute-face: #8a6a43; --stitch: rgba(246,236,217,0.22);
+    --glow: #f2b13a; --on-glow: #2b1d00; --glow-soft: #4a3a1d; --kraft: #c49a69; --basswood: #d7c094; --score: #ff86ad;
+    --success: #e9dcc3; --success-soft: #3a3027; --warning: #f3c77a; --warning-soft: #46361b;
+    --danger: #ff8b6e; --danger-soft: #3d1d15;
+    --shadow-panel: 0 16px 24px -10px rgba(0,0,0,0.75), 0 4px 6px -2px rgba(0,0,0,0.4);
+    --shadow-float: 0 2px 0 rgba(0,0,0,0.4), 0 18px 32px -8px rgba(0,0,0,0.7);
+    --shadow-raise: 0 2px 0 rgba(0,0,0,0.45), 0 3px 6px -2px rgba(0,0,0,0.5);
+    --map-face: #2c241d; --map-edge: #a8957a;
+    --plan-floor: #2c241d; --plan-grid: #3a3027; --plan-grid-major: #4d4033; --plan-wall-fill: #cdbca1;
+    --plan-piece: #5a4a34; --plan-piece-line: #d7c094; --plan-rug: #6b5640; --plan-window: #3a4a5a; --clash: #ff8b6e;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #0f1513; --surface: #171f1c; --surface-sunken: #0b100e;
-  --line: #2a3531; --line-control: #6b7a74;
-  --ink: #e9efeb; --ink-muted: #a2afa9;
-  --mat: #5cbca8; --on-mat: #0a1b17; --mat-soft: #163a33;
-  --glow-soft: #3a2c10; --kraft: #c49a69; --basswood: #d7c094; --score: #ff7aa8;
-  --success: #6cc3e2; --success-soft: #12313d; --warning: #f5c46b; --warning-soft: #3a2c10;
-  --danger: #ff8b6e; --danger-soft: #3d1d15; --focus: #f2b13a;
-  --shadow-float: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.45);
-  --shadow-raise: 0 1px 2px rgba(0,0,0,.4);
-  --map-face: #26302c; --map-edge: #7b8a83;
-  --plan-floor: #1a2320; --plan-grid: #24302c; --plan-grid-major: #33413b; --plan-wall-fill: #a9b6b0;
-  --plan-piece: #5a4a34; --plan-piece-line: #d7c094; --clash: #ff8b6e;
+  --paper: #17120e; --surface: #2c241d; --surface-sunken: #221c16; --stage: #211a14;
+  --line: #40352b; --line-control: #a8957a; --ink: #f6ecd9; --ink-muted: #cdbca1;
+  --primary: #e2b47e; --on-primary: #24190e; --primary-soft: #3d3125;
+  --caramel: #e2b47e; --on-caramel: #24190e; --caramel-edge: #8a6337;
+  --select: #a9baff; --select-halo: #1a140f; --focus: #a9baff;
+  --flute-shade: #3a2b1c; --flute-face: #8a6a43; --stitch: rgba(246,236,217,0.22);
+  --glow: #f2b13a; --on-glow: #2b1d00; --glow-soft: #4a3a1d; --kraft: #c49a69; --basswood: #d7c094; --score: #ff86ad;
+  --success: #e9dcc3; --success-soft: #3a3027; --warning: #f3c77a; --warning-soft: #46361b;
+  --danger: #ff8b6e; --danger-soft: #3d1d15;
+  --shadow-panel: 0 16px 24px -10px rgba(0,0,0,0.75), 0 4px 6px -2px rgba(0,0,0,0.4);
+  --shadow-float: 0 2px 0 rgba(0,0,0,0.4), 0 18px 32px -8px rgba(0,0,0,0.7);
+  --shadow-raise: 0 2px 0 rgba(0,0,0,0.45), 0 3px 6px -2px rgba(0,0,0,0.5);
+  --map-face: #2c241d; --map-edge: #a8957a;
+  --plan-floor: #2c241d; --plan-grid: #3a3027; --plan-grid-major: #4d4033; --plan-wall-fill: #cdbca1;
+  --plan-piece: #5a4a34; --plan-piece-line: #d7c094; --plan-rug: #6b5640; --plan-window: #3a4a5a; --clash: #ff8b6e;
   color-scheme: dark;
 }
 /* names the threads' modules and the SVG renderers already use */
 :root {
   --bg: var(--paper); --panel: var(--surface); --panel-2: var(--surface-sunken);
-  --muted: var(--ink-muted); --accent: var(--mat); --accent-ink: var(--on-mat); --accent-soft: var(--mat-soft);
+  --muted: var(--ink-muted); --accent: var(--primary); --accent-ink: var(--on-primary); --accent-soft: var(--primary-soft);
+  /* the old "mat" names, still used by thread modules */
+  --mat: var(--primary); --on-mat: var(--on-primary); --mat-soft: var(--primary-soft);
   --radius: var(--radius-md); --shadow: var(--shadow-raise);
   --warn-bg: var(--warning-soft); --warn-ink: var(--warning); --err-bg: var(--danger-soft); --err-ink: var(--danger);
-  --info-bg: var(--mat-soft); --info-ink: var(--ink);
+  --info-bg: var(--primary-soft); --info-ink: var(--ink);
 }
 
 /* ------------------------------------------------------------------ base */
