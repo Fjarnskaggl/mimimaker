@@ -11,9 +11,22 @@ const SUN_DIR = [-0.15, -1, 1.4]; // key light from the open front, like a displ
 const DAY = { hemi: 0.7, sun: 0.65, sky: 0xfff6ea, ground: 0x9a8878, sunColor: 0xfff1dc };
 const NIGHT = { hemi: 0.1, sun: 0.06, sky: 0x8090c0, ground: 0x202028, sunColor: 0x9fb0e0 };
 const MOON = { light: 0xa9c4ff, glow: 0x7f97c8 }; // window light at night
-const SELECT_TINT = 0x0f3a44; // emissive tint on the selected piece
-const HOVER_TINT = 0x07222a; // fainter tint on the piece under the pointer
-const SELECT_RING = { day: 0x1d5c52, night: 0xf6ead2 }; // ring round the selected light: --mat by day, the night toggle's light ink at night
+export const SELECT_TINT = 0x08143e; // emissive tint on the selected piece: a breath of blue ballpoint
+export const HOVER_TINT = 0x040a22; // fainter tint on the piece under the pointer
+export const SELECT_NIGHT = 0xa9baff; // the light ballpoint, for the dark night stage in either theme
+const SELECT_DAY = 0x2340a8; // the ballpoint (--select, light theme), when no stylesheet says otherwise
+
+/**
+ * The selection ink for outlines and light rings: the stage's --select (blue
+ * ballpoint by day, the light ballpoint on the dark theme's stage), and the
+ * light ballpoint at night, when the stage is dark in both themes.
+ */
+export function selectInk(el, night) {
+  if (night) return SELECT_NIGHT;
+  const v = el && typeof globalThis.getComputedStyle === 'function' ? globalThis.getComputedStyle(el).getPropertyValue('--select').trim() : '';
+  const m = /^#([0-9a-f]{6})$/i.exec(v);
+  return m ? parseInt(m[1], 16) : SELECT_DAY;
+}
 
 /**
  * BufferGeometry for one compiler face: board panels become solids with real
@@ -192,7 +205,7 @@ export function createViewer(THREE) {
       if (glow && face.led != null && face.opacity < 1) {
         // a ring round the light's glow, shown while that light is selected
         const n = face.n, pts = face.polys[0].map((p) => new THREE.Vector3(p[0] + n[0] * 0.3, p[1] + n[1] * 0.3, p[2] + n[2] * 0.3));
-        entry.ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: SELECT_RING.day, depthTest: false }));
+        entry.ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: SELECT_DAY, depthTest: false }));
         entry.ring.renderOrder = 10;
         entry.ring.visible = false;
         model.add(entry.ring);
@@ -242,14 +255,14 @@ export function createViewer(THREE) {
    * tint alone barely shows on pale pieces. Made on first use, as a child of
    * the mesh so a drag preview carries it along.
    */
-  function outline(entry, on, night, opacity = 1) {
+  function outline(entry, on, ink, opacity = 1) {
     if (!on && !entry.edge) return;
     if (!entry.edge) {
-      entry.edge = new THREE.LineSegments(new THREE.EdgesGeometry(entry.mesh.geometry, 30), new THREE.LineBasicMaterial({ color: SELECT_RING.day }));
+      entry.edge = new THREE.LineSegments(new THREE.EdgesGeometry(entry.mesh.geometry, 30), new THREE.LineBasicMaterial({ color: SELECT_DAY }));
       entry.mesh.add(entry.edge);
     }
     entry.edge.visible = on;
-    entry.edge.material.color.setHex(night ? SELECT_RING.night : SELECT_RING.day);
+    entry.edge.material.color.setHex(ink);
     entry.edge.material.transparent = opacity < 1; // a see-through piece gets a see-through outline
     entry.edge.material.opacity = opacity;
   }
@@ -269,12 +282,13 @@ export function createViewer(THREE) {
     }
     // walls seen from outside are ghosted, as in the SVG preview, so they never hide the room
     const cam = cameraDirection(view);
+    const ink = selectInk(canvas.parentElement || canvas, night); // read once per redraw: follows the theme
     for (const entry of entries) {
       const { face, mesh, ring } = entry;
       const m = mesh.material;
       if (ring) {
         ring.visible = selectedLed != null && face.led === selectedLed;
-        ring.material.color.setHex(night ? SELECT_RING.night : SELECT_RING.day);
+        ring.material.color.setHex(ink);
       }
       if (face.glow) {
         m.blending = night && face.opacity < 1 ? THREE.AdditiveBlending : THREE.NormalBlending;
@@ -289,7 +303,7 @@ export function createViewer(THREE) {
       m.transparent = opacity < 1;
       m.opacity = opacity;
       // a ghosted wall's piece stays ghosted: no hard outline across the room
-      outline(entry, face.item != null && face.item === selectedItem && !ghost && opacity > 0, night, opacity);
+      outline(entry, face.item != null && face.item === selectedItem && !ghost && opacity > 0, ink, opacity);
       // the selected piece glows softly so you can see what the inspector shows
       if (m.emissive) {
         const tint = face.item == null ? 0 : face.item === selectedItem ? SELECT_TINT : face.item === hoverItem ? HOVER_TINT : 0;
