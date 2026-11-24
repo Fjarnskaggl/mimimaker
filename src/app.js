@@ -212,12 +212,22 @@ function scheduleCommit() {
 function restore(state) {
   if (!state) return;
   restoring = true;
+  const before = kit;
   kit = normalizeKit(JSON.parse(state));
   $('#kit-name').value = kit.name;
-  view.sel = null;
+  view.dragging = null;
+  // keep the selection when undo/redo only moved or changed it (so the handles
+  // stay for another try); drop it when pieces came or went, as indexes shift
+  if (!sameThing(before, kit, view.sel)) view.sel = null;
   update({ sidebar: true });
   restoring = false;
   updateUndoButtons();
+}
+function sameThing(a, b, sel) {
+  if (!sel) return false;
+  const list = (k) => (sel.kind === 'item' ? k.items : sel.kind === 'opening' ? k.openings : k.lighting?.leds) || [];
+  const A = list(a), B = list(b);
+  return A.length === B.length && B[sel.index] != null && (sel.kind !== 'item' || A[sel.index]?.type === B[sel.index].type);
 }
 function undo() { if (commitTimer) commitNow(); restore(undoHistory.undo()); }
 function redo() { if (commitTimer) commitNow(); restore(undoHistory.redo()); }
@@ -372,6 +382,7 @@ function materialHint(id) {
 
 function itemInspector(e) {
   const { obj: item, def, index: i } = e;
+  const at = view.dragging?.item === item ? { ...item, ...view.dragging.changes } : item; // where a 3D handle drag has it right now
   if (!def) return [inspHead('Piece', `Unknown piece (${item.type})`, '', { back: true })];
   item.params ||= {};
   const [w, d, hgt] = itemSize(item.type, itemParams(item));
@@ -384,11 +395,11 @@ function itemInspector(e) {
   });
   const placement = def.placement === 'wall'
     ? [selectField('Wall', item.wall || 'back', WALL_OPTIONS, (v) => { item.wall = v; changed(); }),
-      numberField('Along wall', item.pos ?? 0, (v) => { item.pos = v; changed(); }, { min: 0, unit: 'cm' }),
-      numberField('Centre height', item.elev ?? 0, (v) => { item.elev = v; changed(); }, { min: 0, unit: 'cm' })]
-    : [numberField('From left', item.x ?? 0, (v) => { item.x = v; changed(); }, { min: 0, unit: 'cm' }),
-      numberField('From back', item.y ?? 0, (v) => { item.y = v; changed(); }, { min: 0, unit: 'cm' }),
-      selectField('Turn', item.rot || 0, [[0, '0°'], [90, '90°'], [180, '180°'], [270, '270°']], (v) => { item.rot = Number(v); changed(); })];
+      numberField('Along wall', at.pos ?? 0, (v) => { item.pos = v; changed(); }, { min: 0, unit: 'cm' }),
+      numberField('Centre height', at.elev ?? 0, (v) => { item.elev = v; changed(); }, { min: 0, unit: 'cm' })]
+    : [numberField('From left', at.x ?? 0, (v) => { item.x = v; changed(); }, { min: 0, unit: 'cm' }),
+      numberField('From back', at.y ?? 0, (v) => { item.y = v; changed(); }, { min: 0, unit: 'cm' }),
+      selectField('Turn', at.rot || 0, [[0, '0°'], [90, '90°'], [180, '180°'], [270, '270°']], (v) => { item.rot = Number(v); changed(); })];
   const matFilter = def.mat === 'fabric' ? () => true : (m) => m.kind !== 'fabric';
   return [
     inspHead('Piece', def.label, `${cm(w)} × ${cm(d)} × ${cm(hgt)} cm · ${def.group}`, { back: true }),
@@ -709,16 +720,31 @@ function build3d(bar) {
   return h('div', { class: 'stage-wrap' }, stage, bar, foot);
 }
 // T6: move handles on the selected piece, redrawn after every draw of the 3D view
+let inspectorFrame = 0;
 function drawHandles(stage) {
   const wrap = stage.parentElement;
   if (!wrap || !compiled) return;
   const on = view.step === 'design' && view.tab === 'preview';
   drawGizmo(wrap, {
     stage, kit, faces: compiled.faces3d, sel: on ? view.sel : null, project: on ? stageProjector(stage) : null, grid: view.snap,
-    preview: (xf) => previewItem(stage, view.sel?.index, xf),
+    preview: (xf, changes, item) => {
+      const at = kit.items.indexOf(item);
+      previewItem(stage, at >= 0 ? at : view.sel?.index, xf); // the dragged piece, even if the selection moved on
+      // the inspector's position fields follow the drag, as on the plan; a
+      // turn also shows where it lands once kept in the room, as on release
+      if (xf && changes && 'rot' in changes) {
+        const turns = (((changes.rot - (Number(item.rot) || 0)) / 90) % 4 + 4) % 4;
+        const probe = { room: kit.room, items: [{ ...item }] };
+        if (turns) rotateItem(probe, 0, turns);
+        changes = { x: probe.items[0].x, y: probe.items[0].y, rot: probe.items[0].rot };
+      }
+      view.dragging = xf ? { item, changes } : null;
+      if (!inspectorFrame) inspectorFrame = requestAnimationFrame(() => { inspectorFrame = 0; renderInspector({ keepScroll: true }); });
+    },
     commit: (changes, item) => {
+      view.dragging = null;
       const i = kit.items.indexOf(item); // the piece the drag began on, wherever it is now (or gone)
-      if (i < 0) return;
+      if (i < 0) { renderInspector({ keepScroll: true }); drawScene(); return; } // gone (undone mid-drag): show the kit as it is
       if ('rot' in changes) { // one turn about the centre, kept in the room, as the Rotate button does
         const turns = (((changes.rot - (Number(item.rot) || 0)) / 90) % 4 + 4) % 4;
         if (turns) rotateItem(kit, i, turns);
