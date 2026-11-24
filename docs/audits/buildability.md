@@ -81,11 +81,9 @@ Every item above is fixed.
 | #124 | Boxes too thin to finger-joint (mantel, piano legs, armchair and loveseat arms) and the row of books are laminated from stacked layers. Fireplace sill, dressing-table frame and mirror, and vanity basin margin. |
 | #126 | The spiral stair post is a bought dowel, drawn in 3D and listed in the bill. Motor mounts, the cable cover, the hatch stops and the switch mount are drawn where they go. |
 
-Still open:
+| (this PR) | Every piece now cuts cleanly in every board and card material at every size. Joint tabs leave a full strip beside the corner notch, and shelf tabs leave a full strip between slots (or the shelf is glued in). Open boxes too thin to joint grow to the least size the board can joint, with a note. Pieces size their thin parts with `mf`, the cutter's smallest clean feature (`board` tells them they're cut from board), and a piece that comes out bigger than its plan size in thick board says so. The fan and turntable shafts are drawn, and in book-nook shells the cable cover and motor mounts are drawn too. |
 
-- Some boxes in 0.8 mm basswood get finger strips of 1.4 mm. These pass the fine blade, but a knife can't cut them cleanly.
-- The fan rotor and turntable hang on the motor's own shaft, so the 3D view shows no shaft.
-- With a book-nook shell, the cable cover and motor mounts are cut but not drawn.
+Nothing from the audit is still open.
 
 ## Guarding against regressions
 

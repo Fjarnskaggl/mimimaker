@@ -315,15 +315,14 @@ export function compileKit(kit) {
       const pid = addPart(lightGroup, p.name, lm, p.polys);
       if (effectFaces.has(p.name)) faces3d[effectFaces.get(p.name)].part = pid;
       if (!p.place) continue;
-      const box = shell?.dims || { W, D, H }; // a book-nook shell's own walls
-      const fr = faceFrame(p.place.face, box.W, box.D, box.H);
+      const fr = faceFrame(p.place.face, W, D, H); // a book-nook shell's box is the room's W, D, H (a gable roof sits above)
       const off = layerAt.get(`${p.place.face}/${p.place.layer}`) + lm.thickness;
       const plane = { ...fr, o: v3.add(v3.add(fr.o, v3.mul(fr.n, off)), v3.add(v3.mul(fr.U, p.place.u), v3.mul(fr.V, p.place.v))) };
       add3d(0.5, p.polys, plane, worldXf, lm.color, { thickness: lm.thickness, material: lm.id, part: pid });
       // the motor's own shaft: from the motor on the mount, through the shaft hole, into the rotor
       if (p.shaft) {
         const at = (s) => v3.add(v3.add(fr.o, v3.mul(fr.n, s)), v3.add(v3.mul(fr.U, p.shaft.u), v3.mul(fr.V, p.shaft.v)));
-        prism(at(off), at(-(t + p.shaft.into + 0.5)), MOTION.shaft, '#9aa0a6', { material: lm.id, part: pid });
+        prism(at(off), at(-(t + p.shaft.into + 0.5)), MOTION.shaft, '#9aa0a6', { material: lm.id, part: pid, shaft: true });
       }
     }
     lightGroup.steps.push(...(lighting.steps || [])); // [T5] cable cover
@@ -377,7 +376,7 @@ export function compileKit(kit) {
     const [iw, id, ih] = itemSize(item.type, p);
 
     // placement transform
-    let xf;
+    let xf, planSize = null;
     let wallPlane = null;
     if (def.placement === 'wall') {
       const wall = WALLS.includes(item.wall) ? item.wall : 'back';
@@ -394,6 +393,7 @@ export function compileKit(kit) {
     } else {
       const rot = (((Number(item.rot) || 0) % 360) + 360) % 360;
       const r = rotZ(rot, iw, id);
+      planSize = [r.fw, r.fd];
       const ox = t + (item.x ?? 0) * s, oy = D - t - (item.y ?? 0) * s - r.fd, oz = t + (room.floor?.enabled ? 0.25 : 0);
       if ((item.x ?? 0) * s + r.fw > Wi + 0.01 || (item.y ?? 0) * s + r.fd > Di + 0.01 || item.x < 0 || item.y < 0) {
         warn(`${title} sticks out of the room — check its position.`);
@@ -402,6 +402,7 @@ export function compileKit(kit) {
       xf = { p: (q) => v3.add(r.p(q), [ox, oy, oz]), n: r.n };
     }
 
+    const firstFace = faces3d.length;
     for (const c of def.build(p, { t: mat.thickness, mf: minJointFeature(machine, mat), board: mat.kind === 'board' })) {
       const at = c.at || [0, 0, 0];
       const cxf = { p: (q) => xf.p(v3.add(q, at)), n: xf.n };
@@ -416,10 +417,17 @@ export function compileKit(kit) {
       }
     }
     if (def.note) group.steps.push(def.note);
+    // thick board can need more room than the plan's size (parts no thinner
+    // than the cutter makes): say so, so the plan leaves space round it
+    if (def.placement !== 'wall' && planSize) {
+      const pts = faces3d.slice(firstFace).filter((f) => !f.glow).flatMap((f) => f.polys.flat().flatMap((q) => [q, v3.add(q, v3.mul(f.n, -(f.thickness || 0)))]));
+      const span = (i) => Math.max(...pts.map((q) => q[i])) - Math.min(...pts.map((q) => q[i]));
+      if (pts.length && (span(0) > planSize[0] + 0.5 || span(1) > planSize[1] + 0.5)) {
+        warn(`${title} comes out ${span(0).toFixed(0)} × ${span(1).toFixed(0)} mm in ${mat.name}, bigger than its ${planSize[0].toFixed(0)} × ${planSize[1].toFixed(0)} mm plan size, so its parts aren't too thin to cut. Leave room round it.`, 'info');
+      }
+    }
   });
 
-  // A bought rod (dowel, wire, tube), cut to length: drawn as an eight-sided
-  // prism from c.from to c.to, listed in compiled.hardware, never on a sheet.
   // an 8-sided round bar from a to b (world mm), diameter d: rods, motor shafts
   function prism(a, b, d, color, props) {
     const axis = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
@@ -444,6 +452,8 @@ export function compileKit(kit) {
     face(hi, k);
   }
 
+  // A bought rod (dowel, wire, tube), cut to length: drawn as an eight-sided
+  // prism from c.from to c.to, listed in compiled.hardware, never on a sheet.
   function addRod(c, mat, group, xf, title) {
     const a = xf.p(c.from), b = xf.p(c.to);
     const axis = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
