@@ -1035,9 +1035,10 @@ function renderCalibration() {
 }
 
 // T3 material library (src/ui/t3.js); rebuilt when the kit object is replaced (undo, templates)
-let matLib = null, matsOpen = false; // matsOpen keeps the Materials panel open across Make rebuilds
+let matLib = null, matsOpen = false, advOpen = false; // keep the Materials and Advanced panels open across Make rebuilds (undo, redo)
+const matSettingsOpen = new Set(); // materials whose machine settings are open, kept when undo rebuilds the library
 function materialsPanel() {
-  if (!matLib || matLib.kit !== kit) matLib = materialLibrary({ kit, machine: () => compiled?.machine, onChange: changed, onRestructure: restructured });
+  if (!matLib || matLib.kit !== kit) matLib = materialLibrary({ kit, machine: () => compiled?.machine, onChange: changed, onRestructure: restructured, open: matSettingsOpen });
   return matLib;
 }
 
@@ -1058,7 +1059,7 @@ function renderMake(el) {
         allMachinesField(() => kit, changed)), // T3: changed() so the toggle is an undo step
       h('div', { id: 'make-calib' }),
       h('section', { class: 'calib' }, h('h3', {}, 'Sheets'), h('div', { id: 'make-legend' }), h('div', { id: 'make-sheets', class: 'sheets-grid' })),
-      h('details', { class: 'more' }, h('summary', {}, ic('sliders'), 'Advanced'), h('div', {},
+      h('details', { class: 'more', open: advOpen, ontoggle: (e) => { advOpen = e.target.open; } }, h('summary', {}, ic('sliders'), 'Advanced'), h('div', {},
         h('div', { class: 'grid2' },
           numberField('Finger width (0 = auto)', kit.fingerWidth, (v) => { kit.fingerWidth = Math.max(0, v); changed(); }, { min: 0, max: 30, step: 0.5, unit: 'mm' }),
           numberField('Glue tab width', kit.tabWidth, (v) => { kit.tabWidth = Math.max(1, v); changed(); }, { min: 1, max: 15, step: 0.5, unit: 'mm' })),
@@ -1152,9 +1153,11 @@ async function shareLink() {
 // ------------------------------------------------------------------ start
 // T7: a room started from Start is not a remix, so it drops the remix credit.
 function freshRoom(next) { delete next.origin; return next; }
-function replaceKit(next, message) {
-  next.id = newKitId(); // a new room starts its own build progress
-  delete next.progressName;
+function replaceKit(next, message, { keepId = false } = {}) {
+  if (!keepId) {
+    next.id = newKitId(); // a new room starts its own build progress
+    delete next.progressName;
+  }
   kit = next;
   resetZoom(); // T6: a new room starts in its fitted view
   $('#kit-name').value = kit.name;
@@ -1287,7 +1290,9 @@ async function init() {
     if (!file) return;
     closePops();
     try {
-      replaceKit(normalizeKit(unwrapKitFile(JSON.parse(await file.text()))), `Opened ${file.name}.`); // T7: kits/ files open too
+      const raw = unwrapKitFile(JSON.parse(await file.text())); // T7: kits/ files open too
+      // a saved kit is the same room again: it keeps its id, and so its build progress
+      replaceKit(normalizeKit(raw), `Opened ${file.name}.`, { keepId: typeof raw?.id === 'string' && !!raw.id });
     } catch (err) {
       toast(`That file couldn't be opened: ${err.message}`, 'error');
     }

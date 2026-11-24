@@ -115,9 +115,21 @@ export function setEffect(led, id) {
   const defaults = EFFECTS[effect].defaults || {};
   // a new effect starts from its own defaults: a fairy string's 500 mm is not a
   // strip's length, nor a fan's blade span a turntable's platform
-  const fresh = effect !== effectOf(led);
+  const was = effectOf(led);
+  const fresh = effect !== was;
+  // ...but the sizes typed for the old effect are kept, so switching back gives them back
+  const saved = { ...(led.effectSaved || {}) };
+  if (fresh) {
+    const old = EFFECTS[was]?.defaults || {};
+    const typed = Object.fromEntries(EFFECT_KEYS.filter((k) => led[k] != null && led[k] !== old[k]).map((k) => [k, led[k]]));
+    if (Object.keys(typed).length) saved[was] = typed;
+    else delete saved[was];
+  }
   for (const k of EFFECT_KEYS) if (fresh || !(k in defaults)) delete led[k];
+  if (fresh && saved[effect]) { Object.assign(led, saved[effect]); delete saved[effect]; }
   for (const [k, v] of Object.entries(defaults)) if (led[k] == null) led[k] = v;
+  if (Object.keys(saved).length) led.effectSaved = saved;
+  else delete led.effectSaved;
   if (effect === 'steady') delete led.effect;
   else led.effect = effect;
   return led;

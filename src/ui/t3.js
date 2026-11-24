@@ -7,7 +7,7 @@ import { handCutPDF, handCutFileName, defaultPaper, PAPER_NAMES } from '../expor
 import { kitPrintCutFiles, printableParts } from '../export/printcut.js';
 import { makeZip } from '../zip.js';
 import { kitMaterialCost } from '../export/cost.js';
-import { DEFAULT_MATERIALS, TOOL_NAMES, withMaterialDefaults, newMaterial, duplicateMaterial, materialInUse, defaultCurrency, formatMoney, toolSettings, MACHINES, machineFor, BED_LIMITS, cleanOverrides } from '../materials.js';
+import { DEFAULT_MATERIALS, TOOL_NAMES, withMaterialDefaults, newMaterial, duplicateMaterial, materialInUse, defaultCurrency, formatMoney, toolSettings, switchBlade, MACHINES, machineFor, BED_LIMITS, cleanOverrides } from '../materials.js';
 
 function el(tag, attrs = {}, ...children) {
   const e = document.createElement(tag);
@@ -200,8 +200,7 @@ const field = (label, input) => el('label', { class: 'mat-field' }, el('span', {
  * Returns the library element; call `.update(compiled)` after each compile
  * to refresh the cost summary without rebuilding the inputs being typed in.
  */
-export function materialLibrary({ kit, machine, onChange, onRestructure }) {
-  const open = new Set();
+export function materialLibrary({ kit, machine, onChange, onRestructure, open = new Set() }) {
   const root = el('div', { class: 'mat-library' });
   const cost = el('div', { class: 'mat-cost', 'aria-live': 'polite' });
   let last = null, shown = [];
@@ -215,9 +214,8 @@ export function materialLibrary({ kit, machine, onChange, onRestructure }) {
       group('Material',
         field('Kind', selectInput('Kind', m.kind, Object.entries(KINDS), (v) => { m.kind = v; restructure(); })),
         field('Blade', selectInput('Blade', m.tool, Object.entries(TOOL_NAMES), (v) => {
-          // a new blade means new cut settings; the old blade's would mislead
-          if (v !== m.tool) Object.assign(m, toolSettings(v));
-          m.tool = v;
+          // a new blade means new cut settings; the old blade's would mislead (switching back restores them)
+          switchBlade(m, v);
           restructure();
         }))),
       group('Cricut',

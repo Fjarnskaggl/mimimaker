@@ -116,6 +116,30 @@ export function toolSettings(tool) {
   return { cricut: t.cricut, passes: t.passes, speed: t.speed, silhouette: { ...t.silhouette }, laser: { ...t.laser } };
 }
 
+const BLADE_KEYS = ['cricut', 'passes', 'speed', 'silhouette', 'laser'];
+
+/**
+ * Change a material's blade. A new blade starts from its own cut settings
+ * (the old blade's would mislead), but the settings the material had for each
+ * blade are kept, so switching back gives them back. Only settings that
+ * differ from a blade's defaults are kept (in `m.bladeSettings`).
+ */
+export function switchBlade(m, tool) {
+  if (tool === m.tool) return m;
+  const saved = { ...(m.bladeSettings || {}) };
+  const own = Object.fromEntries(BLADE_KEYS.filter((k) => k in m).map((k) => [k, structuredClone(m[k])]));
+  const plain = toolSettings(m.tool);
+  if (BLADE_KEYS.some((k) => JSON.stringify(own[k]) !== JSON.stringify(plain[k]))) saved[m.tool] = own;
+  else delete saved[m.tool];
+  for (const k of BLADE_KEYS) delete m[k];
+  Object.assign(m, saved[tool] || toolSettings(tool));
+  delete saved[tool];
+  m.tool = tool;
+  if (Object.keys(saved).length) m.bladeSettings = saved;
+  else delete m.bladeSettings;
+  return m;
+}
+
 /**
  * The settings `machine` should use for `m`:
  *   cricut     → { setting, passes, speed }
