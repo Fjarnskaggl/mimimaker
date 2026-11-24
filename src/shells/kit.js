@@ -113,7 +113,7 @@ export function prepareShell(kit, warn) {
  * Build the shell and add its parts through the compiler's own helpers.
  * Returns what the rest of the app needs: joints by part id and LED spots.
  */
-export function compileShell(prep, { t, fingerWidth, minFeature, cutter, holes, getMat, newGroup, addPart, add3d, warn, xf }) {
+export function compileShell(prep, { t, fingerWidth, minFeature, cutter, holes, getMat, newGroup, addPart, add3d, addRod, warn, xf }) {
   let sh;
   try {
     sh = buildShell(prep.spec, { t, fingerWidth, minFeature, cutter, holes, materials: prep.kit.materials });
@@ -122,12 +122,17 @@ export function compileShell(prep, { t, fingerWidth, minFeature, cutter, holes, 
     return { type: prep.spec.type, joints: [], lights: [] };
   }
   for (const w of sh.warnings) warn(w.msg, w.level);
-  const groups = new Map(), ids = new Map();
+  const groups = new Map(), ids = new Map(), groupMat = new Map();
   for (const p of sh.parts) {
     const mat = getMat(p.material, p.name);
-    if (!groups.has(p.group)) groups.set(p.group, newGroup(p.group, mat));
+    if (!groups.has(p.group)) { groups.set(p.group, newGroup(p.group, mat)); groupMat.set(p.group, mat); }
     ids.set(p.key, addPart(groups.get(p.group), p.name, mat, p.polys, p.scores));
     add3d(0, p.polys, p.plane, xf, mat.color, { thickness: mat.thickness, material: mat.id }); // solid: material runs along −n
+  }
+  // bought round stock (the spiral stair's dowel post): drawn and billed, never cut
+  for (const r of sh.rods || []) {
+    const g = groups.get(r.group);
+    if (g && addRod) addRod(r, groupMat.get(r.group), g, xf, r.group);
   }
   for (const s of sh.steps) groups.get(s.group)?.steps.push(s.text);
   // LED spots glow in the preview; wired ones are on the LED map too (#16)

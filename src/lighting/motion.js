@@ -77,7 +77,9 @@ export function planMotion(leds) {
     } else {
       parts.push({ name: `${l.label} turntable`, role: 'effect', polys: turntableDisc(0, 0, l.size) });
     }
-    parts.push({ name: `${l.label} motor mount`, role: 'mount', polys: mountPlate() });
+    // on the outside of the ceiling or floor, centred on the shaft hole
+    const m = MOTION.mountPlate / 2;
+    parts.push({ name: `${l.label} motor mount`, role: 'mount', polys: mountPlate(), place: { face: l.face, u: l.u - m, v: l.v - m, layer: 0 } });
   }
   const fans = motors.some((l) => l.effect === 'fan'), turns = motors.some((l) => l.effect === 'turntable');
   if (motors.length) {

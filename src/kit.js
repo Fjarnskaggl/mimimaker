@@ -158,7 +158,7 @@ export function compileKit(kit) {
   // >>> T2 shells
   const roomGroup = shellPrep ? null : newGroup('Room box', rm);
   if (shellPrep) {
-    shell = compileShell(shellPrep, { t, fingerWidth: jointWidth(rm), minFeature: minJointFeature(machine, rm), cutter: cutterName(rm), holes, getMat, newGroup, addPart, add3d, warn, xf: worldXf });
+    shell = compileShell(shellPrep, { t, fingerWidth: jointWidth(rm), minFeature: minJointFeature(machine, rm), cutter: cutterName(rm), holes, getMat, newGroup, addPart, add3d, addRod, warn, xf: worldXf });
   } else if (rm.kind === 'board') { // <<< T2 shells
     const res = buildBox({ W, D, H, t, faces: roomFaces, holes, fingerWidth: jointWidth(rm), minFeature: minJointFeature(machine, rm) });
     checkFingers(res.minFinger, rm, 'Room box');
@@ -265,6 +265,7 @@ export function compileKit(kit) {
 
   // ----------------------------------------------------------------- lights
   if (lighting.enabled && lighting.leds.length) {
+    const effectFaces = new Map(); // fan rotor / turntable part name -> its 3D face
     for (const led of lighting.leds) {
       const ledIndex = led.src; // index in kit.lighting.leds, for click-to-select
       if (led.inside) continue; // T2 shells: a shell's own LEDs already glow where they sit (#16)
@@ -273,6 +274,7 @@ export function compileKit(kit) {
       if (led.load?.device) {
         const size = led.size;
         const shape = led.effect === 'fan' ? fanRotor(led.u, led.v, size) : led.effect === 'turntable' ? turntableDisc(led.u, led.v, size) : null;
+        if (shape && !led.misplaced) effectFaces.set(`${led.label} ${led.effect === 'fan' ? 'fan blades' : 'turntable'}`, faces3d.length);
         if (shape && !led.misplaced) add3d(1.7, shape, faceFrame(led.face, W, D, H, t + (led.effect === 'fan' ? 4 : 1), 'inner'), worldXf, '#b8a990', { material: (mats.get(room.trimMaterial) || kit.materials[0]).id }); // cut from trim, as in lighting.parts
         continue;
       }
@@ -298,7 +300,25 @@ export function compileKit(kit) {
       ],
       parts: [],
     });
-    for (const p of lighting.parts || []) addPart(lightGroup, p.name, getMat(p.material || (p.role === 'frame' || p.role === 'mount' ? room.material : room.trimMaterial), 'Lighting'), p.polys); // [T5] cable cover
+    // [T5] cable cover and motor mounts: cut, and drawn on the outside of their wall
+    const stackT = {}; // thickness already stacked on the outside of each face
+    const placed = (lighting.parts || []).filter((p) => p.place).sort((a, b) => a.place.layer - b.place.layer);
+    const lightMat = (p) => getMat(p.material || (p.role === 'frame' || p.role === 'mount' ? room.material : room.trimMaterial), 'Lighting');
+    const layerAt = new Map();
+    for (const p of placed) {
+      const key = `${p.place.face}/${p.place.layer}`;
+      if (!layerAt.has(key)) { layerAt.set(key, stackT[p.place.face] || 0); stackT[p.place.face] = (stackT[p.place.face] || 0) + lightMat(p).thickness; }
+    }
+    for (const p of lighting.parts || []) {
+      const lm = lightMat(p);
+      const pid = addPart(lightGroup, p.name, lm, p.polys);
+      if (effectFaces.has(p.name)) faces3d[effectFaces.get(p.name)].part = pid;
+      if (!p.place || shellPrep) continue;
+      const fr = faceFrame(p.place.face, W, D, H);
+      const off = layerAt.get(`${p.place.face}/${p.place.layer}`) + lm.thickness;
+      const plane = { ...fr, o: v3.add(v3.add(fr.o, v3.mul(fr.n, off)), v3.add(v3.mul(fr.U, p.place.u), v3.mul(fr.V, p.place.v))) };
+      add3d(0.5, p.polys, plane, worldXf, lm.color, { thickness: lm.thickness, material: lm.id, part: pid });
+    }
     lightGroup.steps.push(...(lighting.steps || [])); // [T5] cable cover
     // >>> [T5] hidden base under the room: battery hatch, wire hole and switch mount
     if (lighting.power.base) {
@@ -313,13 +333,18 @@ export function compileKit(kit) {
         const under = { p: ([x, y, z]) => [x, y, z - L.H], n: (q) => q };
         const ids = { base: [], stops: [], hatch: [], mount: [] };
         for (const p of b.panels) {
-          ids.base.push(addPart(bg, p.name, bm, p.polys));
-          add3d(0, p.polys, faceFrame(p.face, L.W, L.D, L.H, bm.thickness, 'inner'), under, bm.color, { thickness: bm.thickness, material: bm.id });
+          const id = addPart(bg, p.name, bm, p.polys);
+          ids.base.push(id);
+          add3d(0, p.polys, faceFrame(p.face, L.W, L.D, L.H, bm.thickness, 'inner'), under, bm.color, { thickness: bm.thickness, material: bm.id, part: id });
         }
         for (const p of b.parts) {
           const id = addPart(bg, p.name, bm, p.polys);
           ids[p.key === 'stop' ? 'stops' : p.key].push(id);
-          if (p.view) add3d(0.5, p.polys, faceFrame(p.view.face, L.W, L.D, L.H, bm.thickness, 'inner'), under, bm.color, { thickness: bm.thickness, material: bm.id });
+          // the hatch sits in its opening; stops and the switch mount are glued on the inside of their wall
+          const face = p.view?.face || (p.key === 'stop' ? 'back' : L.switch.face);
+          const fr = faceFrame(face, L.W, L.D, L.H, bm.thickness, 'inner');
+          const plane = p.view ? fr : { ...fr, o: v3.add(fr.o, v3.mul(fr.n, bm.thickness)) };
+          add3d(0.5, p.polys, plane, under, bm.color, { thickness: bm.thickness, material: bm.id, part: id });
         }
         bg.steps.push(...b.steps.map((st) => st.replace(/\{(\w+)\}/g, (m, k) => (ids[k] ? fmtIds(ids[k]) : m))));
       }

@@ -121,10 +121,13 @@ export function buildSteps(kit, compiled, graph = jointGraph(kit, compiled)) {
       todo = todo.filter((x) => x.g !== g);
       const own = texts(g.title);
       const whole = groupNodes(g.title).every((n) => ns.includes(n) || lid.has(n.id));
+      // the shell's bought rods (a spiral stair's post) go in with their group
+      const rods = (compiled.hardware || []).map((h, k) => ({ h, k })).filter(({ h }) => h.item == null && h.group === g.title);
       push({
         title: `Add the ${lc(g.title)}`, group: g.title, unit: g.title, parts: ns.map((n) => n.id),
         cureMin: ns.some((n) => n.kind === 'board') ? CURE.board : CURE.card,
-        text: whole && own.length ? [...own] : ns.map((n) => `Glue the ${lc(n.name)} (#${n.id}) in place.`),
+        ...(rods.length ? { hardware: rods.map(({ k }) => k) } : {}),
+        text: whole && own.length ? [...own] : [...rods.map(({ h }) => h.text), ...ns.map((n) => `Glue the ${lc(n.name)} (#${n.id}) in place.`)],
       });
       ns.forEach((n) => done.add(n.id));
     }
