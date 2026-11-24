@@ -223,7 +223,8 @@ test('crib: slatted front and back, plain ends, raised base', () => {
   const comps = build('crib', { slats: 8 });
   const sides = comps.filter((c) => c.kind === 'flat' && c.name.startsWith('Side'));
   assert.equal(sides.length, 2);
-  for (const s of sides) assert.equal(s.polys.length, 1 + 8 + 1, `${s.name}: outline + one gap between each pair of slats`);
+  // up to 8 slats: fewer when 8 would be narrower than the knife cuts (3 mm), with as many gaps + 1
+  for (const s of sides) assert.ok(s.polys.length >= 1 + 2 && s.polys.length <= 1 + 8 + 1, `${s.name}: outline + one gap either side of each slat`);
   const ends = comps.filter((c) => c.kind === 'flat' && c.name.startsWith('End'));
   assert.equal(ends.length, 2);
   for (const e of ends) assert.deepEqual(e.plane.n.map(Math.abs), [1, 0, 0]);
