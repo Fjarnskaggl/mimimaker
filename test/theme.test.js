@@ -78,6 +78,13 @@ for (const [name, vars] of Object.entries(THEMES)) {
     }
   });
 
+  test(`success, warning and danger look different from each other in the ${name} theme`, () => {
+    const dist = (a, b) => Math.hypot(...rgb(vars[a]).map((c, i) => (c - rgb(vars[b])[i]) * 255));
+    for (const [a, b] of [['success', 'warning'], ['warning', 'danger'], ['success', 'danger']]) {
+      assert.ok(dist(a, b) > 60, `${a} vs ${b}: ${dist(a, b).toFixed(0)}`);
+    }
+  });
+
   test(`no green or teal in the ${name} theme`, () => {
     const greens = Object.entries(vars)
       .filter(([, v]) => /^#[0-9a-f]{6}$/.test(v))
