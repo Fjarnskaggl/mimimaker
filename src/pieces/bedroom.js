@@ -81,8 +81,8 @@ export const BEDROOM = [
   {
     id: 'crib', label: 'Crib', theme: 'Bedroom', placement: 'floor', mat: 'board',
     tags: ['sleep', 'kids'], difficulty: 3,
-    params: [num('w', 'Length', 60, 130), num('d', 'Width', 40, 70), num('h', 'Height', 60, 100), cnt('slats', 'Slats per side', 6, 12)],
-    defaults: { w: 100, d: 55, h: 85, slats: 8 },
+    params: [num('w', 'Length', 60, 130), num('d', 'Width', 40, 70), num('h', 'Height', 60, 100), cnt('slats', 'Slats per side', 2, 6)],
+    defaults: { w: 100, d: 55, h: 85, slats: 4 },
     let: {
       r: 'max(3, h * 0.1)', inner: 'w - 2 * t - 2 * r', n: 'max(1, min(round(slats), floor((inner - 3) / 6)))', sw: 'inner / (2 * n + 1)',
       bz: 'h * 0.35', bh: 'max(3, 2 * t, h * 0.06)',

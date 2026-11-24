@@ -77,8 +77,8 @@ export const DECOR = [
     tags: ['clothes', 'hall'], difficulty: 1,
     params: [num('w', 'Spread', 30, 70), num('h', 'Height', 150, 200)],
     defaults: { w: 45, h: 175 },
-    size: ['w', 'max(w * 0.6, 12)', 'h'],
-    let: { b: 'max(w * 0.6, 12)', p: 'max(4, w * 0.1)', c: 'w / 2', q: 'p / 2', h1: 'h * 0.78', rise: 'w * 0.2', bh: 'max(2 * t, 3, h * 0.03)' },
+    size: ['w', 'w * 0.6', 'h'],
+    let: { b: 'w * 0.6', p: 'max(4, w * 0.1)', c: 'w / 2', q: 'p / 2', h1: 'h * 0.78', rise: 'w * 0.2', bh: 'max(2 * t, 3, h * 0.03)' },
     components: [
       { kind: 'box', name: 'Base', size: ['b', 'b', 'bh'], faces: 'all', at: ['(w - b) / 2', 0, 0], holes: { top: [{ rect: ['b / 2 - q - 0.2', '(b - t) / 2 - 0.15', 'p + 0.4', 't + 0.3'] }] } },
       {

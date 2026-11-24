@@ -6,16 +6,16 @@ export const LIBRARY = [
     tags: ['books'], difficulty: 2,
     params: [num('w', 'Width', 25, 70), num('h', 'Height', 80, 260), cnt('rungs', 'Rungs', 3, 12)],
     defaults: { w: 45, h: 200, rungs: 7 },
-    size: ['w', 'h * 0.42 + 2', 'h'],
+    size: ['w', 'h * 0.5', 'h'],
     let: {
-      rail: 'max(3, w * 0.14)', n: 'round(rungs)', s: 0.2, c: 'sqrt(1 - s * s)', L: 'h / c',
-      rung: 'max(3, L * 0.02)', gap: '(L - (n + 1) * rung) / n', back: '2 * s * L + 2 * c * t',
+      rail: 'max(3, w * 0.14)', s: 0.2, c: 'sqrt(1 - s * s)', L: 'h / c',
+      rung: 'max(3, L * 0.02)', n: 'max(1, min(round(rungs), floor((L - rung) / (rung + 3))))', gap: '(L - (n + 1) * rung) / n', back: '2 * s * L + 2 * c * t',
     },
     components: [
       {
         repeat: 2, as: 'k', each: {
           kind: 'flat', name: "{k == 0 ? 'Front ladder' : 'Back ladder'}",
-          plane: { custom: { o: [0, 'k * back', 0], U: [1, 0, 0], V: [0, 'k == 0 ? s : -s', 'c'], n: [0, 'k == 0 ? -c : c', 's'] } },
+          plane: { custom: { o: [0, 'k * back', 's * t'], U: [1, 0, 0], V: [0, 'k == 0 ? s : -s', 'c'], n: [0, 'k == 0 ? -c : c', 's'] } },
           polys: [
             { rect: [0, 0, 'w', 'L'] },
             { repeat: 'n', as: 'j', each: { rect: ['rail', 'rung + j * (gap + rung)', 'w - 2 * rail', 'gap'] } },

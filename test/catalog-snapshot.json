@@ -383,7 +383,7 @@
  },
  "crib": {
   "label": "Crib",
-  "meta": "bfd52696305539d5",
+  "meta": "b5e8d84afafbff03",
   "components": [
    "box:Mattress base",
    "flat:Side front",
@@ -393,11 +393,11 @@
   ],
   "cases": {
    "defaults@board": "6b86c4c4f7c0c71d",
-   "defaults@card": "4b560a02fd0b322a",
+   "defaults@card": "71bd376e2ed9fe7d",
    "min@board": "ed24d7312234a331",
    "min@card": "0426f89169783863",
    "max@board": "b870eee966d6e204",
-   "max@card": "8dcfb51f23437a98"
+   "max@card": "9549447fe7c18ff8"
   }
  },
  "counter": {
@@ -682,12 +682,12 @@
    "flat:Back ladder"
   ],
   "cases": {
-   "defaults@board": "721a14f7a186d553",
-   "defaults@card": "cc53eeb243b9635e",
-   "min@board": "a611455e8580e187",
-   "min@card": "2525a806b0b1f2d6",
-   "max@board": "30139476f661e25b",
-   "max@card": "2cd93e433486aa93"
+   "defaults@board": "550e6fffd7623f6d",
+   "defaults@card": "399207f60ed2aadb",
+   "min@board": "98b8ca6001ec94a6",
+   "min@card": "17acfc2bb77a11d9",
+   "max@board": "1062846cf82d6ecc",
+   "max@card": "f462050a94137cb5"
   }
  },
  "books": {
@@ -862,10 +862,10 @@
    "flat:Stand"
   ],
   "cases": {
-   "defaults@board": "999ec3591c0ef7fa",
-   "defaults@card": "87ff006babf7ee54",
-   "min@board": "4a05de7a123be654",
-   "min@card": "bd9815deb0755830",
+   "defaults@board": "97e15393a2e9ba62",
+   "defaults@card": "fc7cc019d006641c",
+   "min@board": "daea391e37dc4831",
+   "min@card": "18cbb234c0637b87",
    "max@board": "28df337252a27f8e",
    "max@card": "f95a84151ab7b899"
   }
