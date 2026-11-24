@@ -51,6 +51,18 @@ export function createViewer(THREE) {
   renderer.setClearColor(0x000000, 0);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // Shadows only change when the scene or its lights do, not with the camera:
+  // draw them on a rebuild or a day/night switch, and reuse them while orbiting.
+  renderer.shadowMap.autoUpdate = false;
+  let shadowPasses = 0, frames = 0, builds = 0;
+  const shadowRender = renderer.shadowMap.render.bind(renderer.shadowMap);
+  renderer.shadowMap.render = (...args) => {
+    const due = renderer.shadowMap.needsUpdate;
+    shadowRender(...args);
+    if (due && !renderer.shadowMap.needsUpdate) shadowPasses++; // three drew them (it clears the flag)
+  };
+  // a restored context comes back with empty shadow maps
+  canvas.addEventListener('webglcontextrestored', () => { renderer.shadowMap.needsUpdate = true; });
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 1000);
@@ -71,6 +83,9 @@ export function createViewer(THREE) {
 
   let faces = null, bounds = sceneBounds([]), view = {}, entries = [], ledData = [];
   let lookKey = '';
+  let litNight = null; // the lighting the shadow maps were drawn for
+  const litStates = new Set(); // day and/or night, once shown: programs worth keeping warm
+  let retired = []; // the last scene's meshes, freed after the new scene's first frame
   let selectedItem = null;
   let hoverItem = null;
   let selectedLed = null;
@@ -115,21 +130,43 @@ export function createViewer(THREE) {
   }
   let size = [0, 0];
 
+  // Free GPU resources. Freeing a material frees its shader program once no
+  // other material uses it, so a rebuild frees the old scene only after the
+  // new one has drawn (and so taken over the same programs): recompiling them
+  // costs ~50 ms per edit.
+  function free(list) {
+    for (const o of list) { o.geometry?.dispose(); o.material?.dispose(); o.shadow?.map?.dispose(); }
+  }
+  function freeRetired(warm = false) {
+    if (warm && retired.length && litStates.size > 1) {
+      // the old materials also hold programs for the other lighting (night's
+      // LED and window lights); let the new ones take those over too
+      const flip = () => { leds.visible = !leds.visible; windows.visible = !windows.visible; };
+      flip();
+      renderer.compile(scene, camera);
+      flip();
+    }
+    free(retired);
+    retired = [];
+  }
   function clear(keepTextures = false) {
-    for (const e of entries) { e.mesh.geometry.dispose(); e.mesh.material.dispose(); e.ring?.geometry.dispose(); e.ring?.material.dispose(); e.edge?.geometry.dispose(); e.edge?.material.dispose(); }
+    const old = [...entries.flatMap((e) => [e.mesh, e.ring, e.edge].filter(Boolean)), ...windows.children];
     if (!keepTextures) {
       for (const t of textures.values()) t.texture.dispose();
       textures.clear();
     }
     model.clear();
     leds.clear();
-    for (const o of windows.children) { o.geometry?.dispose(); o.material?.dispose(); o.shadow?.map?.dispose(); }
     windows.clear();
     entries = [];
+    return old;
   }
 
   function build(next, opts) {
-    clear(true); // texture images carry over: re-rasterising them is the slow part of a rebuild
+    freeRetired();
+    retired = clear(true); // texture images carry over: re-rasterising them is the slow part of a rebuild
+    builds++;
+    renderer.shadowMap.needsUpdate = true;
     used = new Set();
     faces = next;
     bounds = sceneBounds(faces);
@@ -219,6 +256,7 @@ export function createViewer(THREE) {
 
   function applyView() {
     const night = !!view.night;
+    if (night !== litNight) { litNight = night; litStates.add(night); renderer.shadowMap.needsUpdate = true; } // window lights cast shadows at night
     const L = night ? NIGHT : DAY;
     hemi.color.set(L.sky); hemi.groundColor.set(L.ground); hemi.intensity = L.hemi;
     sun.color.set(L.sunColor); sun.intensity = L.sun;
@@ -246,6 +284,8 @@ export function createViewer(THREE) {
       const facing = face.n[0] * cam[0] + face.n[1] * cam[1] + face.n[2] * cam[2];
       const ghost = face.layer < 2 && facing < -1e-6;
       const opacity = ghost ? (face.layer === 0 ? 0.12 : 0.06) : face.opacity;
+      // a transparency flip moves the mesh between render lists; nothing here
+      // needs a new program, so don't flag the material (that re-keys it every frame)
       m.transparent = opacity < 1;
       m.opacity = opacity;
       // a ghosted wall's piece stays ghosted: no hard outline across the room
@@ -257,7 +297,6 @@ export function createViewer(THREE) {
       }
       m.depthWrite = opacity >= 1;
       mesh.visible = opacity > 0;
-      m.needsUpdate = true;
     }
     const w = canvas.clientWidth || canvas.parentElement?.clientWidth || 600;
     const h = canvas.clientHeight || canvas.parentElement?.clientHeight || 400;
@@ -273,6 +312,8 @@ export function createViewer(THREE) {
   function render() {
     applyView();
     renderer.render(scene, camera);
+    frames++;
+    if (retired.length) freeRetired(true); // the new scene now holds the programs
   }
 
   const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(() => { if (faces) render(); }) : null;
@@ -338,6 +379,14 @@ export function createViewer(THREE) {
       }
       return null;
     },
+    /**
+     * Work counters for performance budgets (deterministic, unlike timings):
+     * scene builds, frames drawn, shadow-map passes, and the ids and
+     * material names of the shader programs alive now.
+     */
+    stats() {
+      return { builds, frames, shadowPasses, programs: renderer.info.programs.map((p) => p.id), programNames: renderer.info.programs.map((p) => p.name) };
+    },
     /** Where a world point (model mm) lands on screen, in client px. */
     project(p) {
       const r = canvas.getBoundingClientRect();
@@ -350,8 +399,10 @@ export function createViewer(THREE) {
      * `offset`. null puts every piece back.
      */
     previewItem(item, xf) {
+      let moved = false;
       for (const e of entries) {
         if (xf && e.face.item === item) {
+          moved = true;
           const th = ((xf.turns || 0) * Math.PI) / 2, c = xf.centre || [0, 0, 0], o = xf.offset || [0, 0, 0];
           const cs = Math.cos(th), sn = Math.sin(th);
           e.mesh.rotation.set(0, 0, th);
@@ -359,8 +410,10 @@ export function createViewer(THREE) {
         } else if (e.mesh.position.lengthSq() || e.mesh.rotation.z) {
           e.mesh.position.set(0, 0, 0);
           e.mesh.rotation.set(0, 0, 0);
+          moved = true;
         }
       }
+      if (moved) renderer.shadowMap.needsUpdate = true; // the piece's shadow moves with it
       if (faces) render();
     },
     /** What the viewer last drew with, without rendering (cheap, for tests). */
@@ -401,8 +454,9 @@ export function createViewer(THREE) {
     },
     /**
      * Orbit once round the room, rendering `frames` frames back to back, and
-     * report the cost of a frame: fps, draw calls and triangles (shadow passes
-     * included) and how many lights cast shadows. Leaves the view as it was.
+     * report the cost of a frame: fps, draw calls and triangles (an orbit
+     * reuses the shadow maps, so no shadow pass) and how many lights cast
+     * shadows. Leaves the view as it was.
      */
     bench({ frames = 60 } = {}) {
       frames = Math.max(1, Math.floor(frames) || 1);
@@ -413,7 +467,8 @@ export function createViewer(THREE) {
       const yaw0 = Number(saved.yaw) || 0;
       render();
       gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // warm up and sync
-      // three resets info after the shadow pass, so reset by hand to count both
+      // three resets info per render() (and after a shadow pass, when there is
+      // one), so reset by hand once per frame
       const autoReset = renderer.info.autoReset;
       renderer.info.autoReset = false;
       let ms;
@@ -443,7 +498,8 @@ export function createViewer(THREE) {
     },
     dispose() {
       resize?.disconnect();
-      clear();
+      freeRetired();
+      free(clear());
       renderer.dispose();
       renderer.forceContextLoss?.();
       canvas.remove();
