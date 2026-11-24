@@ -13,7 +13,7 @@ import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometr
 import { prepareShell, compileShell, compileRoof, shellLighting } from './shells/kit.js';
 import { buildBase } from './lighting/base.js';
 import { HARDWARE_COLORS, hardwareName } from './hardware.js';
-import { fanRotor, turntableDisc } from './lighting/motion.js';
+import { fanRotor, turntableDisc, MOTION } from './lighting/motion.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
@@ -314,11 +314,17 @@ export function compileKit(kit) {
       const lm = lightMat(p);
       const pid = addPart(lightGroup, p.name, lm, p.polys);
       if (effectFaces.has(p.name)) faces3d[effectFaces.get(p.name)].part = pid;
-      if (!p.place || shellPrep) continue;
-      const fr = faceFrame(p.place.face, W, D, H);
+      if (!p.place) continue;
+      const box = shell?.dims || { W, D, H }; // a book-nook shell's own walls
+      const fr = faceFrame(p.place.face, box.W, box.D, box.H);
       const off = layerAt.get(`${p.place.face}/${p.place.layer}`) + lm.thickness;
       const plane = { ...fr, o: v3.add(v3.add(fr.o, v3.mul(fr.n, off)), v3.add(v3.mul(fr.U, p.place.u), v3.mul(fr.V, p.place.v))) };
       add3d(0.5, p.polys, plane, worldXf, lm.color, { thickness: lm.thickness, material: lm.id, part: pid });
+      // the motor's own shaft: from the motor on the mount, through the shaft hole, into the rotor
+      if (p.shaft) {
+        const at = (s) => v3.add(v3.add(fr.o, v3.mul(fr.n, s)), v3.add(v3.mul(fr.U, p.shaft.u), v3.mul(fr.V, p.shaft.v)));
+        prism(at(off), at(-(t + p.shaft.into + 0.5)), MOTION.shaft, '#9aa0a6', { material: lm.id, part: pid });
+      }
     }
     lightGroup.steps.push(...(lighting.steps || [])); // [T5] cable cover
     // >>> [T5] hidden base under the room: battery hatch, wire hole and switch mount
@@ -414,6 +420,30 @@ export function compileKit(kit) {
 
   // A bought rod (dowel, wire, tube), cut to length: drawn as an eight-sided
   // prism from c.from to c.to, listed in compiled.hardware, never on a sheet.
+  // an 8-sided round bar from a to b (world mm), diameter d: rods, motor shafts
+  function prism(a, b, d, color, props) {
+    const axis = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const k = v3.mul(axis, 1 / Math.hypot(...axis));
+    const ref = Math.abs(k[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+    const cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]];
+    const u0 = cr(k, ref), lu = Math.hypot(...u0);
+    const u = v3.mul(u0, 1 / lu), w = cr(k, u);
+    const r = d / 2, n = 8;
+    const ring = (o) => Array.from({ length: n }, (_, i) => {
+      const ang = (2 * Math.PI * (i + 0.5)) / n;
+      return v3.add(o, v3.add(v3.mul(u, r * Math.cos(ang)), v3.mul(w, r * Math.sin(ang))));
+    });
+    const lo = ring(a), hi = ring(b);
+    const face = (poly, nrm) => faces3d.push({ layer: 2, color, opacity: 1, cull: false, glow: false, item: currentItem, thickness: 0, polys: [poly], n: nrm, ...props });
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      const ang = (2 * Math.PI * (i + 1)) / n;
+      face([lo[i], lo[j], hi[j], hi[i]], v3.add(v3.mul(u, Math.cos(ang)), v3.mul(w, Math.sin(ang))));
+    }
+    face([...lo].reverse(), v3.mul(k, -1));
+    face(hi, k);
+  }
+
   function addRod(c, mat, group, xf, title) {
     const a = xf.p(c.from), b = xf.p(c.to);
     const axis = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
@@ -422,27 +452,8 @@ export function compileKit(kit) {
       warn(`${title}: the ${c.name.toLowerCase()} has no length or thickness at this size — make the piece bigger.`);
       return;
     }
-    const k = v3.mul(axis, 1 / length);
-    const ref = Math.abs(k[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
-    const cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]];
-    const u0 = cr(k, ref), lu = Math.hypot(...u0);
-    const u = v3.mul(u0, 1 / lu), w = cr(k, u);
-    const r = c.d / 2, n = 8;
-    const ring = (o) => Array.from({ length: n }, (_, i) => {
-      const ang = (2 * Math.PI * (i + 0.5)) / n;
-      return v3.add(o, v3.add(v3.mul(u, r * Math.cos(ang)), v3.mul(w, r * Math.sin(ang))));
-    });
-    const lo = ring(a), hi = ring(b);
     const index = hardware.length;
-    const color = HARDWARE_COLORS[c.stock] || HARDWARE_COLORS.dowel;
-    const face = (poly, nrm) => faces3d.push({ layer: 2, color, opacity: 1, cull: false, glow: false, item: currentItem, thickness: 0, material: mat.id, polys: [poly], n: nrm, hardware: index });
-    for (let i = 0; i < n; i++) {
-      const j = (i + 1) % n;
-      const ang = (2 * Math.PI * (i + 1)) / n;
-      face([lo[i], lo[j], hi[j], hi[i]], v3.add(v3.mul(u, Math.cos(ang)), v3.mul(w, Math.sin(ang))));
-    }
-    face([...lo].reverse(), v3.mul(k, -1));
-    face(hi, k);
+    prism(a, b, c.d, HARDWARE_COLORS[c.stock] || HARDWARE_COLORS.dowel, { material: mat.id, hardware: index });
     const h = { name: c.name, stock: c.stock, d: c.d, length, group: group.title, item: currentItem, from: a, to: b };
     h.text = `Cut ${hardwareName(c.stock, c.d)} ${Math.floor(length + 1e-6)} mm long for the ${c.name.toLowerCase()}.`;
     hardware.push(h);
