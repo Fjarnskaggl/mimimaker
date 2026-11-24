@@ -42,6 +42,8 @@ Anywhere a number goes you may write a string expression (`src/pieces/expr.js`):
 
 - every parameter (`unit: "cm"` values arrive already scaled to model mm),
 - `t` — the material thickness in mm,
+- `mf` — the smallest strip or tab the cutter makes cleanly in this material, in mm (knife 3, fine blade 1.5, laser 1). Size thin parts with it, e.g. `max(mf, w * 0.1)`, so a piece cuts cleanly in board as well as card.
+- `board` — 1 when the piece is cut from board (jointed or laminated), 0 for card; a board part needs more room round a slot than a folded card net.
 - `let` names, in order (each may use the ones before it),
 - a `repeat`'s loop variable and its own `let`s, inside that repeat.
 

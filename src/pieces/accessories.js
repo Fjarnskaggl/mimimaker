@@ -13,7 +13,7 @@ export const ACCESSORIES = [
     defaults: { count: 8, h: 24, th: 3, d: 17, seed: 7 },
     size: ['th * round(count)', 'd', 'h'],
     components: [{
-      repeat: 'round(count)', as: 'k', let: { bh: 'h * (0.68 + 0.32 * hash(k, seed))', bt: 'max(1, floor(th / t + 0.01)) * t' },
+      repeat: 'round(count)', as: 'k', let: { bh: 'max(mf, h * (0.68 + 0.32 * hash(k, seed)))', bt: 'max(1, floor(th / t + 0.01)) * t' },
       each: { kind: 'box', name: 'Book {k + 1}', size: ['bt', 'd', 'bh'], faces: 'all', solid: true, at: ['k * bt', 0, 0] },
     }],
     note: 'Each book is a few card layers glued into a little block: use a coloured layer on each side for the covers and ink a title on the spine. Glue the books side by side on a shelf. Change "Variation" for a different row.',
@@ -85,10 +85,13 @@ export const ACCESSORIES = [
     params: [num('p', 'Pot width', 7, 25), num('h', 'Plant height', 5, 40), sel('kind', 'Leaves', ['succulent', 'fern', 'grass'])],
     defaults: { p: 10, h: 15, kind: 'succulent' },
     size: ['p * 1.6', 'p', 'p * 0.9 + max(0.5, h * 0.05) + h * 0.9'],
-    let: { W: 'p * 1.6', lobes: "kind == 'succulent' ? 2.5 : kind == 'fern' ? 5.5 : 9.5", sw: 'max(1.5, p * 0.15)', gap: 'max(0.5, h * 0.05)', slot: 'max(1.5, t + 0.3)' },
+    let: {
+      lobes: "kind == 'succulent' ? 2.5 : kind == 'fern' ? 5.5 : 9.5", sw: 'max(mf, p * 0.15)', slot: 'max(1.5, t + 0.3)',
+      P: 'board ? max(p, sw + 0.4 + 2 * (mf + t)) : p', W: 'P * 1.6', ph: 'max(p * 0.9, mf)', lh: 'board ? max(h, 2 * mf) : h', gap: 'max(0.5, lh * 0.05)',
+    },
     components: [
-      { kind: 'box', name: 'Pot', size: ['p', 'p', 'p * 0.9'], faces: 'all', at: ['(W - p) / 2', 0, 0], holes: { top: [{ rect: ['(p - sw) / 2 - 0.2', '(p + t - slot) / 2', 'sw + 0.4', 'slot'] }] } },
-      { kind: 'flat', name: 'Leaves', plane: { upright: { y: 'p / 2', z: 't' } }, polys: [{ plant: ['W', 'h', 'lobes', 'sw', 'p * 0.9 - t + gap'] }] },
+      { kind: 'box', name: 'Pot', size: ['P', 'P', 'ph'], faces: 'all', at: ['(W - P) / 2', 0, 0], holes: { top: [{ rect: ['(P - sw) / 2 - 0.2', '(P - slot) / 2', 'sw + 0.4', 'slot'] }] } },
+      { kind: 'flat', name: 'Leaves', plane: { upright: { y: '(P - t) / 2', z: 't' } }, polys: [{ plant: ['W', 'lh', 'lobes', 'sw', 'ph - t + gap'] }] },
     ],
     note: 'Fold the pot (its top is the soil), cut the leaves from green card and push the stem down through the slot to the pot floor; dot the top with glue and "soil". Line several up on a window sill.',
   },

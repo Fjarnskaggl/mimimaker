@@ -143,7 +143,7 @@
    "defaults@board": "98ca36a87b56830d",
    "defaults@card": "fcbe1dbedbfe0cbf",
    "min@board": "547e292d4e10d28e",
-   "min@card": "cdecc9caf8cd3ac0",
+   "min@card": "50259563c42baf8e",
    "max@board": "5dbc8cbcd3c4b4c2",
    "max@card": "d918098c54f7b689"
   }
@@ -173,12 +173,12 @@
    "flat:Shade spider"
   ],
   "cases": {
-   "defaults@board": "921785a466b52c02",
-   "defaults@card": "3959ae485e65b82e",
+   "defaults@board": "8674979c0eccdbcd",
+   "defaults@card": "9a98896476f22e2f",
    "min@board": "0ea334b53512d022",
    "min@card": "ad026b1f475f7df5",
-   "max@board": "ae5563fff559383d",
-   "max@card": "be7b728622c03188"
+   "max@board": "b3cdd0a777e3cc85",
+   "max@card": "305dff5b1aa0f0fe"
   }
  },
  "sideboard": {
@@ -802,8 +802,8 @@
   "cases": {
    "defaults@board": "1abff1401208f77c",
    "defaults@card": "1abff1401208f77c",
-   "min@board": "ea2a1eeed219b27f",
-   "min@card": "ea2a1eeed219b27f",
+   "min@board": "7208b544cea2a0d6",
+   "min@card": "7208b544cea2a0d6",
    "max@board": "63f0d39b5bb92b37",
    "max@card": "63f0d39b5bb92b37"
   }
@@ -817,8 +817,8 @@
   "cases": {
    "defaults@board": "f719f10ccad20369",
    "defaults@card": "f719f10ccad20369",
-   "min@board": "85d5e935fe1ec5dd",
-   "min@card": "85d5e935fe1ec5dd",
+   "min@board": "9966bd7aebc75d5e",
+   "min@card": "9966bd7aebc75d5e",
    "max@board": "e77fc429865e8571",
    "max@card": "e77fc429865e8571"
   }
@@ -910,12 +910,12 @@
    "flat:Greenery"
   ],
   "cases": {
-   "defaults@board": "9bf7bc98680ad142",
-   "defaults@card": "9f63a352cd6e419c",
-   "min@board": "df339555ec401cc4",
-   "min@card": "058703a58a91ad50",
-   "max@board": "4658e2c143480706",
-   "max@card": "6db577e46c79a28e"
+   "defaults@board": "e3190b69d822d583",
+   "defaults@card": "6ebda9ce523f01e3",
+   "min@board": "8e4d8666ede9d740",
+   "min@card": "f9cee130223c6c07",
+   "max@board": "d7828fdab7e0b347",
+   "max@card": "c734c3c159c6eb9a"
   }
  },
  "bookrow": {
@@ -1011,18 +1011,18 @@
    "flat:Leaves"
   ],
   "cases": {
-   "defaults@board": "ae02b33c3a1827ef",
-   "defaults@card": "ba67619f2a2db70a",
-   "min@board": "29c09394e33b9bec",
-   "min@card": "ea9cf06da59e4d57",
-   "max@board": "b2d485f2b70626a8",
-   "max@card": "301115ede0834428",
-   "kind=succulent@board": "ae02b33c3a1827ef",
-   "kind=succulent@card": "ba67619f2a2db70a",
-   "kind=fern@board": "e097abe5bed26314",
-   "kind=fern@card": "d51a3bcfdfa43c69",
-   "kind=grass@board": "c141e559df3c899a",
-   "kind=grass@card": "f666e481355ae85e"
+   "defaults@board": "68d249a9447b2027",
+   "defaults@card": "a94d7b9ab010b839",
+   "min@board": "96a97481e36e81f0",
+   "min@card": "383b528889ea0be1",
+   "max@board": "da39942d79621ebc",
+   "max@card": "67a5b5f1835648b6",
+   "kind=succulent@board": "68d249a9447b2027",
+   "kind=succulent@card": "a94d7b9ab010b839",
+   "kind=fern@board": "09f7071625359490",
+   "kind=fern@card": "05ff923b93109457",
+   "kind=grass@board": "9f3d3489d76f503b",
+   "kind=grass@card": "1bba5b0fb4d3c18d"
   }
  }
 }

@@ -22,7 +22,7 @@ export const DECOR = [
     params: [num('w', 'Pot width', 10, 60), num('h', 'Pot height', 10, 60), num('leaf', 'Plant height', 20, 150)],
     defaults: { w: 30, h: 30, leaf: 70 },
     size: ['w', 'w', 'h + max(1, leaf * 0.05) + leaf * 0.9'],
-    let: { lw: 'w * 1.8', sw: 'max(1.5, w * 0.12)', gap: 'max(1, leaf * 0.05)', slot: 'max(1.5, t + 0.3)' },
+    let: { lw: 'w * 1.8', sw: 'max(mf, w * 0.12)', gap: 'max(1, leaf * 0.05)', slot: 'max(1.5, t + 0.3)' },
     components: [
       { kind: 'box', name: 'Pot', size: ['w', 'w', 'h'], faces: 'all', at: [0, 0, 0], holes: { top: [{ rect: ['(w - sw) / 2 - 0.2', '(w + t - slot) / 2', 'sw + 0.4', 'slot'] }] } },
       { kind: 'flat', name: 'Leaves', polys: [{ plant: ['lw', 'leaf', 3.5, 'sw', 'h - t + gap'] }], plane: { upright: { x: '(w - lw) / 2', y: 'w / 2', z: 't' } } },
@@ -35,8 +35,8 @@ export const DECOR = [
     params: [num('w', 'Width', 5, 200), num('h', 'Height', 5, 200), num('border', 'Border', 1, 30)],
     defaults: { w: 40, h: 50, border: 5 },
     size: ['w', 0, 'h'],
-    let: { b: 'min(border, w / 2 - 0.5, h / 2 - 0.5)' },
-    components: [{ kind: 'flat', name: 'Frame', polys: [{ rect: [0, 0, 'w', 'h'] }, { rect: ['b', 'b', 'w - 2 * b', 'h - 2 * b'] }], wall: true, surface: true }],
+    let: { W: 'max(w, mf)', H: 'max(h, mf)', b: 'max(mf, min(border, W / 2 - 0.5, H / 2 - 0.5))' },
+    components: [{ kind: 'flat', name: 'Frame', polys: [{ rect: [0, 0, 'W', 'H'] }, { when: 'W - 2 * b >= mf && H - 2 * b >= mf', rect: ['b', 'b', 'W - 2 * b', 'H - 2 * b'] }], wall: true, surface: true }],
     note: 'Glue a printed picture behind the frame, then glue it to the wall.',
   },
   {
@@ -45,8 +45,8 @@ export const DECOR = [
     params: [num('w', 'Diameter', 5, 150), num('border', 'Rim', 1, 20)],
     defaults: { w: 45, border: 4 },
     size: ['w', 0, 'w'],
-    let: { r: 'w / 2', b: 'min(border, r - 0.5)' },
-    components: [{ kind: 'flat', name: 'Mirror rim', polys: [{ ellipse: ['r', 'r', 'r', 'r', 64] }, { ellipse: ['r', 'r', 'r - b', 'r - b', 64] }], wall: true, surface: true }],
+    let: { r: 'max(w, mf) / 2', b: 'max(mf * 1.01, min(border, r - 0.5))' },
+    components: [{ kind: 'flat', name: 'Mirror rim', polys: [{ ellipse: ['r', 'r', 'r', 'r', 64] }, { when: 'r - b >= mf / 2', ellipse: ['r', 'r', 'r - b', 'r - b', 64] }], wall: true, surface: true }],
     note: 'Back the rim with mirror card or a printed clock face.',
   },
   {
@@ -78,7 +78,7 @@ export const DECOR = [
     params: [num('w', 'Spread', 30, 70), num('h', 'Height', 150, 200)],
     defaults: { w: 45, h: 175 },
     size: ['w', 'w * 0.6', 'h'],
-    let: { b: 'w * 0.6', p: 'max(4, w * 0.1)', c: 'w / 2', q: 'p / 2', h1: 'h * 0.78', rise: 'w * 0.2', bh: 'max(2 * t, 3, h * 0.03)' },
+    let: { p: 'max(4, mf, w * 0.1)', b: 'max(w * 0.6, p + 2 * mf + 0.4)', c: 'w / 2', q: 'p / 2', h1: 'h * 0.78', rise: 'w * 0.2', bh: 'max(2 * t, 3, h * 0.03)' },
     components: [
       { kind: 'box', name: 'Base', size: ['b', 'b', 'bh'], faces: 'all', at: ['(w - b) / 2', 0, 0], holes: { top: [{ rect: ['b / 2 - q - 0.2', '(b - t) / 2 - 0.15', 'p + 0.4', 't + 0.3'] }] } },
       {
@@ -118,11 +118,11 @@ export const DECOR = [
     params: [num('p', 'Pot width', 15, 50), num('ph', 'Pot height', 15, 50), num('h', 'Tree height', 80, 220), num('cw', 'Crown width', 40, 120)],
     defaults: { p: 30, ph: 28, h: 160, cw: 70 },
     size: ['max(cw, p)', 'max(cw, p)', 'h'],
-    let: { W: 'max(cw, p)', tw: 'max(3, p * 0.15)', ch: 'h * 0.55', sl: 'max(1.5, t + 0.3)' },
+    let: { tw: 'max(3, mf, p * 0.15)', P: 'board ? max(p, tw + 0.4 + 2 * (mf + t)) : p', W: 'max(cw, P)', ch: 'h * 0.55', sl: 'max(1.5, t + 0.3)' },
     components: [
-      { kind: 'box', name: 'Pot', size: ['p', 'p', 'ph'], faces: 'all', at: ['(W - p) / 2', '(W - p) / 2', 0], holes: { top: [{ rect: ['(p - tw) / 2 - 0.2', '(p - sl) / 2', 'tw + 0.4', 'sl'] }] } },
-      { kind: 'flat', name: 'Crown A', plane: { upright: { x: '(W - cw) / 2', y: '(W - t) / 2', z: 't' } }, polys: [{ plant: ['cw', 'ch', 4, 'tw', 'h - ch - t', 'sl'] }] },
-      { kind: 'flat', name: 'Crown B', plane: { custom: { o: ['(W - t) / 2', '(W - cw) / 2', 'h - ch'], U: [0, 1, 0], V: [0, 0, 1], n: [-1, 0, 0] } }, polys: [{ plant: ['cw', 'ch', 4, 0, 0, '-sl'] }] },
+      { kind: 'box', name: 'Pot', size: ['P', 'P', 'ph'], faces: 'all', at: ['(W - P) / 2', '(W - P) / 2', 0], holes: { top: [{ rect: ['(P - tw) / 2 - 0.2', '(P - sl) / 2', 'tw + 0.4', 'sl'] }] } },
+      { kind: 'flat', name: 'Crown A', plane: { upright: { x: '(W - cw) / 2', y: '(W - t) / 2', z: 't' } }, polys: [{ plant: ['cw', 'ch', 4, 'tw', 'h - ch - t', 'sl', 'mf'] }] },
+      { kind: 'flat', name: 'Crown B', plane: { custom: { o: ['(W - t) / 2', '(W - cw) / 2', 'h - ch'], U: [0, 1, 0], V: [0, 0, 1], n: [-1, 0, 0] } }, polys: [{ plant: ['cw', 'ch', 4, 0, 0, '-sl', 'mf'] }] },
     ],
     note: 'Crown A carries the trunk and has a slit from the top; crown B has a slit from the bottom. Fold up the pot (its top is the soil), push the trunk down through the slot until it stands on the pot floor and glue it, then slide crown B down onto crown A so the slits lock crosswise.',
   },
@@ -137,9 +137,9 @@ export const DECOR = [
       {
         kind: 'box', name: 'Planter', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0],
         scores: { front: [{ repeat: 2, as: 'k', each: { line: [['t + 0.6', 'h * (k + 1) / 3'], ['w - t - 0.6', 'h * (k + 1) / 3']] } }] },
-        holes: { top: [{ rect: ['(w - sw) / 2 - 0.2', '(d + t - slot) / 2', 'sw + 0.4', 'slot'] }] },
+        holes: { top: [{ rect: ['(w - sw) / 2 - 0.2', '(d - slot) / 2', 'sw + 0.4', 'slot'] }] },
       },
-      { kind: 'flat', name: 'Greenery', plane: { upright: { y: 'd / 2', z: 't' } }, polys: [{ plant: ['w', 'leaf', 3.5, 'sw', 'h - t + gap'] }] },
+      { kind: 'flat', name: 'Greenery', plane: { upright: { y: '(d - t) / 2', z: 't' } }, polys: [{ plant: ['w', 'leaf', 3.5, 'sw', 'h - t + gap'] }] },
     ],
     note: 'The score lines read as planks and the top is the soil. Paint the greenery green (or glue green card on it), push its stem through the slot until it stands on the trough floor and glue it; crumbled cork on top looks like soil.',
   },

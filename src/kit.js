@@ -396,7 +396,7 @@ export function compileKit(kit) {
       xf = { p: (q) => v3.add(r.p(q), [ox, oy, oz]), n: r.n };
     }
 
-    for (const c of def.build(p, { t: mat.thickness })) {
+    for (const c of def.build(p, { t: mat.thickness, mf: minJointFeature(machine, mat), board: mat.kind === 'board' })) {
       const at = c.at || [0, 0, 0];
       const cxf = { p: (q) => xf.p(v3.add(q, at)), n: xf.n };
       if (c.kind === 'rod') addRod(c, mat, group, cxf, title);
@@ -450,8 +450,18 @@ export function compileKit(kit) {
   }
 
   function compileBox(c, mat, group, xf, title) {
-    const [bw, bd, bh] = c.size;
+    let [bw, bd, bh] = c.size;
     const mt = mat.thickness;
+    // an open board box (a shelf, a cabinet) too thin to joint keeps its
+    // opening: it grows to the least size whose panels the cutter can make
+    if (mat.kind === 'board' && !c.solid && c.faces.length < 6) {
+      const least = 2 * mt + minJointFeature(machine, mat);
+      const grown = [bw, bd, bh].map((v) => Math.max(v, least));
+      if (grown.some((v, i) => v > c.size[i] + 1e-9)) {
+        warn(`${title}: ${c.name} is made ${grown.map((v) => v.toFixed(1)).join(' × ')} mm, the least ${mat.name} can joint — make it bigger or use thinner board.`, 'info');
+        [bw, bd, bh] = grown;
+      }
+    }
     if (mat.kind === 'fabric') {
       warn(`${title}: ${mat.name} can't make boxes — choose board or cardstock.`);
       return;
@@ -464,7 +474,6 @@ export function compileKit(kit) {
     // only a closed box can become a block: an open one (a shelf, a cabinet)
     // would lose the opening it exists for, so it just gets a warning
     const thin = mat.kind === 'board' && c.faces.length >= 4 && dims[ax] - 2 * mt < minJointFeature(machine, mat);
-    if (thin && !c.solid && c.faces.length < 6) warn(`${title}: ${c.name} is too thin to joint in ${mat.name} (${dims[ax].toFixed(1)} mm) — make it bigger or use thinner board.`);
     if (c.solid || (thin && c.faces.length === 6)) {
       const nearFace = ['left', 'front', 'bottom'][ax], farFace = ['right', 'back', 'top'][ax];
       // holes in the far face (top, right, back) go through every layer but
