@@ -49,8 +49,9 @@ export function loopScores(pts) {
  * `slit` cuts a cross-lap slit `|slit|` wide down the middle to the leaves'
  * centre: from the top when positive, from the bottom when negative.
  * A stem and a bottom slit can't be combined (the stem takes the lower middle).
+ * `shoulder` is the square shoulder beside a slit's mouth: the cutter's smallest strip.
  */
-export function plantPoly(w, h, lobes = 3.5, stemW = 0, stemH = 0, slit = 0) {
+export function plantPoly(w, h, lobes = 3.5, stemW = 0, stemH = 0, slit = 0, shoulder = SHOULDER) {
   let pts = [];
   const cx = w / 2, n = 160;
   for (let i = 0; i < n; i++) {
@@ -82,7 +83,7 @@ export function plantPoly(w, h, lobes = 3.5, stemW = 0, stemH = 0, slit = 0) {
   // left to right (angles π…2π), the upper half right to left (0…π); the
   // lower half goes first, so the upper half's indices hold. A stem takes the
   // lower middle, so a plant has a stem or a bottom slit, not both.
-  const h2 = Math.abs(slit) / 2, band = h2 + SHOULDER;
+  const h2 = Math.abs(slit) / 2, band = h2 + shoulder;
   if (stem) splice(true, stemW / 2, (y0, y1) => [[cx - stemW / 2, y0], [cx - stemW / 2, 0], [cx + stemW / 2, 0], [cx + stemW / 2, y1]]);
   else if (slit < 0) splice(true, band, (y0, y1) => [[cx - band, y0], [cx - h2, y0], [cx - h2, mid + SLIT_PAST], [cx + h2, mid + SLIT_PAST], [cx + h2, y1], [cx + band, y1]]);
   if (slit > 0) splice(false, band, (y0, y1) => [[cx + band, y0], [cx + h2, y0], [cx + h2, mid - SLIT_PAST], [cx - h2, mid - SLIT_PAST], [cx - h2, y1], [cx - band, y1]]);
@@ -107,7 +108,7 @@ export const SHAPE_FNS = {
   arch: (x, y, w, h, r, seg) => archPoly(x, y, w, h, r, seg),
   ellipse: (cx, cy, rx, ry, seg) => ellipsePoly(cx, cy, rx, ry, seg),
   circle: (cx, cy, r, seg) => ellipsePoly(cx, cy, r, r, seg),
-  plant: (w, h, lobes, stemW, stemH, slit) => plantPoly(w, h, lobes, stemW, stemH, slit),
+  plant: (w, h, lobes, stemW, stemH, slit, shoulder) => plantPoly(w, h, lobes, stemW, stemH, slit, shoulder),
   drape: (x0, pw, h) => drapePoly(x0, pw, h),
 };
 

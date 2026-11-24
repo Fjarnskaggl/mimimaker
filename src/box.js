@@ -66,7 +66,8 @@ export function faceFrame(face, W, D, H, inset = 0, side = 'outer') {
  * @param {number[]} [o.shelves] z of each shelf's underside (mm from outer bottom)
  * @param {number} [o.minFeature] smallest tab or notch the cutter makes cleanly
  *   (mm, see minJointFeature); raises the finger width when it is smaller.
- *   Shelf tabs keep their fixed 1–2 per edge; minFinger reports them.
+ *   Shelf tabs are 1–2 per edge, or none (glued in) when the shelf is too
+ *   shallow for a tab and the board between its slots; minFinger reports them.
  */
 export function buildBox({ W, D, H, t, faces, fingerWidth, holes = {}, scores = {}, shelves = [], clearance = 0.1, minFeature = 0 }) {
   const present = new Set(faces);
@@ -83,8 +84,11 @@ export function buildBox({ W, D, H, t, faces, fingerWidth, holes = {}, scores = 
     const y0 = present.has('front') ? t : 0;
     const y1 = present.has('back') ? D - t : D;
     const Ds = y1 - y0;
-    const side = profileTabs(Ds, t, Ds > 25 ? 2 : 1);
-    const back = present.has('back') ? profileTabs(Wi, t, Wi > 25 ? 2 : 1) : profilePlain(Wi);
+    // tabs (and the board between their slots) no narrower than the cutter
+    // makes cleanly; a shelf too shallow for even one tab is glued in on its edges
+    const tabs = (L) => [L > 25 ? 2 : 1, 1, 0].find((k) => k === 0 || L / (2 * k + 1) - 2 * clearance >= minFeature);
+    const side = profileTabs(Ds, t, tabs(Ds));
+    const back = present.has('back') ? profileTabs(Wi, t, tabs(Wi)) : profilePlain(Wi);
     const outline = panelOutline(Wi, Ds, [profilePlain(Wi), side, back, side]);
     const c = clearance;
     for (const s of side) if (s.d < 0) {
@@ -105,7 +109,7 @@ export function buildBox({ W, D, H, t, faces, fingerWidth, holes = {}, scores = 
     const edges = FACES[f].nb.map((g, i) => {
       const L = i % 2 === 0 ? w : h;
       if (!present.has(g)) return profilePlain(L);
-      const segs = jointSegments(L, fw);
+      const segs = jointSegments(L, fw, t);
       minFinger = Math.min(minFinger, narrowestSegment(segs));
       return profileJoint(segs, t, RANK[f] > RANK[g]);
     });

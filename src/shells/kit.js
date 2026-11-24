@@ -39,7 +39,7 @@ export function shellRoom(kit) {
     const setAside = [];
     if (kit.items?.length) setAside.push(`${kit.items.length} piece${kit.items.length > 1 ? 's' : ''} of furniture`);
     if (kit.openings?.length) setAside.push('windows and doors');
-    if (kit.lighting?.enabled && kit.lighting.leds?.length) setAside.push('the room LEDs');
+    if (kit.lighting?.enabled && kit.lighting.leds?.length) setAside.push('LEDs');
     out.items = [];
     out.openings = [];
     if (def.wiredLights) {

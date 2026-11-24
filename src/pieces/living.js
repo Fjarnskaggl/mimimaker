@@ -39,7 +39,7 @@ export const LIVING = [
     let: { ow: 'w * 0.56', oh: 'h * 0.58', ov: 'min(w * 0.05, 6)' },
     components: [
       { kind: 'box', name: 'Fireplace', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0], holes: { front: [{ arch: ['(w - ow) / 2', 't + 3', 'ow', 'oh'] }] } },
-      { kind: 'box', name: 'Mantel', size: ['w + 2 * ov', 'd + ov', 'max(3 * t, h * 0.05)'], faces: 'all', at: ['-ov', '-ov', 'h'] },
+      { kind: 'box', name: 'Mantel', size: ['w + 2 * ov', 'd + ov', 'max(3 * t, mf, h * 0.05)'], faces: 'all', at: ['-ov', '-ov', 'h'] },
     ],
     note: 'Put an amber LED on the floor inside the opening for a glowing fire. Glue the mantel on top, overhanging the front and sides.',
   },
@@ -57,8 +57,8 @@ export const LIVING = [
     defaults: { w: 35, h: 160, shade: 28 },
     size: ['w', 'w', 'h'],
     let: {
-      base: 'w * 0.7', bh: 'max(3, h * 0.03)', d: 'max(1.5, min(3, w * 0.08))', hole: 'd / 2 + 0.1',
-      rim: 'max(1.5, w * 0.06)', arm: 'd + 3.4', q: '(w - 2 * rim - arm) / 2',
+      d: 'max(1.5, min(3, w * 0.08))', hole: 'd / 2 + 0.1', base: 'max(w * 0.7, 2 * hole + 2 * mf)', bh: 'max(3, h * 0.03)',
+      rim: 'max(mf, w * 0.06)', arm: '2 * hole + 2 * mf', q: '(w - 2 * rim - arm) / 2',
     },
     components: [
       { kind: 'box', name: 'Base', size: ['base', 'base', 'bh'], faces: 'all', at: ['(w - base) / 2', '(w - base) / 2', 0], holes: { top: [{ circle: ['base / 2', 'base / 2', 'hole', 24] }] } },
@@ -68,8 +68,8 @@ export const LIVING = [
         kind: 'flat', name: 'Shade spider', plane: { floor: { z: 'h' } },
         polys: [
           { rect: [0, 0, 'w', 'w'] },
-          { when: 'q >= 1.5', rect: ['rim', 'rim', 'q', 'q'] }, { when: 'q >= 1.5', rect: ['w - rim - q', 'rim', 'q', 'q'] },
-          { when: 'q >= 1.5', rect: ['rim', 'w - rim - q', 'q', 'q'] }, { when: 'q >= 1.5', rect: ['w - rim - q', 'w - rim - q', 'q', 'q'] },
+          { when: 'q >= mf', rect: ['rim', 'rim', 'q', 'q'] }, { when: 'q >= mf', rect: ['w - rim - q', 'rim', 'q', 'q'] },
+          { when: 'q >= mf', rect: ['rim', 'w - rim - q', 'q', 'q'] }, { when: 'q >= mf', rect: ['w - rim - q', 'w - rim - q', 'q', 'q'] },
           { circle: ['w / 2', 'w / 2', 'hole', 24] },
         ],
       },
@@ -116,7 +116,7 @@ export const LIVING = [
     params: [num('w', 'Width', 50, 120), num('h', 'Height', 40, 90), num('border', 'Frame', 1, 8)],
     defaults: { w: 80, h: 60, border: 3 },
     size: ['w', 'w * 0.2', 'h'],
-    let: { c: 'sqrt(3) / 2', pw: 'w / (1 + 2 * c)', b: 'max(1.5, min(border, pw / 4))' },
+    let: { c: 'sqrt(3) / 2', pw: 'w / (1 + 2 * c)', b: 'max(mf, min(border, pw / 4))' },
     components: [
       {
         repeat: 3, as: 'k', each: {
@@ -126,7 +126,7 @@ export const LIVING = [
             U: ['k == 1 ? 1 : c', 'k == 0 ? -0.5 : k == 2 ? 0.5 : 0', 0], V: [0, 0, 1],
             n: ['k == 0 ? -0.5 : k == 2 ? 0.5 : 0', "k == 1 ? -1 : -c", 0],
           } },
-          polys: [{ arch: [0, 0, 'pw', 'h'] }, { arch: ['b', 'b', 'pw - 2 * b', 'h - 2 * b'] }],
+          polys: [{ arch: [0, 0, 'pw', 'h'] }, { when: 'pw - 2 * b >= mf', arch: ['b', 'b', 'pw - 2 * b', 'h - 2 * b'] }],
         },
       },
     ],

@@ -388,9 +388,67 @@ test('every lighting and hidden-base part is drawn in 3D where it goes', () => {
   for (const p of parts) assert.ok(c.faces3d.some((f) => f.part === p.id), `${p.name} carries its part id`);
   // the fan's motor mount sits on top of the ceiling, the turntable's under the floor
   const zs = (name) => c.faces3d.filter((f, k) => owner[k] === c.parts.find((p) => p.name === name)?.id)
-    .flatMap((f) => f.polys.flat().flatMap((q) => [q[2], q[2] - f.n[2] * f.thickness]));
+    .flatMap((f) => f.polys.flat().flatMap((q) => [q[2], q[2] - f.n[2] * (f.thickness || 0)]));
   const ceiling = Math.max(...zs('Ceiling')), floor = Math.min(...zs('Floor'));
-  const mounts = c.parts.filter((p) => /motor mount/.test(p.name)).map((p) => zs(p.name));
+  const plate = (id) => c.faces3d.filter((f) => f.part === id && f.thickness > 0).flatMap((f) => f.polys.flat().flatMap((q) => [q[2], q[2] - f.n[2] * f.thickness]));
+  const mounts = c.parts.filter((p) => /motor mount/.test(p.name)).map((p) => plate(p.id));
   assert.ok(mounts.some((z) => Math.abs(Math.min(...z) - ceiling) < 0.01), `a mount on the ceiling at ${ceiling}: ${mounts.map((z) => Math.min(...z)).join(', ')}`);
   assert.ok(mounts.some((z) => Math.abs(Math.max(...z) - floor) < 0.01), `a mount under the floor at ${floor}`);
+  // each motor's shaft runs from its mount through the shaft hole to the rotor in the room
+  const reach = c.parts.filter((p) => /motor mount/.test(p.name)).map((p) => {
+    const zs = c.faces3d.filter((f) => f.part === p.id && f.thickness === 0).flatMap((f) => f.polys.flat().map((q) => q[2]));
+    return zs.length ? [Math.min(...zs), Math.max(...zs)] : null;
+  });
+  const fanBlades = zs(c.parts.find((p) => /fan blades/.test(p.name)).name), disc = zs(c.parts.find((p) => /turntable/.test(p.name)).name);
+  assert.ok(fanBlades.length && disc.length, 'rotors drawn');
+  assert.ok(reach.some((r) => r && r[1] >= ceiling - 0.01 && r[0] <= Math.max(...fanBlades) + 0.01), `fan shaft reaches the blades: ${JSON.stringify(reach)}`);
+  assert.ok(reach.some((r) => r && r[0] <= floor + 0.01 && r[1] >= Math.min(...disc) - 0.01), `turntable shaft reaches the disc: ${JSON.stringify(reach)}`);
+});
+
+test('every piece cuts cleanly in every board and card material: no strip under the cutter minimum', () => {
+  const mats = base.materials.filter((m) => m.kind === 'board' || m.kind === 'card');
+  const bad = [];
+  for (const [type, def] of Object.entries(CATALOG)) {
+    for (const m of mats) {
+      const min = minJointFeature(null, m);
+      for (const [label, params] of sizes(def)) {
+        const c = compileKit(soloKit(base, type, params, m.id));
+        for (const p of c.parts) {
+          if (!p.polys) continue;
+          const w = narrowestStrip(p.polys);
+          if (w < min - 1e-6) bad.push(`${type} in ${m.id} ${label}: ${p.name} ${w.toFixed(2)} mm (needs ${min})`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(bad, []);
+});
+
+test('in a book-nook shell, the cable cover, motor mounts and shafts are drawn too', () => {
+  for (const [type, params] of [['nook', {}], ['nook', { gable: true }], ['twostorey', {}]]) {
+    const kit = { ...defaultKit(), items: [], openings: [], shell: { type, gap: { w: 250, h: 280, d: 200 }, clearance: 2, params } };
+    kit.room.ceiling = true;
+    kit.lighting.enabled = true;
+    kit.lighting.power = { ...kit.lighting.power, wall: 'back', pos: 150, elev: 60, kind: 'battery', supply: 'aa2' };
+    kit.lighting.leds = [{ mount: 'wall', wall: 'back', pos: 80, elev: 150, color: 'warm' }, { mount: 'ceiling', x: 150, y: 100, effect: 'fan', sizeMm: 60 }];
+    kit.lighting.cover = { enabled: true };
+    const c = compileKit(kit);
+    const parts = c.parts.filter((p) => p.group === 'Lighting');
+    assert.ok(parts.some((p) => /Cable cover panel/.test(p.name)), type);
+    assert.ok(!c.warnings.some((w) => /room's the room/.test(w.msg)), 'the set-aside note reads cleanly');
+    for (const p of parts) assert.ok(c.faces3d.some((f) => f.part === p.id), `${type}: ${p.name} is drawn in 3D`);
+    // the cover sits on the outside of the shell's back wall
+    const back = c.shell.dims.D;
+    const panel = parts.find((p) => p.name === 'Cable cover panel');
+    const ys = c.faces3d.filter((f) => f.part === panel.id).flatMap((f) => f.polys.flat().map((q) => q[1]));
+    assert.ok(Math.min(...ys) > back - 0.01, `${type}: cover panel behind the back wall (${Math.min(...ys)} vs ${back})`);
+    // under a gable roof too, the fan's shaft runs from its mount down into the blades
+    const blades = parts.find((p) => /fan blades/.test(p.name));
+    assert.ok(type !== 'nook' || blades, 'the nook keeps its fan');
+    if (blades) {
+      const bz = c.faces3d.filter((f) => f.part === blades.id).flatMap((f) => f.polys.flat().map((q) => q[2]));
+      const sz = c.faces3d.filter((f) => f.shaft).flatMap((f) => f.polys.flat().map((q) => q[2]));
+      assert.ok(sz.length && Math.min(...sz) <= Math.min(...bz) + 0.01 && Math.max(...sz) > Math.max(...bz), `${type} ${JSON.stringify(params)}: shaft ${Math.min(...sz)}–${Math.max(...sz)}, blades at ${Math.min(...bz)}`);
+    }
+  }
 });

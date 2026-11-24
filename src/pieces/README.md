@@ -42,6 +42,8 @@ Anywhere a number goes you may write a string expression (`src/pieces/expr.js`):
 
 - every parameter (`unit: "cm"` values arrive already scaled to model mm),
 - `t` — the material thickness in mm,
+- `mf` — the smallest strip or tab the cutter makes cleanly in this material, in mm (knife 3, fine blade 1.5, laser 1). Size thin parts with it, e.g. `max(mf, w * 0.1)`, so a piece cuts cleanly in board as well as card.
+- `board` — 1 when the piece is cut from board (jointed or laminated), 0 for card; a board part needs more room round a slot than a folded card net.
 - `let` names, in order (each may use the ones before it),
 - a `repeat`'s loop variable and its own `let`s, inside that repeat.
 
@@ -60,7 +62,7 @@ front at depth `y`; `{ "floor": { "z" } }` lays it flat;
 `{ "custom": { "o", "U", "V", "n" } }` for anything else.
 
 Shapes: `rect [x, y, w, h]`, `arch [x, y, w, h, r?, seg?]`,
-`ellipse [cx, cy, rx, ry, seg?]`, `circle [cx, cy, r, seg?]`, `plant [w, h, lobes?, stemW?, stemH?, slit?]` (a stem tab stemH tall under the leaves; a cross-lap slit from the top when slit > 0, from the bottom when < 0, which can't be combined with a stem),
+`ellipse [cx, cy, rx, ry, seg?]`, `circle [cx, cy, r, seg?]`, `plant [w, h, lobes?, stemW?, stemH?, slit?, shoulder?]` (a stem tab stemH tall under the leaves; a cross-lap slit from the top when slit > 0, from the bottom when < 0, which can't be combined with a stem; `shoulder` is the square shoulder beside the slit, default 1.5, pass `mf`),
 `drape [x, w, h]`, `poly [[x, y], …]`.
 
 Scores: `line [[x, y], [x, y]]`, `loop [[x, y], …]`, `rect`, `circle`

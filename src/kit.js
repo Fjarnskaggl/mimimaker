@@ -13,7 +13,7 @@ import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometr
 import { prepareShell, compileShell, compileRoof, shellLighting } from './shells/kit.js';
 import { buildBase } from './lighting/base.js';
 import { HARDWARE_COLORS, hardwareName } from './hardware.js';
-import { fanRotor, turntableDisc } from './lighting/motion.js';
+import { fanRotor, turntableDisc, MOTION } from './lighting/motion.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
 const DOOR_SILL = 0.8;
@@ -314,11 +314,16 @@ export function compileKit(kit) {
       const lm = lightMat(p);
       const pid = addPart(lightGroup, p.name, lm, p.polys);
       if (effectFaces.has(p.name)) faces3d[effectFaces.get(p.name)].part = pid;
-      if (!p.place || shellPrep) continue;
-      const fr = faceFrame(p.place.face, W, D, H);
+      if (!p.place) continue;
+      const fr = faceFrame(p.place.face, W, D, H); // a book-nook shell's box is the room's W, D, H (a gable roof sits above)
       const off = layerAt.get(`${p.place.face}/${p.place.layer}`) + lm.thickness;
       const plane = { ...fr, o: v3.add(v3.add(fr.o, v3.mul(fr.n, off)), v3.add(v3.mul(fr.U, p.place.u), v3.mul(fr.V, p.place.v))) };
       add3d(0.5, p.polys, plane, worldXf, lm.color, { thickness: lm.thickness, material: lm.id, part: pid });
+      // the motor's own shaft: from the motor on the mount, through the shaft hole, into the rotor
+      if (p.shaft) {
+        const at = (s) => v3.add(v3.add(fr.o, v3.mul(fr.n, s)), v3.add(v3.mul(fr.U, p.shaft.u), v3.mul(fr.V, p.shaft.v)));
+        prism(at(off), at(-(t + p.shaft.into + 0.5)), MOTION.shaft, '#9aa0a6', { material: lm.id, part: pid, shaft: true });
+      }
     }
     lightGroup.steps.push(...(lighting.steps || [])); // [T5] cable cover
     // >>> [T5] hidden base under the room: battery hatch, wire hole and switch mount
@@ -371,7 +376,7 @@ export function compileKit(kit) {
     const [iw, id, ih] = itemSize(item.type, p);
 
     // placement transform
-    let xf;
+    let xf, planSize = null;
     let wallPlane = null;
     if (def.placement === 'wall') {
       const wall = WALLS.includes(item.wall) ? item.wall : 'back';
@@ -388,6 +393,7 @@ export function compileKit(kit) {
     } else {
       const rot = (((Number(item.rot) || 0) % 360) + 360) % 360;
       const r = rotZ(rot, iw, id);
+      planSize = [r.fw, r.fd];
       const ox = t + (item.x ?? 0) * s, oy = D - t - (item.y ?? 0) * s - r.fd, oz = t + (room.floor?.enabled ? 0.25 : 0);
       if ((item.x ?? 0) * s + r.fw > Wi + 0.01 || (item.y ?? 0) * s + r.fd > Di + 0.01 || item.x < 0 || item.y < 0) {
         warn(`${title} sticks out of the room — check its position.`);
@@ -396,7 +402,8 @@ export function compileKit(kit) {
       xf = { p: (q) => v3.add(r.p(q), [ox, oy, oz]), n: r.n };
     }
 
-    for (const c of def.build(p, { t: mat.thickness })) {
+    const firstFace = faces3d.length;
+    for (const c of def.build(p, { t: mat.thickness, mf: minJointFeature(machine, mat), board: mat.kind === 'board' })) {
       const at = c.at || [0, 0, 0];
       const cxf = { p: (q) => xf.p(v3.add(q, at)), n: xf.n };
       if (c.kind === 'rod') addRod(c, mat, group, cxf, title);
@@ -410,7 +417,40 @@ export function compileKit(kit) {
       }
     }
     if (def.note) group.steps.push(def.note);
+    // thick board can need more room than the plan's size (parts no thinner
+    // than the cutter makes): say so, so the plan leaves space round it
+    if (def.placement !== 'wall' && planSize) {
+      const pts = faces3d.slice(firstFace).filter((f) => !f.glow).flatMap((f) => f.polys.flat().flatMap((q) => [q, v3.add(q, v3.mul(f.n, -(f.thickness || 0)))]));
+      const span = (i) => Math.max(...pts.map((q) => q[i])) - Math.min(...pts.map((q) => q[i]));
+      if (pts.length && (span(0) > planSize[0] + 0.5 || span(1) > planSize[1] + 0.5)) {
+        warn(`${title} comes out ${span(0).toFixed(0)} × ${span(1).toFixed(0)} mm in ${mat.name}, bigger than its ${planSize[0].toFixed(0)} × ${planSize[1].toFixed(0)} mm plan size, so its parts aren't too thin to cut. Leave room round it.`, 'info');
+      }
+    }
   });
+
+  // an 8-sided round bar from a to b (world mm), diameter d: rods, motor shafts
+  function prism(a, b, d, color, props) {
+    const axis = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const k = v3.mul(axis, 1 / Math.hypot(...axis));
+    const ref = Math.abs(k[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+    const cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]];
+    const u0 = cr(k, ref), lu = Math.hypot(...u0);
+    const u = v3.mul(u0, 1 / lu), w = cr(k, u);
+    const r = d / 2, n = 8;
+    const ring = (o) => Array.from({ length: n }, (_, i) => {
+      const ang = (2 * Math.PI * (i + 0.5)) / n;
+      return v3.add(o, v3.add(v3.mul(u, r * Math.cos(ang)), v3.mul(w, r * Math.sin(ang))));
+    });
+    const lo = ring(a), hi = ring(b);
+    const face = (poly, nrm) => faces3d.push({ layer: 2, color, opacity: 1, cull: false, glow: false, item: currentItem, thickness: 0, polys: [poly], n: nrm, ...props });
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      const ang = (2 * Math.PI * (i + 1)) / n;
+      face([lo[i], lo[j], hi[j], hi[i]], v3.add(v3.mul(u, Math.cos(ang)), v3.mul(w, Math.sin(ang))));
+    }
+    face([...lo].reverse(), v3.mul(k, -1));
+    face(hi, k);
+  }
 
   // A bought rod (dowel, wire, tube), cut to length: drawn as an eight-sided
   // prism from c.from to c.to, listed in compiled.hardware, never on a sheet.
@@ -422,27 +462,8 @@ export function compileKit(kit) {
       warn(`${title}: the ${c.name.toLowerCase()} has no length or thickness at this size — make the piece bigger.`);
       return;
     }
-    const k = v3.mul(axis, 1 / length);
-    const ref = Math.abs(k[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
-    const cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]];
-    const u0 = cr(k, ref), lu = Math.hypot(...u0);
-    const u = v3.mul(u0, 1 / lu), w = cr(k, u);
-    const r = c.d / 2, n = 8;
-    const ring = (o) => Array.from({ length: n }, (_, i) => {
-      const ang = (2 * Math.PI * (i + 0.5)) / n;
-      return v3.add(o, v3.add(v3.mul(u, r * Math.cos(ang)), v3.mul(w, r * Math.sin(ang))));
-    });
-    const lo = ring(a), hi = ring(b);
     const index = hardware.length;
-    const color = HARDWARE_COLORS[c.stock] || HARDWARE_COLORS.dowel;
-    const face = (poly, nrm) => faces3d.push({ layer: 2, color, opacity: 1, cull: false, glow: false, item: currentItem, thickness: 0, material: mat.id, polys: [poly], n: nrm, hardware: index });
-    for (let i = 0; i < n; i++) {
-      const j = (i + 1) % n;
-      const ang = (2 * Math.PI * (i + 1)) / n;
-      face([lo[i], lo[j], hi[j], hi[i]], v3.add(v3.mul(u, Math.cos(ang)), v3.mul(w, Math.sin(ang))));
-    }
-    face([...lo].reverse(), v3.mul(k, -1));
-    face(hi, k);
+    prism(a, b, c.d, HARDWARE_COLORS[c.stock] || HARDWARE_COLORS.dowel, { material: mat.id, hardware: index });
     const h = { name: c.name, stock: c.stock, d: c.d, length, group: group.title, item: currentItem, from: a, to: b };
     h.text = `Cut ${hardwareName(c.stock, c.d)} ${Math.floor(length + 1e-6)} mm long for the ${c.name.toLowerCase()}.`;
     hardware.push(h);
@@ -450,8 +471,18 @@ export function compileKit(kit) {
   }
 
   function compileBox(c, mat, group, xf, title) {
-    const [bw, bd, bh] = c.size;
+    let [bw, bd, bh] = c.size;
     const mt = mat.thickness;
+    // an open board box (a shelf, a cabinet) too thin to joint keeps its
+    // opening: it grows to the least size whose panels the cutter can make
+    if (mat.kind === 'board' && !c.solid && c.faces.length < 6) {
+      const least = 2 * mt + minJointFeature(machine, mat);
+      const grown = [bw, bd, bh].map((v) => Math.max(v, least));
+      if (grown.some((v, i) => v > c.size[i] + 1e-9)) {
+        warn(`${title}: ${c.name} is made ${grown.map((v) => v.toFixed(1)).join(' × ')} mm, the least ${mat.name} can joint — make it bigger or use thinner board.`, 'info');
+        [bw, bd, bh] = grown;
+      }
+    }
     if (mat.kind === 'fabric') {
       warn(`${title}: ${mat.name} can't make boxes — choose board or cardstock.`);
       return;
@@ -464,7 +495,6 @@ export function compileKit(kit) {
     // only a closed box can become a block: an open one (a shelf, a cabinet)
     // would lose the opening it exists for, so it just gets a warning
     const thin = mat.kind === 'board' && c.faces.length >= 4 && dims[ax] - 2 * mt < minJointFeature(machine, mat);
-    if (thin && !c.solid && c.faces.length < 6) warn(`${title}: ${c.name} is too thin to joint in ${mat.name} (${dims[ax].toFixed(1)} mm) — make it bigger or use thinner board.`);
     if (c.solid || (thin && c.faces.length === 6)) {
       const nearFace = ['left', 'front', 'bottom'][ax], farFace = ['right', 'back', 'top'][ax];
       // holes in the far face (top, right, back) go through every layer but

@@ -126,15 +126,17 @@ export function explodedFaces(kit, compiled, steps = buildSteps(kit, compiled), 
   if (!moving.length) return [];
 
   // bounding-box centres: vertex means lean towards the finger-jointed edges
+  // a motor's shaft rides along with its mount but doesn't set where it goes
+  const solid = (fs) => (fs.some((f) => !f.source.shaft) ? fs.filter((f) => !f.source.shaft) : fs);
   const centre = (fs) => {
-    const pts = fs.flatMap((f) => f.source.polys[0]);
+    const pts = solid(fs).flatMap((f) => f.source.polys[0]);
     const lo = pts.reduce((a, p) => a.map((v, i) => Math.min(v, p[i])), [Infinity, Infinity, Infinity]);
     const hi = pts.reduce((a, p) => a.map((v, i) => Math.max(v, p[i])), [-Infinity, -Infinity, -Infinity]);
     return mul(add(lo, hi), 0.5);
   };
   const facesOf = (id) => faces.filter((f) => f.part === id);
   const span = (fs) => {
-    const pts = fs.flatMap((f) => f.source.polys[0]);
+    const pts = solid(fs).flatMap((f) => f.source.polys[0]);
     const lo = pts.reduce((a, p) => a.map((v, i) => Math.min(v, p[i])), [Infinity, Infinity, Infinity]);
     const hi = pts.reduce((a, p) => a.map((v, i) => Math.max(v, p[i])), [-Infinity, -Infinity, -Infinity]);
     return Math.max(...sub(hi, lo));

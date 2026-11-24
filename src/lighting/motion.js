@@ -11,6 +11,7 @@ import { ellipsePoly, rectPoly } from '../geometry.js';
 
 export const MOTION = {
   shaftHole: 5, // mm: the motor's output shaft turns freely in it
+  shaft: 3, // mm: the geared motor's output shaft (drawn in 3D)
   hubHole: 1.5, // mm: pierced in the rotor's hub, widened to grip the shaft
   hubR: 5, // mm, the rotor's hub
   mountPlate: 20, // mm square plate the motor is glued to, outside the ceiling / under the floor
@@ -79,7 +80,7 @@ export function planMotion(leds) {
     }
     // on the outside of the ceiling or floor, centred on the shaft hole
     const m = MOTION.mountPlate / 2;
-    parts.push({ name: `${l.label} motor mount`, role: 'mount', polys: mountPlate(), place: { face: l.face, u: l.u - m, v: l.v - m, layer: 0 } });
+    parts.push({ name: `${l.label} motor mount`, role: 'mount', polys: mountPlate(), place: { face: l.face, u: l.u - m, v: l.v - m, layer: 0 }, shaft: { u: l.u, v: l.v, into: l.effect === 'fan' ? 4 : 1 } });
   }
   const fans = motors.some((l) => l.effect === 'fan'), turns = motors.some((l) => l.effect === 'turntable');
   if (motors.length) {

@@ -16,10 +16,10 @@ export const KINDS = ['box', 'flat', 'rod'];
 /** Bought round stock a rod component stands for (not cut: listed in the bill of materials). */
 export const STOCKS = ['dowel', 'wire', 'tube'];
 export const UNITS = ['cm'];
-export const RESERVED = ['t'];
+export const RESERVED = ['t', 'mf', 'board']; // t: material thickness, mf: the cutter's smallest clean feature (mm), board: 1 when cut from board
 
 /** Cut shapes: key → [min, max] argument count (poly takes a point list). */
-export const SHAPE_ARGS = { rect: [4, 4], arch: [4, 6], ellipse: [4, 5], circle: [3, 4], plant: [2, 6], drape: [3, 3] };
+export const SHAPE_ARGS = { rect: [4, 4], arch: [4, 6], ellipse: [4, 5], circle: [3, 4], plant: [2, 7], drape: [3, 3] };
 export const SHAPES = [...Object.keys(SHAPE_ARGS), 'poly'];
 /** Score (fold/engrave) line sets. */
 export const SCORE_ARGS = { rect: [4, 4], circle: [3, 4], ellipse: [4, 5] };

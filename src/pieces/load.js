@@ -111,8 +111,8 @@ export function loadPiece(json) {
     ...(json.tags && { tags: [...json.tags] }),
     ...(json.difficulty && { difficulty: json.difficulty }),
     size: (p) => vec(sizeExprs, p),
-    build: (p, { t }) => {
-      const env = withLets(json.let, { ...p, t });
+    build: (p, { t, mf = 1.5, board = false }) => {
+      const env = withLets(json.let, { ...p, t, mf, board: board ? 1 : 0 });
       return expand(json.components, env, component);
     },
   };

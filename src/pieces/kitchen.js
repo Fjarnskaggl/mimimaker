@@ -15,9 +15,10 @@ export const KITCHEN = [
     tags: ['water', 'cooking'], difficulty: 2,
     params: [num('w', 'Width', 50, 200), num('d', 'Depth', 40, 80), num('h', 'Height', 70, 110)],
     defaults: { w: 80, d: 60, h: 90 },
+    let: { mx: 'max(w * 0.22, t + mf)', my: 'max(d * 0.25, t + mf)' },
     components: [{
       kind: 'box', name: 'Sink unit', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0], scores: { front: [doorsFront(2)] },
-      holes: { top: [{ arch: ['w * 0.22', 'd * 0.25', 'w * 0.56', 'd * 0.5', 'min(w, d) * 0.08'] }] },
+      holes: { top: [{ arch: ['mx', 'my', 'w - 2 * mx', 'd - 2 * my', 'min(w, d) * 0.08'] }] },
     }],
     note: 'Glue a scrap of silver card under the top for the basin, and a bent paperclip for the tap.',
   },

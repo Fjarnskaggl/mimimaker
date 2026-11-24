@@ -39,16 +39,18 @@ const canon = (v) => JSON.stringify(v, (_, x) => {
 });
 const digest = (v) => createHash('sha256').update(canon(v)).digest('hex').slice(0, 16);
 
-export function buildCase(type, raw, t) {
+export function buildCase(type, raw, t, mk = 'card') {
   const def = CATALOG[type];
   const p = toModel(def, raw);
-  return { size: itemSize(type, p), components: def.build(p, { t }) };
+  // board is cut with the knife (3 mm smallest feature), card with the fine blade
+  const ctx = mk === 'board' ? { t, mf: 3, board: true } : { t, mf: 1.5 };
+  return { size: itemSize(type, p), components: def.build(p, ctx) };
 }
 
 function snapshot() {
   const out = {};
   for (const [type, def] of Object.entries(CATALOG)) {
-    const base = buildCase(type, def.defaults, THICKNESS.board);
+    const base = buildCase(type, def.defaults, THICKNESS.board, 'board');
     const entry = {
       label: def.label,
       // what the app reads besides build(): picker, forms, placement
@@ -57,7 +59,7 @@ function snapshot() {
       cases: {},
     };
     for (const [name, raw] of Object.entries(paramCases(def))) {
-      for (const [mk, t] of Object.entries(THICKNESS)) entry.cases[`${name}@${mk}`] = digest(buildCase(type, raw, t));
+      for (const [mk, t] of Object.entries(THICKNESS)) entry.cases[`${name}@${mk}`] = digest(buildCase(type, raw, t, mk));
     }
     out[type] = entry;
   }

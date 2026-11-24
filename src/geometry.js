@@ -47,19 +47,21 @@ export function profileFingers(L, t, n, keepEnds) {
  * the odd ones. The higher-ranked panel keeps the even segments (and so both
  * corners), its partner keeps the tabs (see profileJoint).
  */
-export function jointSegments(L, fingerWidth) {
-  const fw = fingerWidth;
-  if (L < 3 * fw) return [{ a0: 0, a1: L, tab: false }];
+export function jointSegments(L, fingerWidth, edge = 0) {
+  // `edge`: how much of each end the panel at the corner takes away (the
+  // board thickness), so the strip either side of a tab stays fw wide
+  const fw = fingerWidth, e = fw + edge;
+  if (L < 3 * fw + 2 * edge) return [{ a0: 0, a1: L, tab: false }];
   let k = L < 60 ? 1 : L <= 160 ? 2 : 3;
   let w = Math.min(Math.max(0.12 * L, fw), 3 * fw);
-  while (k > 1 && L < k * w + (k + 1) * fw) k--;
+  while (k > 1 && L < k * w + (k - 1) * fw + 2 * e) k--;
   const cuts = [];
   if (k === 1) {
-    w = Math.min(w, L / 3);
+    w = Math.min(w, L / 3, L - 2 * e);
     cuts.push((L - w) / 2);
   } else {
     // outer tabs centred ~20 % in from each corner, the rest spread between
-    const end = Math.min(Math.max(fw, 0.2 * L - w / 2), (L - k * w - (k - 1) * fw) / 2);
+    const end = Math.min(Math.max(e, 0.2 * L - w / 2), (L - k * w - (k - 1) * fw) / 2);
     const gap = (L - 2 * end - k * w) / (k - 1);
     for (let i = 0; i < k; i++) cuts.push(end + i * (w + gap));
   }
