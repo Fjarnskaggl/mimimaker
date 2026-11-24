@@ -24,7 +24,7 @@ export function posOnWall(wall, [x, y], room) {
 
 const shortName = (def) => def.label.replace(/ \/.*$/, '');
 
-export function planSVG(kit, { selected = null, clashes = new Set() } = {}) {
+export function planSVG(kit, { selected = null, clashes = new Set(), guides = [] } = {}) {
   const room = kit.room;
   const W = room.width, D = room.depth;
   const T = Math.max(5, Math.min(W, D) / 40); // drawn wall thickness
@@ -99,6 +99,19 @@ export function planSVG(kit, { selected = null, clashes = new Set() } = {}) {
       if (led.mount === 'wall') { const s = wallSpan(led.wall, led.pos ?? 0, 0, room); x = s.x0; y = s.y0; } else { x = led.x ?? 0; y = led.y ?? 0; }
       out.push(`<g class="plan-led ${led.mount}${isSel('led', i) ? ' sel' : ''}" data-li="${i}"><title>L${i + 1}${led.name ? ` · ${esc(led.name)}` : ''} (${led.mount})</title><circle class="halo" cx="${f(x)}" cy="${f(y)}" r="${f(fs * 1.1)}"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(fs * 0.45)}"/></g>`);
     });
+  }
+
+  // snapping guides while dragging: what the piece lined up with
+  for (const g of guides) {
+    const ext = T * 2;
+    let l = null;
+    if (g.axis === 'x') l = [g.at, g.from - ext, g.at, g.to + ext];
+    else if (g.axis === 'y') l = [g.from - ext, g.at, g.to + ext, g.at];
+    else if (g.axis === 'pos') {
+      const s = wallSpan(g.wall, g.at, 0, room);
+      l = g.wall === 'back' ? [s.x0, -T, s.x0, D * 0.35] : g.wall === 'left' ? [-T, s.y0, W * 0.35, s.y0] : [W + T, s.y0, W * 0.65, s.y0];
+    }
+    if (l) out.push(`<line class="plan-guide ${g.kind}" pointer-events="none" x1="${f(l[0])}" y1="${f(l[1])}" x2="${f(l[2])}" y2="${f(l[3])}"/>`);
   }
 
   out.push(`<text class="plan-label" x="${f(W / 2)}" y="${f(-T - fs * 0.6)}" font-size="${f(fs * 0.8)}">BACK WALL · ${f(W)} cm</text>`);

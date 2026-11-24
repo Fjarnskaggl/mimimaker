@@ -308,6 +308,7 @@ export function createViewer(THREE) {
     update(nextFaces, nextView, opts = {}) {
       const key = opts.lookKey || '';
       if (nextFaces !== faces || key !== lookKey) { lookKey = key; build(nextFaces, opts); }
+      else for (const e of entries) if (e.mesh.position.lengthSq() || e.mesh.rotation.z) { e.mesh.position.set(0, 0, 0); e.mesh.rotation.set(0, 0, 0); } // drop a drag preview
       view = { ...nextView };
       selectedItem = view.sel?.kind === 'item' ? view.sel.index : null;
       selectedLed = view.sel?.kind === 'led' ? view.sel.index : null;
@@ -365,6 +366,35 @@ export function createViewer(THREE) {
      */
     stats() {
       return { builds, frames, shadowPasses, programs: renderer.info.programs.map((p) => p.id), programNames: renderer.info.programs.map((p) => p.name) };
+    },
+    /** Where a world point (model mm) lands on screen, in client px. */
+    project(p) {
+      const r = canvas.getBoundingClientRect();
+      const v = new THREE.Vector3(...p).project(camera);
+      return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
+    },
+    /**
+     * Show piece `item` moved while it's being dragged, without a rebuild:
+     * turned `turns` quarter turns about `centre` (world mm), then shifted by
+     * `offset`. null puts every piece back.
+     */
+    previewItem(item, xf) {
+      let moved = false;
+      for (const e of entries) {
+        if (xf && e.face.item === item) {
+          moved = true;
+          const th = ((xf.turns || 0) * Math.PI) / 2, c = xf.centre || [0, 0, 0], o = xf.offset || [0, 0, 0];
+          const cs = Math.cos(th), sn = Math.sin(th);
+          e.mesh.rotation.set(0, 0, th);
+          e.mesh.position.set(c[0] - (cs * c[0] - sn * c[1]) + o[0], c[1] - (sn * c[0] + cs * c[1]) + o[1], o[2]);
+        } else if (e.mesh.position.lengthSq() || e.mesh.rotation.z) {
+          e.mesh.position.set(0, 0, 0);
+          e.mesh.rotation.set(0, 0, 0);
+          moved = true;
+        }
+      }
+      if (moved) renderer.shadowMap.needsUpdate = true; // the piece's shadow moves with it
+      if (faces) render();
     },
     /** What the viewer last drew with, without rendering (cheap, for tests). */
     shown() {

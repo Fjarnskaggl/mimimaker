@@ -2,7 +2,7 @@
 // the WebGL viewer or the SVG preview. The SVG is always drawn first (it is
 // instant), and stays as the fallback when WebGL or the CDN isn't available.
 
-import { renderScene } from '../preview3d.js';
+import { renderScene, viewBasis } from '../preview3d.js';
 import { loadThree, webglSupported } from '../render/three-loader.js';
 import { createViewer } from '../render/webgl.js';
 import { resolveLook, faceTexture, textureChoices, textureChoice, setTextureChoice } from '../textures/look.js';
@@ -177,6 +177,7 @@ function attachZoom(stage) {
   let frame = 0;
   stage.addEventListener('wheel', (e) => {
     if (state.last?.stage !== stage || e.metaKey) return; // ⌘-wheel stays the browser's
+    if (stage.parentElement?.querySelector(':scope > .t6-gizmo.dragging')) { e.preventDefault(); return; } // no zooming mid-drag: the drag's screen maths would go stale
     // wheels report pixels, lines (Firefox mice) or pages
     const px = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? (globalThis.innerHeight || 800) : 1);
     const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, state.zoom * Math.exp(-px * 0.0015)));
@@ -191,6 +192,54 @@ function attachZoom(stage) {
       });
     }
   }, { passive: false });
+}
+
+const svgOptions = (view) => ({
+  ...view, zoom: state.zoom,
+  selected: view.sel?.kind === 'item' ? view.sel.index : null,
+  selectedLed: view.sel?.kind === 'led' ? view.sel.index : null,
+});
+
+// ------------------------------------------------------------ move handles
+// The move handles (src/ui/gizmo.js) draw over whichever renderer is showing
+// and move a piece live while dragging, without a rebuild.
+
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+/** A function from a world point (model mm) to client px on `stage`, or null. */
+export function stageProjector(stage) {
+  if (stage.dataset.renderer === 'webgl' && state.viewer) return (p) => state.viewer.project(p);
+  const view = state.last?.stage === stage ? state.last.view : null;
+  if (!view) return null;
+  const { right, up } = viewBasis(view.yaw, view.pitch);
+  return (p) => {
+    const svg = stage.querySelector('svg.scene-svg');
+    const ctm = svg?.getScreenCTM();
+    if (!ctm) return { x: NaN, y: NaN };
+    const pt = svg.createSVGPoint();
+    pt.x = dot3(p, right); pt.y = -dot3(p, up);
+    const q = pt.matrixTransform(ctm);
+    return { x: q.x, y: q.y };
+  };
+}
+
+/** Faces with piece `index` turned `turns` quarter turns about `centre`, then shifted by `offset`. */
+function moveFaces(faces, index, { offset = [0, 0, 0], turns = 0, centre = [0, 0, 0] }) {
+  const k = ((turns % 4) + 4) % 4;
+  const rot = ([x, y, z]) => (k === 1 ? [-y, x, z] : k === 2 ? [-x, -y, z] : k === 3 ? [y, -x, z] : [x, y, z]);
+  const pt = (p) => { const r = rot([p[0] - centre[0], p[1] - centre[1], p[2]]); return [r[0] + centre[0] + offset[0], r[1] + centre[1] + offset[1], r[2] + offset[2]]; };
+  return faces.map((f) => (f.item !== index ? f : { ...f, polys: f.polys.map((poly) => poly.map(pt)), n: rot(f.n) }));
+}
+
+/** Show piece `index` moved (see moveFaces) while it's dragged; null puts it back. */
+export function previewItem(stage, index, xf) {
+  const l = state.last;
+  if (!l || l.stage !== stage) return;
+  if (stage.dataset.renderer === 'webgl' && state.viewer) { state.viewer.previewItem(index, xf); return; }
+  const old = stage.querySelector(':scope > svg.scene-svg');
+  const html = renderScene(xf ? moveFaces(l.faces, index, xf) : l.faces, svgOptions(l.view));
+  if (old) old.outerHTML = html; else stage.innerHTML = html; // keep anything else on the stage, like the no-WebGL note
+  paintSvgHover(stage);
 }
 
 /** Back to the fitted view, e.g. when another kit opens. */
@@ -227,7 +276,16 @@ function startViewer() {
  * "svg"; while the viewer is wanted but not running, stage.dataset.webgl is
  * "loading" or "unavailable".
  */
+const drawnHooks = [];
+/** Call fn(stage) after every draw of the 3D stage (zoom and texture loads included). */
+export function onStageDrawn(fn) { drawnHooks.push(fn); }
+const drawn = (stage) => { for (const fn of drawnHooks) fn(stage); };
+
 export function drawStage(stage, faces, view, kit = null) {
+  drawStageOnly(stage, faces, view, kit);
+  drawn(stage);
+}
+function drawStageOnly(stage, faces, view, kit) {
   // new pieces or a new stage: whatever was hovered may now be another piece
   if (state.last && (state.last.faces !== faces || state.last.stage !== stage)) {
     stage.t6hover = null;
@@ -255,11 +313,7 @@ export function drawStage(stage, faces, view, kit = null) {
   }
   if (!state.want) disposeViewer();
   stage.t6viewer = null;
-  stage.innerHTML = renderScene(faces, {
-    ...view, zoom: state.zoom,
-    selected: view.sel?.kind === 'item' ? view.sel.index : null,
-    selectedLed: view.sel?.kind === 'led' ? view.sel.index : null,
-  });
+  stage.innerHTML = renderScene(faces, svgOptions(view));
   stage.dataset.renderer = 'svg';
   paintSvgHover(stage); // the redraw replaced the hovered paths
   if (!state.want) { delete stage.dataset.webgl; return; }

@@ -93,6 +93,11 @@ test('perf budget: orbiting reuses the shadow maps; a rebuild or the night toggl
   assert.equal(s3.shadowPasses - s2.shadowPasses, 1, 'night (window lights) draws them once');
   await orbit(page, 4);
   assert.equal((await stats(page)).shadowPasses, s3.shadowPasses, 'and orbiting at night reuses them too');
+  // dragging a piece with the 3D handles moves its shadow, without a rebuild
+  await page.evaluate(() => document.querySelector('.stage').t6viewer.previewItem(0, { offset: [10, 0, 0] }));
+  assert.equal((await stats(page)).shadowPasses, s3.shadowPasses + 1, 'a drag preview redraws the shadows');
+  await page.evaluate(() => document.querySelector('.stage').t6viewer.previewItem(null));
+  assert.equal((await stats(page)).shadowPasses, s3.shadowPasses + 2, 'and so does putting the piece back');
   assert.deepEqual(page.errors, []);
   await page.close();
 });
