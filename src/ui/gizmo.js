@@ -5,7 +5,7 @@
 // quarter turns (rot). A wall piece gets an arrow along its wall (pos), one up
 // the wall (up) and a square in the wall (plane). Moves snap with the floor
 // plan's engine (src/plan.js): grid, walls, openings and other pieces' edges
-// and centres, with guides while dragging. Alt moves freely.
+// and centres, with guides while dragging. Alt (or Snap: Off) moves freely.
 //
 // The handles are an SVG overlay drawn in screen space from a projector
 // (world mm → client px), so they work the same over the sketch view and
@@ -130,7 +130,7 @@ export function drawGizmo(wrap, o) {
     h.classList.add('active');
     const move = (mv) => {
       const d = { x: mv.clientX - overlay.drag.x0, y: mv.clientY - overlay.drag.y0 };
-      const free = mv.altKey;
+      const free = mv.altKey || !o.grid; // Alt, or Snap set to Off
       let res;
       if (name === 'rot') {
         const ring = JSON.parse(h.dataset.ring);
@@ -170,7 +170,7 @@ export function drawGizmo(wrap, o) {
       const off = toLocal(o.project(origin.map((v, i) => v + (res.xf.offset?.[i] || 0))));
       handles.setAttribute('transform', `translate(${off.x - lo.x} ${off.y - lo.y})`);
     };
-    const end = () => {
+    const end = (ev) => {
       h.removeEventListener('pointermove', move);
       h.removeEventListener('pointerup', end);
       h.removeEventListener('pointercancel', end);
@@ -178,7 +178,7 @@ export function drawGizmo(wrap, o) {
       overlay.drag = null;
       svg.classList.remove('dragging');
       guides.replaceChildren();
-      if (res) o.commit(res.changes); else o.preview(null);
+      if (res && ev.type === 'pointerup') o.commit(res.changes); else o.preview(null); // a cancelled drag puts it back
     };
     h.addEventListener('pointermove', move);
     h.addEventListener('pointerup', end);

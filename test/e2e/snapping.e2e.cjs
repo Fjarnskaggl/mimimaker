@@ -136,6 +136,8 @@ test('plan: Snap Off moves freely, past other pieces too, and the sidebar keeps 
   const done = await item(page, 2);
   assert.ok(Math.abs(done.x - (shelf.x1 + 1.5)) < 1, `not pulled onto the bookshelf (x ${done.x})`);
   assert.deepEqual(page.errors, []);
+  await page.close();
+});
 
 // ------------------------------------------------------------ 3D move handles
 /** Client centre of a gizmo handle. */
