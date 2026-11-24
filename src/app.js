@@ -26,7 +26,7 @@ import { makeZip } from './zip.js';
 import { icon, MIMI, MARK } from './ui/art.js';
 import { checksSummary } from './ui/checks.js';
 // T6: WebGL viewer + SVG fallback
-import { drawStage, rendererToggle, texturePicker, attachPicking, resetZoom, stageProjector, previewItem, onStageDrawn } from './ui/t6.js';
+import { drawStage, rendererToggle, texturePicker, attachPicking, resetZoom, stageProjector, previewItem, onStageDrawn, hoverPiece } from './ui/t6.js';
 import { drawGizmo } from './ui/gizmo.js';
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
@@ -267,6 +267,12 @@ function notice(tone, word, text) {
     ic(tone === 'success' ? 'check' : tone === 'info' ? 'info' : 'alert'), h('div', {}, h('b', {}, word), ' ', text));
 }
 
+// a row of the pieces list points at its piece in 3D, under the pointer or
+// focused (the pointer wins); rows go away when the inspector re-renders
+// without firing pointerleave or blur, so a re-render clears both
+const listPoint = { over: null, focus: null };
+function pointAt(key, index) { listPoint[key] = index; hoverPiece(listPoint.over ?? listPoint.focus); }
+
 function select(sel) {
   view.sel = sel;
   renderInspector();
@@ -281,6 +287,7 @@ function renderInspector({ keepScroll = false } = {}) {
   const sb = $('#sidebar');
   if (view.step === 'make' || view.step === 'build') { sb.replaceChildren(); return; }
   const scroll = sb.scrollTop;
+  if (listPoint.over != null || listPoint.focus != null) { listPoint.over = listPoint.focus = null; hoverPiece(null); } // its rows are about to go
   const e = selectedEntity();
   let content;
   if (view.step === 'light') content = e?.kind === 'led' ? ledInspector(e) : lightingInspector();
@@ -302,7 +309,9 @@ function roomInspector() {
   const items = kit.items.map((item, i) => {
     const def = CATALOG[item.type];
     const mat = kit.materials.find((m) => m.id === item.material);
-    return h('button', { type: 'button', class: `insp-row${clashes.has(i) ? ' clash' : ''}`, 'data-select-item': i, onclick: () => select({ kind: 'item', index: i }) },
+    return h('button', { type: 'button', class: `insp-row${clashes.has(i) ? ' clash' : ''}`, 'data-select-item': i, onclick: () => select({ kind: 'item', index: i }),
+      // point at the piece in the 3D view while the row is under the pointer or focused
+      onpointerenter: () => pointAt('over', i), onpointerleave: () => pointAt('over', null), onfocus: () => pointAt('focus', i), onblur: () => pointAt('focus', null) },
       h('span', { class: 'sw', style: `background:${mat?.color || '#ccc'}` }),
       h('span', { class: 'grow' }, def?.label || item.type),
       clashes.has(i) ? h('span', { class: 'mm-chip mm-chip--danger' }, 'Overlaps') : h('span', { class: 'k2' }, def?.group || ''));
