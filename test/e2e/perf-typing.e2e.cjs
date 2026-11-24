@@ -36,7 +36,9 @@ test('perf budget: typing the room name recompiles nothing, and the name still s
   assert.equal(await page.inputValue('#kit-name'), 'Tiny tea room', 'the name was saved');
   // the Build guide follows the name as it's typed
   await page.click('.mm-steps [data-step=build]');
-  await page.type('#kit-name', '!');
+  await page.focus('#kit-name');
+  await page.keyboard.press('End');
+  await page.keyboard.type('!');
   assert.ok(await page.evaluate(() => document.querySelector('.guide-frame').srcdoc.includes('Tiny tea room!')), 'guide shows the new name');
   await page.keyboard.press('Backspace');
   await page.click('.mm-steps [data-step=design]');
