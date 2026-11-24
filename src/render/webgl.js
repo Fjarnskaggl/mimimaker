@@ -57,9 +57,12 @@ export function createViewer(THREE) {
   let shadowPasses = 0, frames = 0, builds = 0;
   const shadowRender = renderer.shadowMap.render.bind(renderer.shadowMap);
   renderer.shadowMap.render = (...args) => {
-    if (renderer.shadowMap.enabled && renderer.shadowMap.needsUpdate) shadowPasses++;
-    return shadowRender(...args);
+    const due = renderer.shadowMap.needsUpdate;
+    shadowRender(...args);
+    if (due && !renderer.shadowMap.needsUpdate) shadowPasses++; // three drew them (it clears the flag)
   };
+  // a restored context comes back with empty shadow maps
+  canvas.addEventListener('webglcontextrestored', () => { renderer.shadowMap.needsUpdate = true; });
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 1000);
@@ -81,6 +84,7 @@ export function createViewer(THREE) {
   let faces = null, bounds = sceneBounds([]), view = {}, entries = [], ledData = [];
   let lookKey = '';
   let litNight = null; // the lighting the shadow maps were drawn for
+  const litStates = new Set(); // day and/or night, once shown: programs worth keeping warm
   let retired = []; // the last scene's meshes, freed after the new scene's first frame
   let selectedItem = null;
   let hoverItem = null;
@@ -133,7 +137,15 @@ export function createViewer(THREE) {
   function free(list) {
     for (const o of list) { o.geometry?.dispose(); o.material?.dispose(); o.shadow?.map?.dispose(); }
   }
-  function freeRetired() {
+  function freeRetired(warm = false) {
+    if (warm && retired.length && litStates.size > 1) {
+      // the old materials also hold programs for the other lighting (night's
+      // LED and window lights); let the new ones take those over too
+      const flip = () => { leds.visible = !leds.visible; windows.visible = !windows.visible; };
+      flip();
+      renderer.compile(scene, camera);
+      flip();
+    }
     free(retired);
     retired = [];
   }
@@ -227,7 +239,7 @@ export function createViewer(THREE) {
 
   function applyView() {
     const night = !!view.night;
-    if (night !== litNight) { litNight = night; renderer.shadowMap.needsUpdate = true; } // window lights cast shadows at night
+    if (night !== litNight) { litNight = night; litStates.add(night); renderer.shadowMap.needsUpdate = true; } // window lights cast shadows at night
     const L = night ? NIGHT : DAY;
     hemi.color.set(L.sky); hemi.groundColor.set(L.ground); hemi.intensity = L.hemi;
     sun.color.set(L.sunColor); sun.intensity = L.sun;
@@ -281,7 +293,7 @@ export function createViewer(THREE) {
     applyView();
     renderer.render(scene, camera);
     frames++;
-    if (retired.length) freeRetired(); // the new scene now holds the programs
+    if (retired.length) freeRetired(true); // the new scene now holds the programs
   }
 
   const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(() => { if (faces) render(); }) : null;
@@ -348,11 +360,11 @@ export function createViewer(THREE) {
     },
     /**
      * Work counters for performance budgets (deterministic, unlike timings):
-     * scene builds, frames drawn, shadow-map passes, and the ids of the
-     * shader programs alive now.
+     * scene builds, frames drawn, shadow-map passes, and the ids and
+     * material names of the shader programs alive now.
      */
     stats() {
-      return { builds, frames, shadowPasses, programs: renderer.info.programs.map((p) => p.id) };
+      return { builds, frames, shadowPasses, programs: renderer.info.programs.map((p) => p.id), programNames: renderer.info.programs.map((p) => p.name) };
     },
     /** What the viewer last drew with, without rendering (cheap, for tests). */
     shown() {
@@ -404,7 +416,8 @@ export function createViewer(THREE) {
       const yaw0 = Number(saved.yaw) || 0;
       render();
       gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // warm up and sync
-      // three resets info after the shadow pass, so reset by hand to count both
+      // three resets info per render() (and after a shadow pass, when there is
+      // one), so reset by hand once per frame
       const autoReset = renderer.info.autoReset;
       renderer.info.autoReset = false;
       let ms;

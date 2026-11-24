@@ -80,7 +80,7 @@ test('a tampered three.js is refused and the SVG preview stays', async () => {
 // Measured 2026-11-23 (shadow pass included): 112 calls, ~16.7k triangles.
 // Since 2026-11-24 orbit frames reuse the shadow maps (test/e2e/perf.e2e.cjs):
 // 59 calls, ~4.9k triangles.
-const BUDGET = { calls: 200, triangles: 50000, shadowLights: 1, pixelRatio: 2 };
+const BUDGET = { calls: 120, triangles: 20000, shadowLights: 1, pixelRatio: 2 }; // tightened from 200 calls / 50k triangles when the shadow pass left orbit frames
 
 test('perf budget: orbiting the café stays inside the 60 fps budget', async () => {
   const page = await open();

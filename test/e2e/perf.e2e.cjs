@@ -62,6 +62,22 @@ test('perf budget: rebuilding the 3D scene after an edit compiles no new shader 
   await page.close();
 });
 
+test('perf budget: after an edit, switching to night reuses the night programs too', async () => {
+  const page = await open({ webgl: true });
+  await page.click('#night-toggle');
+  await page.click('#night-toggle'); // night seen once, back to day
+  const before = await stats(page);
+  await page.evaluate(() => window.mimimaker.refresh()); // an edit by day
+  await page.click('#night-toggle');
+  const after = await stats(page);
+  // a kind of material never drawn before (the selection ring, warmed with the
+  // rest) may compile once; anything the room already used must not
+  const again = after.programs.filter((id) => !before.programs.includes(id)).map((id) => after.programNames[after.programs.indexOf(id)]).filter((n) => before.programNames.includes(n));
+  assert.deepEqual(again, [], 'night lighting needed no recompile');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('perf budget: orbiting reuses the shadow maps; a rebuild or the night toggle redraws them', async () => {
   const page = await open({ webgl: true });
   const s0 = await stats(page);
