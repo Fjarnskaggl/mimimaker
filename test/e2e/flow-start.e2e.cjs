@@ -25,9 +25,12 @@ test('flow: a first visit opens a ready room with nothing broken', async () => {
     await page.click(`[data-step=${step}]`);
     await page.locator(sel).first().waitFor({ state: 'visible', timeout: 5000 });
   }
-  // rename the kit: the name sticks and shows in the Make summary of the guide
+  // rename the kit: the guide on Build uses the new name
   await page.locator('#kit-name').fill('Tiny Tea Room');
   assert.equal((await F.kit(page)).name, 'Tiny Tea Room');
+  await page.click('[data-step=build]');
+  if (!(await page.locator('.guide-frame').isVisible())) await page.click('.t4-mode [data-mode=guide]');
+  await page.frameLocator('.guide-frame').locator('text=Tiny Tea Room').first().waitFor({ timeout: 5000 });
   F.assertClean(page);
   await page.context().close();
 });
@@ -67,16 +70,21 @@ test('flow: start a new kit from every room type, and from a blank room', async 
     F.assertClean(page, `with ${name}`);
   }
 
-  // blank room: no furniture, an empty list, and undo brings the last room back
+  // blank room: no furniture and an empty list
   await page.click('[data-step=design]');
-  const last = (await F.kit(page)).name;
   await page.click('#btn-file');
   await page.click('#btn-new');
-  await F.expectRedraw(page, STAGE, () => page.click('#start-blank'), 'starting a blank room');
+  const blank = await F.expectRedraw(page, STAGE, () => page.click('#start-blank'), 'starting a blank room');
   assert.equal((await F.kit(page)).items.length, 0);
   assert.equal(await page.locator('#sidebar [data-select-item]').count(), 0);
-  await F.expectRedraw(page, STAGE, () => page.locator('.mm-toast', { hasText: 'Blank room ready' }).locator('button', { hasText: 'Undo' }).click(), 'Undo on the toast');
-  assert.equal((await F.kit(page)).name, last, 'the toast’s Undo restores the room');
+
+  // the toast's Undo takes a new room back (clicked at once: toasts go after a few seconds)
+  await page.click('#btn-file');
+  await page.click('#btn-new');
+  await page.click(`#start .rt-card[data-room="${cards[0].id}"]`);
+  await page.locator('.mm-toast', { hasText: 'loaded' }).last().locator('button', { hasText: 'Undo' }).click({ timeout: 3000 });
+  assert.equal((await F.kit(page)).items.length, 0, 'the toast’s Undo restores the blank room');
+  assert.ok(F.looksSame(await F.settled(page, STAGE), blank), 'and the screen shows it again');
 
   // Keep my design closes without changing anything
   await F.expectSteady(page, STAGE, async () => {

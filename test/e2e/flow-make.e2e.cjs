@@ -33,8 +33,8 @@ test('flow: add a material, price it, build the walls from it, and see the sheet
 
   // Design: the room's wall material picker offers it; use it for the walls
   await page.click('[data-step=design]');
-  const wallSelect = page.locator('#sidebar select', { has: page.locator(`option[value="${id}"]`) }).first();
-  assert.ok(await wallSelect.count(), 'the new material is offered in the room settings');
+  const wallSelect = page.locator('#sidebar label', { hasText: 'Structure board' }).locator('select');
+  assert.equal(await wallSelect.locator(`option[value="${id}"]`).count(), 1, 'the walls picker offers the new material');
   await wallSelect.selectOption(id);
   const used = await page.evaluate((m) => window.mimimaker.compiled.sheets.some((s) => s.material.id === m), id);
   assert.ok(used, 'some sheets are now cut from it');

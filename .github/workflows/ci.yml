@@ -31,7 +31,9 @@ jobs:
           npm install --no-save playwright@1.48.2
           npx playwright install --with-deps chromium
           mkdir -p "$RUNNER_TEMP/three" && (cd "$RUNNER_TEMP/three" && npm pack --silent three@0.128.0 && tar xzf three-0.128.0.tgz)
-          MIMI_THREE_JS="$RUNNER_TEMP/three/package/build/three.min.js" npm run test:e2e
+          export MIMI_THREE_JS="$RUNNER_TEMP/three/package/build/three.min.js"
+          echo "MIMI_THREE_JS=$MIMI_THREE_JS" >> "$GITHUB_ENV" # for the test-first rerun below too
+          npm run test:e2e
       - name: Tests before code
         # The branch's new or changed tests must fail on main and pass here.
         run: |

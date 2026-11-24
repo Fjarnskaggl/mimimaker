@@ -19,7 +19,7 @@ test('flow: read and download the guide, then build step by step and come back l
   // wide screens open on the printable guide, filled in for this kit
   if (!(await page.locator('.guide-frame').isVisible())) await page.click('.t4-mode [data-mode=guide]');
   const guide = page.frameLocator('.guide-frame');
-  await guide.locator('body').waitFor();
+  await guide.locator('svg, img').first().waitFor(); // srcdoc has loaded, not the blank first document
   assert.match(await guide.locator('body').innerText(), new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'the guide names the kit');
   assert.ok(await guide.locator('svg, img').count() > 3, 'the guide has pictures');
   const html = await F.download(page, () => page.locator('.guide-tools button', { hasText: 'Download guide' }).click());

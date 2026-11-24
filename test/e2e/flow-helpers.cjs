@@ -136,10 +136,8 @@ async function settled(page, where, { timeout = 5000 } = {}) {
     await frames(page, 2);
     const next = await shoot(page, where);
     if (looksSame(next, last)) return next;
-    if (Date.now() > end) {
-      if (process.env.FLOW_DEBUG) console.error(`settled: ${where} still changing after ${timeout} ms`);
-      return next;
-    }
+    // a view that never stops changing would make every redraw check pass
+    if (Date.now() > end) assert.fail(`${typeof where === 'string' ? where : 'the view'} kept changing for ${timeout} ms without any input`);
     last = next;
   }
 }

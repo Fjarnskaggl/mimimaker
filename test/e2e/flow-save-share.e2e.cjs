@@ -56,7 +56,8 @@ test('flow: a changed design survives a reload, a saved file and a share link', 
   await page.click('#btn-file');
   const saved = await F.download(page, () => page.click('#btn-save'));
   assert.match(saved.name, /\.json$/);
-  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'flow-')), saved.name);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'flow-'));
+  const file = path.join(dir, saved.name);
   fs.writeFileSync(file, saved.body);
   const other = await F.openApp(browser, URL);
   assert.notEqual((await F.kit(other)).name, 'Flow Test Studio');
@@ -67,6 +68,7 @@ test('flow: a changed design survives a reload, a saved file and a share link', 
   assert.deepEqual(designOf(await F.kit(other)), want, 'the file opens the same design');
   assert.ok(F.looksSame(await roomPicture(other), picture), 'the opened file shows the same room');
   F.assertClean(other, 'opening the saved file');
+  fs.rmSync(dir, { recursive: true, force: true });
   await other.context().close();
 
   // 3. Share link: someone else opens it and sees the same room
@@ -78,10 +80,10 @@ test('flow: a changed design survives a reload, a saved file and a share link', 
   await page.click('#share-close');
   const friend = await F.openApp(browser, link);
   await friend.waitForFunction(() => window.mimimaker.kit.name === 'Flow Test Studio');
+  await friend.locator('.mm-toast').first().waitFor({ timeout: 3000 }); // a toast says what was opened (it goes after 4 s)
   assert.equal(await friend.evaluate(() => location.hash), '', 'the link’s hash is cleared');
   assert.deepEqual(designOf(await F.kit(friend)), want, 'the link opens the same design');
   assert.ok(F.looksSame(await roomPicture(friend), picture), 'the link shows the same room');
-  assert.ok(await friend.locator('.mm-toast').count() > 0, 'a toast says what was opened');
   // the friend's copy is their own: a change there doesn't touch ours
   await friend.locator('#kit-name').fill('Friend copy');
   assert.equal((await F.kit(page)).name, 'Flow Test Studio');

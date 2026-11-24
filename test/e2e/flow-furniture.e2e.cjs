@@ -64,9 +64,14 @@ test('flow: add a piece, then select, move, rotate, delete and undo it on the fl
   assert.ok(Math.abs(turned.width - moved.height) < 3 && Math.abs(turned.height - moved.width) < 3, 'the footprint is turned a quarter');
   assert.equal((await F.kit(page)).items[i].rot, 90);
 
-  // the inspector shows the new rotation and position without a reselect
-  const rotField = page.locator('#sidebar label', { hasText: /rotat/i }).first();
-  if (await rotField.count()) assert.match(await rotField.innerText() + await rotField.locator('input, select').first().inputValue(), /90/);
+  // the inspector shows the new turn and position without a reselect
+  const position = page.locator('#sidebar details.section', { has: page.locator('summary', { hasText: 'Position' }) });
+  if (!(await position.evaluate((d) => d.open))) await position.locator('summary').click();
+  const field = (label) => position.locator('label', { hasText: label }).locator('input, select').first();
+  const now = (await F.kit(page)).items[i];
+  assert.equal(await field('Turn').inputValue(), '90');
+  assert.equal(Number(await field('From left').inputValue()), now.x);
+  assert.equal(Number(await field('From back').inputValue()), now.y);
 
   // the 3D view is not stale: it shows the move straight away
   const k = await F.kit(page);
@@ -110,12 +115,14 @@ test('flow: pick, nudge, rotate, duplicate and delete a piece in the sketch 3D v
 
   // click another piece: the outline moves
   const q = await F.pickPoint(page, 0);
+  assert.ok(q, 'the bookshelf is visible');
   await F.expectRedraw(page, STAGE, () => page.mouse.click(q.x, q.y), 'clicking the bookshelf');
   assert.equal(await page.locator(`${STAGE} path.sel[data-item="1"]`).count(), 0);
   assert.match(await F.inspectorTitle(page), /bookshelf/i);
 
   // back to the armchair; arrow keys nudge it and the view follows
   const p2 = await F.pickPoint(page, 1);
+  assert.ok(p2, 'the armchair is visible');
   await page.mouse.click(p2.x, p2.y);
   const x0 = (await F.kit(page)).items[1].x;
   await F.expectRedraw(page, STAGE, () => page.keyboard.press('Shift+ArrowRight'), 'nudging with an arrow key');
@@ -133,6 +140,7 @@ test('flow: pick, nudge, rotate, duplicate and delete a piece in the sketch 3D v
 
   // orbit with the Rotate slider: the view turns and the selection survives
   const p3 = await F.pickPoint(page, 1);
+  assert.ok(p3, 'the armchair is still visible');
   await page.mouse.click(p3.x, p3.y);
   await F.expectRedraw(page, STAGE, () => page.locator('input[aria-label=Rotate]').fill('20'), 'turning the Rotate slider');
   assert.equal(await page.locator(`${STAGE} path.sel[data-item="1"]`).count() > 0, true, 'still outlined after orbiting');
