@@ -127,7 +127,7 @@ export function compileShell(prep, { t, fingerWidth, minFeature, cutter, holes, 
     const mat = getMat(p.material, p.name);
     if (!groups.has(p.group)) groups.set(p.group, newGroup(p.group, mat));
     ids.set(p.key, addPart(groups.get(p.group), p.name, mat, p.polys, p.scores));
-    add3d(0, p.polys, p.plane, xf, mat.color, { thickness: mat.thickness }); // solid: material runs along −n
+    add3d(0, p.polys, p.plane, xf, mat.color, { thickness: mat.thickness, material: mat.id }); // solid: material runs along −n
   }
   for (const s of sh.steps) groups.get(s.group)?.steps.push(s.text);
   // LED spots glow in the preview; wired ones are on the LED map too (#16)
@@ -162,7 +162,7 @@ export function compileRoof(room, { W, D, H, t, fingerWidth, rm, newGroup, addPa
   const group = newGroup('Roof', rm);
   for (const p of res.parts) {
     addPart(group, p.name, rm, p.polys, p.scores);
-    add3d(0, p.polys, p.plane, xf, rm.color, { thickness: t });
+    add3d(0, p.polys, p.plane, xf, rm.color, { thickness: t, material: rm.id });
   }
   group.steps.push(
     'Glue the gable upright on the back wall\'s top edge, flush with the back.',

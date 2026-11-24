@@ -5,7 +5,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TEXTURES, textureShapes, textureSVG } from '../src/textures/index.js';
 
-const IDS = ['wood-planks', 'tiles', 'brick', 'wallpaper-stripes', 'wallpaper-sprig', 'book-spines'];
+const IDS = ['wood-planks', 'tiles', 'brick', 'wallpaper-stripes', 'wallpaper-sprig', 'book-spines',
+  'chipboard', 'wood-grain', 'card-fibre', 'felt', 'clear-sheet']; // raw material finishes for unprinted parts
 const close = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 const rects = (s) => s.shapes.filter((x) => x.type === 'rect' && !x.background);
 const mm = (cm, scale) => (cm * 10) / scale;
@@ -14,7 +15,7 @@ test('registry lists every texture with a name, kind and default params', () => 
   assert.deepEqual(TEXTURES.map((t) => t.id).sort(), [...IDS].sort());
   for (const t of TEXTURES) {
     assert.ok(t.name && typeof t.name === 'string');
-    assert.ok(['floor', 'wall', 'decor'].includes(t.kind), t.id);
+    assert.ok(['floor', 'wall', 'decor', 'material'].includes(t.kind), t.id);
     assert.ok(Array.isArray(t.params.colors) && t.params.colors.length >= 2, `${t.id} has a palette`);
   }
 });

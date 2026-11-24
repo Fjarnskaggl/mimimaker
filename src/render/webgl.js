@@ -13,6 +13,7 @@ const NIGHT = { hemi: 0.1, sun: 0.06, sky: 0x8090c0, ground: 0x202028, sunColor:
 const MOON = { light: 0xa9c4ff, glow: 0x7f97c8 }; // window light at night
 const SELECT_TINT = 0x0f3a44; // emissive tint on the selected piece
 const HOVER_TINT = 0x07222a; // fainter tint on the piece under the pointer
+const SELECT_RING = { day: 0x1d5c52, night: 0xf6ead2 }; // ring round the selected light: --mat by day, the night toggle's light ink at night
 
 /**
  * BufferGeometry for one compiler face: board panels become solids with real
@@ -72,14 +73,24 @@ export function createViewer(THREE) {
   let lookKey = '';
   let selectedItem = null;
   let hoverItem = null;
+  let selectedLed = null;
   const raycaster = new THREE.Raycaster();
-  const textures = new Map(); // spec key -> { id, texture, ready }
+  const textures = new Map(); // spec key -> { id, texture, ready }; kept across rebuilds
+  let used = new Set(), texturesMade = 0, repaint = 0;
+  // texture images land one by one: repaint once per frame, not once per image
+  const repaintSoon = () => {
+    if (repaint) return;
+    const raf = globalThis.requestAnimationFrame || ((f) => setTimeout(f, 16));
+    repaint = raf(() => { repaint = 0; if (faces) render(); });
+  };
 
   // One texture image per spec, big enough to cover any face without repeating,
   // rasterised from the same SVG that would be printed.
   function textureFor(spec, scale, sizeMm, fallback) {
     const key = JSON.stringify([spec.id, spec.params, spec.seed, scale, sizeMm]);
+    used.add(key);
     if (textures.has(key)) return textures.get(key);
+    texturesMade++;
     const px = Math.min(2048, Math.max(512, Math.round(sizeMm * 8)));
     const cnv = document.createElement('canvas');
     cnv.width = cnv.height = px;
@@ -95,7 +106,7 @@ export function createViewer(THREE) {
       ctx.drawImage(img, 0, 0, px, px);
       texture.needsUpdate = true;
       entry.ready = true;
-      if (faces) render();
+      repaintSoon();
     };
     img.onerror = () => { entry.ready = true; entry.failed = true; };
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(textureSVG(spec.id, { width: sizeMm, height: sizeMm, scale, seed: spec.seed, params: spec.params }));
@@ -104,10 +115,12 @@ export function createViewer(THREE) {
   }
   let size = [0, 0];
 
-  function clear() {
-    for (const e of entries) { e.mesh.geometry.dispose(); e.mesh.material.dispose(); }
-    for (const t of textures.values()) t.texture.dispose();
-    textures.clear();
+  function clear(keepTextures = false) {
+    for (const e of entries) { e.mesh.geometry.dispose(); e.mesh.material.dispose(); e.ring?.geometry.dispose(); e.ring?.material.dispose(); }
+    if (!keepTextures) {
+      for (const t of textures.values()) t.texture.dispose();
+      textures.clear();
+    }
     model.clear();
     leds.clear();
     for (const o of windows.children) { o.geometry?.dispose(); o.material?.dispose(); o.shadow?.map?.dispose(); }
@@ -116,7 +129,8 @@ export function createViewer(THREE) {
   }
 
   function build(next, opts) {
-    clear();
+    clear(true); // texture images carry over: re-rasterising them is the slow part of a rebuild
+    used = new Set();
     faces = next;
     bounds = sceneBounds(faces);
     const texSize = Math.ceil(Math.max(...bounds.max.map((v, i) => v - bounds.min[i]), 10));
@@ -124,19 +138,31 @@ export function createViewer(THREE) {
       if (!face.polys.length || face.polys[0].length < 3) continue;
       const glow = face.glow;
       const spec = !glow && opts.textureOf ? opts.textureOf(face) : null;
-      const tex = spec ? textureFor(spec, opts.scale || 12, texSize, face.color) : null;
+      // raw material finishes repeat on a small tile; printed patterns span the scene
+      const size = spec?.tile > 0 ? spec.tile : texSize;
+      const tex = spec ? textureFor(spec, opts.scale || 12, size, face.color) : null;
       const material = glow
         ? new THREE.MeshBasicMaterial({ color: face.color, transparent: face.opacity < 1, opacity: face.opacity, depthWrite: face.opacity >= 1 })
         : new THREE.MeshStandardMaterial({
           color: tex ? 0xffffff : face.color, map: tex ? tex.texture : null, roughness: 0.88, metalness: 0,
           side: face.cull || faceThickness(face) > 0 ? THREE.FrontSide : THREE.DoubleSide,
         });
-      const mesh = new THREE.Mesh(faceGeometry(THREE, face, tex ? texSize : 0), material);
+      const mesh = new THREE.Mesh(faceGeometry(THREE, face, tex ? size : 0), material);
       mesh.castShadow = !glow;
       mesh.receiveShadow = !glow;
       model.add(mesh);
-      entries.push({ face, mesh, solid: faceThickness(face) > 0, texture: tex });
+      const entry = { face, mesh, solid: faceThickness(face) > 0, texture: tex };
+      if (glow && face.led != null && face.opacity < 1) {
+        // a ring round the light's glow, shown while that light is selected
+        const n = face.n, pts = face.polys[0].map((p) => new THREE.Vector3(p[0] + n[0] * 0.3, p[1] + n[1] * 0.3, p[2] + n[2] * 0.3));
+        entry.ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: SELECT_RING.day, depthTest: false }));
+        entry.ring.renderOrder = 10;
+        entry.ring.visible = false;
+        model.add(entry.ring);
+      }
+      entries.push(entry);
     }
+    for (const [key, t] of textures) if (!used.has(key)) { t.texture.dispose(); textures.delete(key); }
     ledData = ledLights(faces);
     // several LEDs share the room: keep the total roughly constant so it doesn't blow out
     const strength = Math.max(0.6, Math.min(1.6, 2.2 / Math.sqrt(ledData.length || 1)));
@@ -188,8 +214,12 @@ export function createViewer(THREE) {
     }
     // walls seen from outside are ghosted, as in the SVG preview, so they never hide the room
     const cam = cameraDirection(view);
-    for (const { face, mesh } of entries) {
+    for (const { face, mesh, ring } of entries) {
       const m = mesh.material;
+      if (ring) {
+        ring.visible = selectedLed != null && face.led === selectedLed;
+        ring.material.color.setHex(night ? SELECT_RING.night : SELECT_RING.day);
+      }
       if (face.glow) {
         m.blending = night && face.opacity < 1 ? THREE.AdditiveBlending : THREE.NormalBlending;
         m.opacity = night && face.opacity < 1 ? 0.6 : face.opacity;
@@ -237,8 +267,10 @@ export function createViewer(THREE) {
     update(nextFaces, nextView, opts = {}) {
       const key = opts.lookKey || '';
       if (nextFaces !== faces || key !== lookKey) { lookKey = key; build(nextFaces, opts); }
+      else for (const e of entries) if (e.mesh.position.lengthSq() || e.mesh.rotation.z) { e.mesh.position.set(0, 0, 0); e.mesh.rotation.set(0, 0, 0); } // drop a drag preview
       view = { ...nextView };
       selectedItem = view.sel?.kind === 'item' ? view.sel.index : null;
+      selectedLed = view.sel?.kind === 'led' ? view.sel.index : null;
       render();
     },
     /** Tint the piece under the pointer (item index, or null for none) and redraw if it changed. */
@@ -254,37 +286,66 @@ export function createViewer(THREE) {
       resize?.observe(parent);
     },
     /**
-     * The piece under a screen point (client px): its item index, or null when
-     * the first thing hit is the room shell, an overlay or nothing. Ghosted
-     * walls are see-through, so they don't block a pick.
+     * What is under a screen point (client px): the index of the piece
+     * (kind "item") or light (kind "led") hit first, or null when the first
+     * thing hit is something else or nothing. Ghosted walls are see-through,
+     * so they don't block a pick; for lights, the glow round a bulb counts.
      */
-    pick(clientX, clientY) {
+    pick(clientX, clientY, kind = 'item') {
       const r = canvas.getBoundingClientRect();
       if (!r.width || !r.height) return null;
       const ndc = new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
-      const solid = entries.filter((e) => e.mesh.visible && !e.face.glow && e.mesh.material.opacity >= 1).map((e) => e.mesh);
-      const hit = raycaster.intersectObjects(solid, false)[0];
+      const led = kind === 'led';
+      const targets = entries.filter((e) => e.mesh.visible && (led && e.face.glow ? e.face.led != null : !e.face.glow && e.mesh.material.opacity >= 1)).map((e) => e.mesh);
+      const hit = raycaster.intersectObjects(targets, false)[0];
       if (!hit) return null;
-      return entries.find((e) => e.mesh === hit.object)?.face.item ?? null;
+      const face = entries.find((e) => e.mesh === hit.object)?.face;
+      return (led ? face?.led : face?.item) ?? null;
     },
-    /** A client point where `item` is the front-most thing (for tests and tours), or null. */
-    pointFor(item) {
+    /** A client point where piece (or light) `index` is the front-most thing (for tests and tours), or null. */
+    pointFor(index, kind = 'item') {
       const r = canvas.getBoundingClientRect();
       const v = new THREE.Vector3();
+      const key = kind === 'led' ? 'led' : 'item';
       for (const { face, mesh } of entries) {
-        if (face.item !== item || !mesh.visible) continue;
+        if (face[key] !== index || !mesh.visible) continue;
         const pts = face.polys[0];
         const c = pts.reduce((s, p) => s.map((x, i) => x + p[i] / pts.length), [0, 0, 0]);
         v.set(...c).project(camera);
         const x = r.left + ((v.x + 1) / 2) * r.width, y = r.top + ((1 - v.y) / 2) * r.height;
-        if (this.pick(x, y) === item) return { x, y };
+        if (this.pick(x, y, kind) === index) return { x, y };
       }
       return null;
     },
+    /** Where a world point (model mm) lands on screen, in client px. */
+    project(p) {
+      const r = canvas.getBoundingClientRect();
+      const v = new THREE.Vector3(...p).project(camera);
+      return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
+    },
+    /**
+     * Show piece `item` moved while it's being dragged, without a rebuild:
+     * turned `turns` quarter turns about `centre` (world mm), then shifted by
+     * `offset`. null puts every piece back.
+     */
+    previewItem(item, xf) {
+      for (const e of entries) {
+        if (xf && e.face.item === item) {
+          const th = ((xf.turns || 0) * Math.PI) / 2, c = xf.centre || [0, 0, 0], o = xf.offset || [0, 0, 0];
+          const cs = Math.cos(th), sn = Math.sin(th);
+          e.mesh.rotation.set(0, 0, th);
+          e.mesh.position.set(c[0] - (cs * c[0] - sn * c[1]) + o[0], c[1] - (sn * c[0] + cs * c[1]) + o[1], o[2]);
+        } else if (e.mesh.position.lengthSq() || e.mesh.rotation.z) {
+          e.mesh.position.set(0, 0, 0);
+          e.mesh.rotation.set(0, 0, 0);
+        }
+      }
+      if (faces) render();
+    },
     /** What the viewer last drew with, without rendering (cheap, for tests). */
     shown() {
-      return { selected: selectedItem, hovered: hoverItem, zoom: view.zoom || 1 };
+      return { selected: selectedItem, selectedLed, hovered: hoverItem, zoom: view.zoom || 1 };
     },
     /** Render now and read back the pixels — for tests and thumbnails. */
     sample() {
@@ -304,6 +365,8 @@ export function createViewer(THREE) {
       return {
         lit: lit / (W * H), mean: lit ? sum / lit : 0, max, hash,
         textured: entries.filter((e) => e.texture).length,
+        untextured: entries.filter((e) => !e.texture && !e.face.glow).length,
+        texturesMade,
         textures: [...new Set(entries.filter((e) => e.texture).map((e) => e.texture.id))].sort(),
         texturesReady: [...textures.values()].every((t) => t.ready),
         meshes: entries.length, solids: entries.filter((e) => e.solid).length, flat: entries.filter((e) => !e.solid).length, pointLights: leds.visible ? leds.children.length : 0,

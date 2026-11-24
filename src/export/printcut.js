@@ -90,13 +90,17 @@ export function clipToRect(loop, x, y, w, h) {
 }
 
 // ------------------------------------------------------------- the parts
-const KNOWN = new Set(TEXTURES.map((t) => t.id));
+const KNOWN = new Set(TEXTURES.filter((t) => t.kind !== 'material').map((t) => t.id)); // raw finishes never print
 const suffix = (k) => (k < 26 ? '' : String.fromCharCode(96 + Math.floor(k / 26))) + String.fromCharCode(97 + (k % 26));
-/** Parts that get printed: [{ part, look }] where the part's material has a look. */
+/**
+ * Parts that get printed: [{ part, look }], the wallpaper and floor covering
+ * (part.print) whose material has a look. Furniture cut from the same paper
+ * or card stays plain, as the 3D view shows it.
+ */
 export function printableParts(compiled, kit) {
   const look = resolveLook(kit);
   for (const [mat, spec] of Object.entries(look)) if (!KNOWN.has(spec?.id)) delete look[mat]; // e.g. a retired texture in an old kit
-  return compiled.parts.filter((p) => look[p.material]).map((part) => ({ part, look: look[part.material] }));
+  return compiled.parts.filter((p) => p.print && look[p.material]).map((part) => ({ part, look: look[part.material] }));
 }
 
 /**
