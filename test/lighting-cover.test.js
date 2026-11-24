@@ -148,5 +148,5 @@ test('turning the cover on moves a back-wall power box into range (once)', () =>
   }
   const off = { power: { wall: 'back', pos: 300, elev: 25 }, cover: { enabled: true } };
   setCover(off, false, range);
-  assert.deepEqual([off.power.pos, off.power.elev], [300, 25], 'turning it off moves nothing');
+  assert.deepEqual([off.power.pos, off.power.elev], [300, 25], 'turning off a cover it did not move the box for moves nothing');
 });
