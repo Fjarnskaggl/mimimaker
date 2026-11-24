@@ -492,6 +492,9 @@ details.section > summary:has(.count)::after { margin-left: var(--space-2); }
 .plan-item.sel rect, .plan-item.sel ellipse { stroke: var(--mat); stroke-width: 2; }
 .plan-item.clash rect, .plan-item.clash ellipse { stroke: var(--clash); stroke-width: 1.8; stroke-dasharray: 3 2; fill: color-mix(in srgb, var(--clash) 18%, var(--plan-piece)); }
 .plan-led { cursor: grab; }
+/* snapping guides while dragging (plan and 3D): score pink reads on kraft, floor and wall */
+.plan-guide { stroke: var(--score); stroke-width: .8; stroke-dasharray: 3 2; stroke-linecap: round; }
+.plan-guide.wall { stroke-dasharray: none; }
 .plan-led circle { fill: #f2b13a; stroke: #8a5300; stroke-width: .6; }
 .plan-led .halo { fill: #f2b13a; fill-opacity: .22; stroke: none; pointer-events: none; }
 .plan-led.ceiling circle:not(.halo) { stroke-dasharray: 1.5 1; }

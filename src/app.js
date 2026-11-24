@@ -12,7 +12,7 @@ import { LED_COLORS } from './lighting.js';
 import { ledMapSVG, ledRows } from './ledmap.js';
 import { DEFAULT_MATERIALS, MACHINES, SCALES, TOOL_NAMES, withMaterialDefaults, formatMoney } from './materials.js';
 import { History } from './history.js';
-import { collisions, moveItem, rotateItem, slideOnWall, snap, itemParams, findFreeSpot } from './plan.js';
+import { collisions, moveItem, rotateItem, slideOnWall, snap, itemParams, findFreeSpot, snapFloorMove, snapWallMove } from './plan.js';
 import { planSVG, posOnWall } from './planview.js';
 import { fitCoupon, couponSVG, calibrate, estimateCutMinutes, formatMinutes } from './make.js';
 import { shareHash, kitFromHash, decodeKit, shareSummary, linkSizeNote, unwrapKitFile } from './share.js';
@@ -275,7 +275,8 @@ function select(sel) {
   else if (view.tab === 'preview') drawScene();
 }
 
-function renderInspector() {
+/** keepScroll: a refresh mid-drag stays where the person has scrolled to. */
+function renderInspector({ keepScroll = false } = {}) {
   const sb = $('#sidebar');
   if (view.step === 'make' || view.step === 'build') { sb.replaceChildren(); return; }
   const scroll = sb.scrollTop;
@@ -287,7 +288,7 @@ function renderInspector() {
   else if (e?.kind === 'led') content = ledInspector(e);
   else content = roomInspector();
   sb.replaceChildren(...content.filter(Boolean));
-  sb.scrollTop = e ? 0 : scroll;
+  sb.scrollTop = e && !keepScroll ? 0 : scroll;
 }
 
 const OPENING_KINDS = [['window', 'Window'], ['arch', 'Arched window'], ['round', 'Round window'], ['door', 'Door'], ['archdoor', 'Arched door']];
@@ -714,11 +715,17 @@ function selectedEntity() {
 }
 const isFloorItem = (e) => e?.kind === 'item' && e.def?.placement === 'floor';
 
-function drawPlan() {
+function drawPlan(guides = []) {
   const host = document.querySelector('.plan-canvas');
   if (!host) return;
   const clashes = new Set(collisions(kit).flat());
-  host.innerHTML = planSVG(kit, { selected: view.sel, clashes });
+  host.innerHTML = planSVG(kit, { selected: view.sel, clashes, guides });
+}
+
+/** Snap reach: about 8 screen px, in plan cm. */
+function planReach(canvas) {
+  const k = canvas.querySelector('svg')?.getScreenCTM()?.a;
+  return k > 0 ? 8 / k : 3;
 }
 
 function planAction(action) {
@@ -756,6 +763,12 @@ function nudge(dx, dy) {
   changed();
 }
 
+function entityHeight(e) {
+  if (e.kind === 'opening') return e.obj.height;
+  if (e.kind === 'item') return itemSize(e.obj.type, itemParams(e.obj))[2];
+  return 0;
+}
+
 function entityWidth(e) {
   if (e.kind === 'opening') return e.obj.width;
   if (e.kind === 'item') return itemSize(e.obj.type, itemParams(e.obj))[0];
@@ -774,8 +787,9 @@ function buildPlan(bar) {
     if (!target) { select(null); return; }
     const kind = target.dataset.index != null ? 'item' : target.dataset.oi != null ? 'opening' : 'led';
     const index = Number(target.dataset.index ?? target.dataset.oi ?? target.dataset.li);
+    const same = view.sel?.kind === kind && view.sel.index === index;
     view.sel = { kind, index };
-    renderInspector();
+    renderInspector({ keepScroll: same }); // grabbing the selected piece again keeps the sidebar where it was
     const e = selectedEntity();
     // The plan re-renders while dragging, so always measure against the
     // SVG that is on screen now (a detached one has no screen position).
@@ -788,29 +802,48 @@ function buildPlan(bar) {
     };
     const p0 = toPlan(ev.clientX, ev.clientY);
     const start = { x: e.obj.x ?? 0, y: e.obj.y ?? 0, pos: e.obj.pos ?? 0 };
-    let moved = false;
+    const grab = e.obj.wall ? posOnWall(e.obj.wall, p0, kit.room) - start.pos : 0; // keep the grab point under the pointer
+    const reach = planReach(canvas);
+    let moved = false, frame = 0, guides = [];
+    const paint = () => { // once per frame: the plan, its guides and the inspector's position fields
+      frame = 0;
+      drawPlan(guides);
+      renderInspector({ keepScroll: true });
+    };
     const onMove = (mv) => {
       const p = toPlan(mv.clientX, mv.clientY);
       const dx = p[0] - p0[0], dy = p[1] - p0[1];
       if (!moved && Math.hypot(dx, dy) < 1) return;
       moved = true;
-      const step = mv.altKey ? 0 : view.snap;
-      if (isFloorItem(e)) moveItem(kit, index, start.x + dx, start.y + dy, { step });
-      else if (e.obj.wall && (e.kind !== 'led' || e.obj.mount === 'wall')) slideOnWall(e.obj, posOnWall(e.obj.wall, p, kit.room), kit.room, { width: entityWidth(e), step });
-      else if (e.kind === 'led') {
+      const free = mv.altKey || !view.snap; // Snap Off means no pull to pieces or walls either
+      const step = free ? 0 : view.snap;
+      guides = [];
+      if (isFloorItem(e)) {
+        const r = snapFloorMove(kit, index, start.x + dx, start.y + dy, { grid: step, reach, free });
+        e.obj.x = r.x; e.obj.y = r.y; guides = r.guides;
+      } else if (e.obj.wall && (e.kind !== 'led' || e.obj.mount === 'wall')) {
+        const hgt = entityHeight(e);
+        const elev = e.kind === 'opening' ? (e.obj.sill ?? 0) + hgt / 2 : e.obj.elev ?? 0;
+        const r = snapWallMove(kit, { kind, index }, posOnWall(e.obj.wall, p, kit.room) - grab, elev,
+          { w: entityWidth(e), h: hgt, grid: step, reach, free });
+        e.obj.pos = r.pos; guides = r.guides.filter((g) => g.axis === 'pos'); // the plan shows positions along the wall
+      } else if (e.kind === 'led') {
         e.obj.x = Math.min(Math.max(snap(start.x + dx, step), 0), kit.room.width);
         e.obj.y = Math.min(Math.max(snap(start.y + dy, step), 0), kit.room.depth);
       }
-      drawPlan();
+      if (!frame) frame = requestAnimationFrame(paint);
     };
     const onUp = () => {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      cancelAnimationFrame(frame);
       if (moved) restructured(); else drawPlan();
       canvas.focus({ preventScroll: true });
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp); // a touch taken over by the browser ends the drag too
     ev.preventDefault();
     drawPlan();
   });
