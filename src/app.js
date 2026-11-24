@@ -8,7 +8,7 @@
 import { compileKit } from './kit.js';
 import { CATALOG, defaultKit, defaultMaterialFor } from './catalog.js';
 import { ROOM_TYPES, applyRoomType } from './templates.js';
-import { LED_COLORS } from './lighting.js';
+import { LED_COLORS, normalizeLighting } from './lighting.js';
 import { ledMapSVG, ledRows } from './ledmap.js';
 import { DEFAULT_MATERIALS, MACHINES, SCALES, TOOL_NAMES, withMaterialDefaults, formatMoney } from './materials.js';
 import { History } from './history.js';
@@ -130,12 +130,7 @@ function normalizeKit(k) {
   out.materials = out.materials.map(withMaterialDefaults);
   out.openings = Array.isArray(k.openings) ? k.openings : [];
   out.items = Array.isArray(k.items) ? k.items : [];
-  const L = k.lighting || {};
-  out.lighting = {
-    enabled: !!L.enabled, holeDiameter: L.holeDiameter || 3,
-    power: { wall: 'back', pos: 20, elev: 20, kind: 'battery', ...(L.power || {}) },
-    leds: Array.isArray(L.leds) ? L.leds : [],
-  };
+  out.lighting = normalizeLighting(k.lighting || {}); // keeps the cable cover across undo, reload and files
   return out;
 }
 
@@ -499,7 +494,7 @@ function lightingInspector() {
     const on = L.enabled && compiled?.lighting?.enabled;
     return [
       inspHead('Lighting', 'Circuit', `${shellLeds.length} light${shellLeds.length === 1 ? '' : 's'}`),
-      on ? renderCircuitSummary(compiled.lighting.circuit) : notice('info', 'Lights are off.', 'Turn them on under Power to wire the shell\'s LEDs.'),
+      on ? renderCircuitSummary(compiled.lighting.circuit) : !L.enabled ? lightsOffNotice('to wire the shell\'s LEDs') : null,
       section('Lights', [
         h('p', { class: 'hint', 'data-shell-lights': '' }, 'The shell places these LEDs itself (behind an alley\'s lit windows, under shelves, floors and roofs). Change the shell in its panel to move them.'),
         h('div', { class: 'insp-list' }, shellLeds.map((led) => h('div', { class: 'insp-row' },
@@ -527,7 +522,7 @@ function lightingInspector() {
   const on = L.enabled && compiled?.lighting?.enabled;
   return [
     inspHead('Lighting', 'Circuit', `${L.leds.length} light${L.leds.length === 1 ? '' : 's'}`),
-    on ? renderCircuitSummary(compiled.lighting.circuit) : notice('info', 'Lights are off.', 'Turn them on under Power to cut the wire holes.'), // [T5] circuit summary
+    on ? renderCircuitSummary(compiled.lighting.circuit) : !L.enabled ? lightsOffNotice('to cut the wire holes') : null, // [T5] circuit summary
     section('Lights', [
       h('div', { class: 'insp-list' }, rows),
       h('div', { class: 'add-row' },
@@ -539,6 +534,14 @@ function lightingInspector() {
   ];
 }
 
+/** "Lights are off" with a button that turns them on (the Power section starts closed). */
+function lightsOffNotice(why) {
+  const n = notice('info', 'Lights are off.', `Turn them on ${why}.`);
+  n.querySelector('div').append(' ', h('button', { type: 'button', class: 'mm-btn mm-btn--sm', 'data-action': 'lights-on', onclick: turnLightsOn }, 'Turn lights on'));
+  return n;
+}
+function turnLightsOn() { kit.lighting.enabled = true; restructured(); }
+
 function lightingInspectorPower(L) {
   return [
     checkField('Lights on (cut the wire holes)', L.enabled, (v) => { L.enabled = v; restructured(); }),
@@ -547,12 +550,13 @@ function lightingInspectorPower(L) {
       numberField('Wire hole', L.holeDiameter, (v) => { L.holeDiameter = Math.max(1, v); changed(); }, { min: 1, max: 8, step: 0.5, unit: 'mm' })),
     renderMountField(L.power, restructured), // [T5] mount picker (restructured: the base adds switch fields)
     renderSwitchFields(L.power, changed), // [T5] hidden base switch
-    renderCoverField(L, { checkField, restructured, range: compiled.lighting?.coverRange }), // [T5] cable cover
+    renderCoverField(L, { checkField, restructured, toast, range: () => compiled?.lighting?.coverRange }), // read on change: the supply may have changed since // [T5] cable cover
     renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
-    h('div', { class: 'grid3' },
+    // a hidden base sits on the floor, so its height does nothing there
+    h('div', { class: L.power.mount === 'base' ? 'grid2' : 'grid3' },
       selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
       numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
-      numberField('Height', L.power.elev, (v) => { L.power.elev = v; changed(); }, { min: 0, unit: 'cm' })),
+      L.power.mount === 'base' ? null : numberField('Height', L.power.elev, (v) => { L.power.elev = v; changed(); }, { min: 0, unit: 'cm' })),
   ];
 }
 
@@ -940,11 +944,13 @@ function onKey(ev) {
     if (view.sel) select(null);
     return;
   }
-  if (typing) return;
   const mod = ev.ctrlKey || ev.metaKey;
   const key = ev.key.toLowerCase();
-  if (mod && key === 'z') { ev.preventDefault(); ev.shiftKey ? redo() : undo(); return; }
-  if (mod && key === 'y') { ev.preventDefault(); redo(); return; }
+  // a checkbox, radio or select has no text of its own to undo, so the app's
+  // undo works there too, the same as the Undo button
+  const textEntry = tag === 'TEXTAREA' || (tag === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color)$/.test(ev.target.type));
+  if (mod && !textEntry && !document.querySelector('dialog[open]') && (key === 'z' || key === 'y')) { ev.preventDefault(); key === 'y' || ev.shiftKey ? redo() : undo(); return; }
+  if (typing) return;
   if (mod || ev.altKey) return;
   // the plan and Design's 3D view share the shortcuts; in 3D only while nothing
   // else has focus, so a focused list button keeps its own keys
@@ -963,7 +969,11 @@ function onKey(ev) {
 function renderWiring(el) {
   if (!el) return;
   if (!compiled.lighting?.enabled || !compiled.lighting.leds.length) {
-    el.replaceChildren(h('p', { class: 'hint' }, 'Add a light to see its wire route, holes and lead lengths here.'));
+    const off = !kit.lighting.enabled && (kit.lighting.leds.length || shellWiresLights(kit));
+    el.replaceChildren(off
+      ? h('div', { class: 'map-head' }, h('p', { class: 'hint' }, 'Lights are off, so no wire holes are cut. Turn them on to see each wire route, hole and lead length here.'),
+        h('button', { type: 'button', class: 'mm-btn mm-btn--sm', 'data-action': 'lights-on', onclick: turnLightsOn }, 'Turn lights on'))
+      : h('p', { class: 'hint' }, 'Add a light to see its wire route, holes and lead lengths here.'));
     return;
   }
   const rows = ledRows(compiled);

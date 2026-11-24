@@ -118,6 +118,82 @@ test('flow: power the lights, hide the battery in a base, and get the base parts
   await page.context().close();
 });
 
+test('flow: wiring toggles undo themselves, agree with Undo, and survive a reload', async () => {
+  const page = await F.openApp(browser, URL);
+  await page.click('[data-step=light]');
+  await openAll(page);
+  const power = async () => { const p = (await F.kit(page)).lighting.power; return [p.pos, p.elev]; };
+  const shown = () => page.evaluate(() => ['Along wall', 'Height'].map((t) => [...document.querySelectorAll('#sidebar label.field')].find((l) => l.textContent.startsWith(t))?.querySelector('input').value));
+  const start = await power();
+  const cover = page.locator('input[data-t5=cover]');
+
+  // tick the cover: the box moves into it, and a toast says so
+  await F.expectRedraw(page, STAGE, () => cover.check(), 'turning the cable cover on');
+  const moved = await power();
+  assert.notDeepEqual(moved, start, 'the box moves inside the cover');
+  assert.match(await page.locator('.toasts').innerText(), /Moved the power box to/);
+  assert.ok(!(await page.evaluate(() => window.mimimaker.compiled.warnings.some((w) => /cable cover/.test(w.msg)))), 'no cover warning once moved');
+
+  // untick: the box goes back, and the fields show it
+  await openAll(page);
+  await F.expectRedraw(page, STAGE, () => page.locator('input[data-t5=cover]').uncheck(), 'turning the cable cover off');
+  assert.deepEqual(await power(), start, 'unticking puts the box back');
+  assert.deepEqual(await shown(), start.map(String), 'the Power fields show it back too');
+  assert.match(await page.locator('.toasts').innerText(), /back to/);
+
+  // Undo agrees with the checkbox: undo re-ticks it with the box moved, undo again is the start
+  await page.click('#btn-undo');
+  assert.equal((await F.kit(page)).lighting.cover?.enabled, true, 'undo brings the cover back');
+  assert.deepEqual(await power(), moved);
+  await openAll(page);
+  assert.equal(await page.locator('input[data-t5=cover]').isChecked(), true, 'and the box is ticked');
+  await page.click('#btn-undo');
+  assert.equal((await F.kit(page)).lighting.cover, undefined);
+  assert.deepEqual(await power(), start);
+
+  // Ctrl+Z works while a select still has focus, the same as the Undo button
+  await openAll(page);
+  await page.selectOption('select[data-t5=supply]', 'cr2032');
+  assert.equal((await F.kit(page)).lighting.power.supply, 'cr2032');
+  await page.focus('select[data-t5=supply]');
+  await page.keyboard.press('Control+z');
+  await page.waitForFunction(() => window.mimimaker.kit.lighting.power.supply !== 'cr2032', null, { timeout: 3000 });
+
+  // the cover stays on after a reload
+  await openAll(page);
+  await page.locator('input[data-t5=cover]').check();
+  await page.reload();
+  await F.ready(page);
+  assert.equal((await F.kit(page)).lighting.cover?.enabled, true, 'reload keeps the cover');
+  await page.click('[data-step=light]');
+  await openAll(page);
+  assert.equal(await page.locator('input[data-t5=cover]').isChecked(), true);
+  assert.ok(await page.evaluate(() => window.mimimaker.compiled.parts.some((p) => p.name === 'Cable cover panel')), 'and its parts are cut');
+
+  // in a hidden base the Height field goes: the base sits on the floor
+  await page.selectOption('select[data-t5=mount]', 'base');
+  await openAll(page);
+  assert.deepEqual((await shown())[1], undefined, 'no Height field for a hidden base');
+  await page.selectOption('select[data-t5=mount]', 'outside');
+  await openAll(page);
+  assert.ok((await shown())[1] != null, 'Height is back for a box on the wall');
+
+  // lights off: the inspector and the wiring view both say so and turn them back on
+  await page.locator('#sidebar label.check', { hasText: 'Lights on' }).locator('input').uncheck();
+  await page.click('[data-view=wiring]');
+  assert.match(await page.locator('.wiring').innerText(), /Lights are off/, 'the wiring view says the lights are off, not that there are none');
+  await page.click('.wiring [data-action=lights-on]');
+  assert.equal((await F.kit(page)).lighting.enabled, true);
+  assert.ok(await page.locator('.map-wrap svg').isVisible(), 'the LED map is back');
+  await page.locator('#sidebar label.check', { hasText: 'Lights on' }).locator('input').uncheck();
+  await page.click('#sidebar [data-action=lights-on]');
+  assert.equal((await F.kit(page)).lighting.enabled, true, 'the inspector button turns them on too');
+
+  await F.shot(page, 'wiring-toggles');
+  F.assertClean(page);
+  await page.context().close();
+});
+
 test('flow: in Realistic 3D, adding and recolouring a light shows at once', async () => {
   const page = await F.openApp(browser, URL, { webgl: true });
   await page.click('[data-step=light]');

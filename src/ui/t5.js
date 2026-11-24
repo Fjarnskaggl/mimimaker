@@ -109,11 +109,14 @@ export function renderSupplyField(power, onChange) {
 export const EFFECT_OPTIONS = Object.entries(EFFECTS).map(([id, e]) => [id, e.name]);
 const EFFECT_KEYS = ['bulbs', 'lengthMm', 'ledsPerM', 'sizeMm'];
 
-/** Set a light's effect, filling that effect's defaults and dropping fields it doesn't use. */
+/** Set a light's effect: a different effect starts from its own defaults; the same one keeps what was typed. */
 export function setEffect(led, id) {
   const effect = EFFECTS[id] ? id : 'steady';
   const defaults = EFFECTS[effect].defaults || {};
-  for (const k of EFFECT_KEYS) if (!(k in defaults)) delete led[k];
+  // a new effect starts from its own defaults: a fairy string's 500 mm is not a
+  // strip's length, nor a fan's blade span a turntable's platform
+  const fresh = effect !== effectOf(led);
+  for (const k of EFFECT_KEYS) if (fresh || !(k in defaults)) delete led[k];
   for (const [k, v] of Object.entries(defaults)) if (led[k] == null) led[k] = v;
   if (effect === 'steady') delete led.effect;
   else led.effect = effect;
@@ -217,23 +220,55 @@ export function renderShoppingButton(onDownload) {
 /**
  * Turn the back-wall cable cover on or off; off is stored as nothing. Turning
  * it on moves a power box glued to the back wall into `range` (from
- * compiled.lighting.coverRange) so the cover opens without a warning.
+ * compiled.lighting.coverRange) so the cover opens without a warning, and
+ * remembers where it was; turning it off again puts the box back there, unless
+ * it has been moved since. Returns the move made, { from, to } in [pos, elev],
+ * or null.
  */
 export function setCover(lighting, on, range) {
-  if (!on) { delete lighting.cover; return lighting; }
-  lighting.cover = { ...(lighting.cover || {}), enabled: true };
   const p = lighting.power;
-  if (range && p && (p.wall || 'back') === 'back' && p.mount !== 'flush' && p.mount !== 'base') {
-    const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v ?? lo));
-    p.pos = clamp(p.pos, range.pos);
-    p.elev = clamp(p.elev, range.elev);
+  const glued = p && (p.wall || 'back') === 'back' && p.mount !== 'flush' && p.mount !== 'base';
+  if (!on) {
+    const moved = lighting.cover?.moved;
+    delete lighting.cover;
+    if (moved && glued && p.pos === moved.to[0] && p.elev === moved.to[1]) {
+      put(p, moved.from);
+      return { from: moved.to, to: moved.from };
+    }
+    return null;
   }
-  return lighting;
+  const { moved: _old, ...rest } = lighting.cover || {};
+  lighting.cover = { ...rest, enabled: true };
+  if (!range || !glued) return null;
+  const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v ?? lo));
+  const from = [p.pos ?? 0, p.elev ?? 0]; // where the box is drawn when it has no position yet
+  const to = [clamp(p.pos, range.pos), clamp(p.elev, range.elev)];
+  if (from[0] === to[0] && from[1] === to[1]) return null;
+  put(p, to);
+  lighting.cover.moved = { from, to };
+  return { from, to };
+}
+const put = (p, [pos, elev]) => { p.pos = pos; p.elev = elev; };
+
+/** Plain words for a power box move made by setCover, for a toast. */
+export function coverMoveText(move, on) {
+  if (!move) return null;
+  const [pos, elev] = move.to;
+  return on
+    ? `Moved the power box to ${pos} cm along, ${elev} cm up, so the cover fits round it.`
+    : `Moved the power box back to ${pos} cm along, ${elev} cm up.`;
 }
 
-/** "Hide wires behind a cover" checkbox, built with the app's checkField. ui: { checkField, restructured, range } */
+/**
+ * "Hide wires behind a cover" checkbox, built with the app's checkField.
+ * ui: { checkField, restructured, range (or a function giving it, read on change), toast? }
+ */
 export function renderCoverField(lighting, ui) {
-  const field = ui.checkField('Hide wires behind a cover (back wall)', !!lighting.cover?.enabled, (v) => { setCover(lighting, v, ui.range); ui.restructured(); });
+  const field = ui.checkField('Hide wires behind a cover (back wall)', !!lighting.cover?.enabled, (v) => {
+    const text = coverMoveText(setCover(lighting, v, typeof ui.range === 'function' ? ui.range() : ui.range), v);
+    ui.restructured();
+    if (text) ui.toast?.(text);
+  });
   field.querySelector('input')?.setAttribute('data-t5', 'cover');
   return field;
 }
