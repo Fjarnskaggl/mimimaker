@@ -79,7 +79,7 @@ Every item above is fixed.
 | #119 | Potted plant, little plant, potted tree, garden planter: soil tops with slots, stems that stand on the pot floor, and cross-lap slits in the tree crowns. |
 | #122 | Coat stand in a slotted base. Crib with the mattress between the ends and slats of at least 3 mm. The library ladder became an A-frame step ladder (two ladders glued at the top). The fire screen is three panels angled into a zigzag. Adds a check that every floor piece stands on more than a line. |
 | #124 | Boxes too thin to finger-joint (mantel, piano legs, armchair and loveseat arms) and the row of books are laminated from stacked layers. Fireplace sill, dressing-table frame and mirror, and vanity basin margin. |
-| PR 5 | The spiral stair post is a bought dowel, drawn in 3D and listed in the bill. Motor mounts, the cable cover, the hatch stops and the switch mount are drawn where they go. |
+| #126 | The spiral stair post is a bought dowel, drawn in 3D and listed in the bill. Motor mounts, the cable cover, the hatch stops and the switch mount are drawn where they go. |
 
 Still open:
 
