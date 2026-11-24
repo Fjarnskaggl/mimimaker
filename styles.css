@@ -112,7 +112,8 @@ body {
   display: flex; flex-direction: column;
 }
 button, input, select, textarea, .button { font: inherit; color: inherit; }
-.mm-panel:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* the stitching uses outline, so focus has to win it back */
+:is(.mm-panel, .rail, .inspector, .drawer, .page, .stage-wrap.flow .wiring, .mm-popover, .share-pop, dialog.start, dialog.submit):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .mm-ic { width: 18px; height: 18px; flex: none; }
@@ -273,7 +274,7 @@ button:disabled, .mm-btn:disabled { opacity: .45; cursor: not-allowed; backgroun
 .stage .scene-svg:active { cursor: grabbing; }
 .stage.t6-over-piece .scene-svg { cursor: pointer; } /* a click would select the piece under the pointer */
 .stage.night { --select: #a9baff; } /* the stage is dark at night in both themes: the light ballpoint */
-.stage .scene-svg path.sel { stroke: var(--select); }
+.stage .scene-svg path.sel { stroke: var(--select); filter: drop-shadow(0 0 1px var(--select-halo)); } /* the halo keeps it readable on any wallpaper */
 .stage .scene-svg path.sel-led { stroke: var(--select); }
 .stage .scene-svg path.hover:not(.sel) { stroke: var(--select); stroke-width: calc(0.5px / var(--scene-zoom, 1)); stroke-opacity: 0.8; }
 .stage canvas { touch-action: none; cursor: grab; }
@@ -282,7 +283,11 @@ button:disabled, .mm-btn:disabled { opacity: .45; cursor: not-allowed; backgroun
 .stage.night { background: var(--night-bg); }
 /* T6 move handles over the 3D view: card knobs with a coloured edge per axis
    (score = across the room, select = toward the front, warning amber = up),
-   the ballpoint ring for turning, score-pink snapping guides. No green. */
+   an ink ring and plane for turning and sliding, score-pink snapping guides.
+   No green. On the night stage the handles take the dark theme's brighter
+   values, so they stay visible on the dark room in either theme. */
+.t6-gizmo { --ax-turn: var(--ink); }
+.stage.night .t6-gizmo { --score: #ff86ad; --warning: #ffc533; --ax-turn: #f6ead2; }
 .t6-gizmo { position: absolute; z-index: 1; pointer-events: none; overflow: visible; }
 .gizmo-handle { pointer-events: auto; cursor: grab; --ax: var(--select); }
 .t6-gizmo.dragging .gizmo-handle { cursor: grabbing; }
@@ -295,8 +300,8 @@ button:disabled, .mm-btn:disabled { opacity: .45; cursor: not-allowed; backgroun
 .gizmo-handle .knob { fill: var(--surface); stroke: var(--ax); stroke-width: 2.5; filter: drop-shadow(0 1px 2px rgba(40,22,5,.35)); transition: transform 120ms ease-out; transform-box: fill-box; transform-origin: center; }
 .gizmo-handle .glyph { fill: none; stroke: var(--ax); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .gizmo-handle:hover .knob, .gizmo-handle.active .knob { transform: scale(1.18); }
-.gizmo-handle.plane .knob { fill: color-mix(in srgb, var(--select) 22%, transparent); stroke: var(--select); stroke-width: 1.5; stroke-linejoin: round; }
-.gizmo-handle.ring .line { stroke: var(--select); stroke-width: 2; stroke-dasharray: 5 4; opacity: .8; }
+.gizmo-handle.plane .knob { fill: color-mix(in srgb, var(--ax-turn) 18%, transparent); stroke: var(--ax-turn); stroke-width: 1.5; stroke-linejoin: round; }
+.gizmo-handle.ring .line { stroke: var(--ax-turn); stroke-width: 2; stroke-dasharray: 5 4; opacity: .8; }
 .gizmo-handle.ring:hover .line, .gizmo-handle.ring.active .line { stroke-dasharray: none; opacity: 1; }
 .gizmo-origin { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; }
 .gizmo-guide { stroke: var(--score); stroke-width: 1.5; stroke-dasharray: 4 3; stroke-linecap: round; }

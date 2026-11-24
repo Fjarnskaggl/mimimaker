@@ -58,10 +58,9 @@ for (const scheme of ['light', 'dark']) {
     assert.match(panel.bg, /repeating-linear-gradient/, 'drawn as flutes');
     const tape = await page.evaluate(() => getComputedStyle(document.querySelector('[data-step][aria-current=step]')).backgroundColor);
     assert.equal(tape, 'rgb(226, 180, 126)', 'the current step is caramel tape');
-    const shots = [];
     const check = async (name) => {
       assert.deepEqual(await greens(page), [], `${name}: no green or teal`);
-      if (process.env.SHOT_DIR) shots.push(page.screenshot({ path: `${process.env.SHOT_DIR}/theme-${scheme}-${name}.png` }));
+      if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/theme-${scheme}-${name}.png` });
     };
     await check('design');
     await page.click('.rail button >> nth=0');
@@ -70,7 +69,6 @@ for (const scheme of ['light', 'dark']) {
       await page.locator('.t5-circuit, .sheet-card, .t4-mode').first().waitFor({ timeout: 5000 });
       await check(step);
     }
-    await Promise.all(shots);
     F.assertClean(page);
     await ctx.close();
   });
