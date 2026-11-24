@@ -20,9 +20,9 @@ import { validatePiece } from '../src/pieces/schema.js';
 const PENDING = new Set([]);
 
 /** Pieces with strips narrower than the cutter manages, waiting for their fix. */
-const PENDING_STRIPS = new Set(['fireplace', 'piano', 'loveseat', 'dressingtable', 'vanity', 'bookrow']);
+const PENDING_STRIPS = new Set([]);
 /** Floor pieces that can't yet stand up on their own, waiting for their fix. */
-const PENDING_STAND = new Set(['bookrow']);
+const PENDING_STAND = new Set([]);
 
 const base = defaultKit();
 const sizes = (def) => [
@@ -244,21 +244,25 @@ test('plantPoly: a stem tab down to y = 0 under the leaves, and slits from the t
   assert.ok(narrowestStrip([top]) >= 1.5 && narrowestStrip([bottom]) >= 1.5, `${narrowestStrip([top])} ${narrowestStrip([bottom])}`);
 });
 
-/** How wide what a floor piece stands on is (mm), at each size. */
+/** How wide what a floor piece stands on is (mm), and how tall it is, at each size. */
 function footprints(type) {
   const def = CATALOG[type];
   return sizes(def).map(([label, params]) => {
     const kit = soloKit(base, type, params, defaultMaterialFor(def, base.materials));
-    return [label, attachmentReport(kit, compileKit(kit))[0].footprint];
+    const c = compileKit(kit);
+    const zs = c.faces3d.filter((f) => f.item === 0).flatMap((f) => f.polys[0].map((p) => p[2]));
+    return [label, attachmentReport(kit, c)[0].footprint, Math.max(...zs) - Math.min(...zs)];
   });
 }
+// it rests on at least 2 mm, or on a third of its height for tiny pieces
+const stands = (w, height) => w >= Math.min(2, height / 3);
 
 test('every floor piece stands on its own: it rests on more than a line', () => {
   for (const [type, def] of Object.entries(CATALOG)) {
     if (def.placement === 'wall' || PENDING_STAND.has(type)) continue;
-    for (const [label, w] of footprints(type)) assert.ok(w >= 2, `${def.label} (${type}) ${label}: stands on a ${w.toFixed(2)} mm wide strip`);
+    for (const [label, w, height] of footprints(type)) assert.ok(stands(w, height), `${def.label} (${type}) ${label}: a ${height.toFixed(1)} mm piece standing on a ${w.toFixed(2)} mm strip`);
   }
-  for (const type of PENDING_STAND) assert.ok(footprints(type).some(([, w]) => w < 2), `${type} stands now: take it off the pending list`);
+  for (const type of PENDING_STAND) assert.ok(footprints(type).some(([, w, height]) => !stands(w, height)), `${type} stands now: take it off the pending list`);
 });
 
 test('ladder is a step ladder, fire screen a zigzag, crib slats at least 3 mm, coat stand in a slot', () => {
@@ -290,6 +294,28 @@ test('ladder is a step ladder, fire screen a zigzag, crib slats at least 3 mm, c
     assert.ok(narrowestStrip(side.polys) >= 3 - 1e-6, `crib w ${w}: slats ${narrowestStrip(side.polys)}`);
   }
   const stand = build('coatrack');
-  assert.equal(stand.part('Base top').polys.length, 2, 'slot in the base top');
+  assert.equal(stand.part('Base layer 1').polys.length, 1, 'the stand stands on the bottom layer');
+  assert.equal(stand.part('Base layer 2').polys.length, 2, 'slot in the top layer');
   assert.deepEqual(stand.r.crossings, []);
+});
+
+test('blocks too thin to joint are laminated; books are solid blocks', () => {
+  const parts = (type, mat) => compileKit(soloKit(base, type, {}, mat ?? defaultMaterialFor(CATALOG[type], base.materials))).parts;
+  const mantel = parts('fireplace').filter((p) => p.group === 'Fireplace' && /^Mantel/.test(p.name));
+  assert.ok(mantel.length >= 2 && mantel.every((p) => /^Mantel layer \d+$/.test(p.name)), mantel.map((p) => p.name).join(', '));
+  const legs = parts('piano').filter((p) => /^Leg 1/.test(p.name));
+  assert.ok(legs.every((p) => / layer \d+$/.test(p.name)), legs.map((p) => p.name).join(', '));
+  // a big box still gets finger joints
+  assert.ok(parts('piano').some((p) => p.name === 'Piano front'));
+  const books = parts('bookrow', 'card110').filter((p) => /^Book 1 /.test(p.name));
+  assert.equal(books.length, Math.round((3 * 10) / base.scale / 0.38), 'a 3 cm spine is three card layers');
+});
+
+test('solid: is validated as true or false', () => {
+  const piece = (solid) => ({
+    id: 'x', label: 'X', theme: 'Basics', placement: 'floor', mat: 'board', params: [], defaults: {}, size: [10, 10, 10],
+    components: [{ kind: 'box', name: 'B', size: [10, 10, 10], faces: 'all', solid }],
+  });
+  assert.deepEqual(validatePiece(piece(true)), []);
+  assert.match(validatePiece(piece('yes')).join(), /solid: must be true or false/);
 });

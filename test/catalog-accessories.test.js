@@ -70,16 +70,16 @@ test('accessories compile on cardstock without errors or warnings at their defau
   }
 });
 
-test('row of books: one spine per book, heights vary with the seed but repeat for the same seed', () => {
+test('row of books: one solid block per book, heights vary with the seed but repeat for the same seed', () => {
   const books = build('bookrow', { count: 9, seed: 7 });
   assert.equal(books.length, 9);
-  const heights = (b) => b.map((c) => Math.max(...c.polys[0].map((p) => p[1])));
+  assert.ok(books.every((b) => b.kind === 'box' && b.solid), 'laminated card blocks');
+  const heights = (b) => b.map((c) => c.size[2]);
   const h = heights(books);
   assert.ok(new Set(h.map((x) => x.toFixed(4))).size > 3, 'heights vary');
   for (const x of h) assert.ok(x <= model('bookrow').h + 1e-9);
   assert.deepEqual(heights(build('bookrow', { count: 9, seed: 7 })), h, 'same seed, same row');
   assert.notDeepEqual(heights(build('bookrow', { count: 9, seed: 8 })), h, 'another seed, another row');
-  for (const b of books) assert.equal(b.scores.length, 2, `${b.name}: two spine bands`);
 });
 
 test('poster: aspect follows its shape; a zero margin has no score', () => {

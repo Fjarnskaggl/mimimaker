@@ -140,12 +140,12 @@
    "box:Mantel"
   ],
   "cases": {
-   "defaults@board": "9b4424c78e5c12c9",
-   "defaults@card": "44cb9bb868bb814e",
-   "min@board": "8b11e34a59a73fdd",
-   "min@card": "68563f40af3993de",
-   "max@board": "e6c0a42f56af066c",
-   "max@card": "aaa888fa5795ee6f"
+   "defaults@board": "98ca36a87b56830d",
+   "defaults@card": "fcbe1dbedbfe0cbf",
+   "min@board": "547e292d4e10d28e",
+   "min@card": "cdecc9caf8cd3ac0",
+   "max@board": "5dbc8cbcd3c4b4c2",
+   "max@card": "d918098c54f7b689"
   }
  },
  "tvstand": {
@@ -373,12 +373,12 @@
    "flat:Mirror frame"
   ],
   "cases": {
-   "defaults@board": "81753b8048cdaecf",
-   "defaults@card": "81753b8048cdaecf",
-   "min@board": "dc62c0e7a6f62902",
-   "min@card": "dc62c0e7a6f62902",
-   "max@board": "5d25a3fb4aab7f41",
-   "max@card": "5d25a3fb4aab7f41"
+   "defaults@board": "8e7c6b9681c5cd70",
+   "defaults@card": "6e5bba784a5063d9",
+   "min@board": "aebcfa676a51b89f",
+   "min@card": "31b9363bd3ce8702",
+   "max@board": "5f7abf616f19f0e4",
+   "max@card": "1e69455b803992e4"
   }
  },
  "crib": {
@@ -528,12 +528,12 @@
    "box:Vanity"
   ],
   "cases": {
-   "defaults@board": "91b74b21cf1b65f1",
-   "defaults@card": "3f22f88701a2cc88",
-   "min@board": "b4ea3189b8028557",
-   "min@card": "059946e4e62a901c",
-   "max@board": "2f12d06113815c05",
-   "max@card": "0e534fcfcbae85b3"
+   "defaults@board": "3f3b405ef092a0be",
+   "defaults@card": "40139c346e92816f",
+   "min@board": "304557fc63af3653",
+   "min@card": "c2667376aeb0a8c1",
+   "max@board": "13aac694b024dede",
+   "max@card": "b4808ce9ee54d599"
   }
  },
  "toilet": {
@@ -920,24 +920,24 @@
  },
  "bookrow": {
   "label": "Row of books",
-  "meta": "dc122172ea77a1d0",
+  "meta": "d250151305023595",
   "components": [
-   "flat:Book 1",
-   "flat:Book 2",
-   "flat:Book 3",
-   "flat:Book 4",
-   "flat:Book 5",
-   "flat:Book 6",
-   "flat:Book 7",
-   "flat:Book 8"
+   "box:Book 1",
+   "box:Book 2",
+   "box:Book 3",
+   "box:Book 4",
+   "box:Book 5",
+   "box:Book 6",
+   "box:Book 7",
+   "box:Book 8"
   ],
   "cases": {
-   "defaults@board": "17bebd9397a644ce",
-   "defaults@card": "17bebd9397a644ce",
-   "min@board": "4e9868fc76332dfa",
-   "min@card": "4e9868fc76332dfa",
-   "max@board": "06c88cd32034040a",
-   "max@card": "06c88cd32034040a"
+   "defaults@board": "48590f092c07abd7",
+   "defaults@card": "48590f092c07abd7",
+   "min@board": "614aea70a23b211c",
+   "min@card": "614aea70a23b211c",
+   "max@board": "01443552e65c2143",
+   "max@card": "01443552e65c2143"
   }
  },
  "bakery": {
