@@ -290,3 +290,24 @@ for (const webgl of [false, true]) {
     await page.context().close();
   });
 }
+
+test('flow: turning a piece with the ring shows where it will land in the position fields', async () => {
+  const page = await F.openApp(browser, URL);
+  await page.click('[data-select-item="0"]'); // the bookshelf, long and against the left wall: a turn pushes it off the wall
+  await page.locator('#sidebar summary', { hasText: 'Position' }).click();
+  const field = (name) => page.evaluate((n) => Number([...document.querySelectorAll('#sidebar .field')].find((f) => f.textContent.includes(n)).querySelector('input').value), name);
+  await page.locator('.t6-gizmo [data-handle="rot"]').waitFor({ state: 'attached', timeout: 10000 });
+  const ring = await page.evaluate(() => JSON.parse(document.querySelector('.t6-gizmo [data-handle="rot"]').dataset.ring));
+  const from = await page.evaluate(() => { const r = document.querySelector('.t6-gizmo [data-handle="rot"] .knob').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  const a0 = Math.atan2(from.y - ring.cy, from.x - ring.cx);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) { const a = a0 + (i / 10) * (Math.PI / 2) * 1.1; await page.mouse.move(ring.cx + Math.cos(a) * ring.rx, ring.cy + Math.sin(a) * ring.ry); }
+  await page.waitForTimeout(50);
+  const live = [await field('From left'), await field('From back')];
+  await page.mouse.up();
+  const it = (await F.kit(page)).items[0];
+  assert.deepEqual(live, [it.x, it.y], 'the fields mid-turn match where it lands');
+  F.assertClean(page);
+  await page.context().close();
+});

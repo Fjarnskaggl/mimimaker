@@ -55,12 +55,12 @@ let overlay = null; // { svg, drag }
  * @param {object|null} o.kit, o.sel, o.faces   the kit, view.sel and compiled faces3d
  * @param {Function|null} o.project   world mm → client px (null: no handles)
  * @param {number} o.grid      grid step in cm (0: none)
- * @param {Function} o.preview (xf|null, changes) show the piece moved: {offset, turns, centre}; changes as for commit
+ * @param {Function} o.preview (xf|null, changes, item) show `item` moved: {offset, turns, centre}; changes as for commit
  * @param {Function} o.commit  (changes, item) apply {x, y} | {pos, elev} | {rot} to `item` (the piece the drag began on) for good
  */
 export function drawGizmo(wrap, o) {
   if (overlay?.drag) { // mid-drag: the drag owns the overlay; a redraw only needs the piece put back where it's being dragged
-    if (overlay.drag.result) o.preview(overlay.drag.result.xf, overlay.drag.result.changes);
+    if (overlay.drag.result) o.preview(overlay.drag.result.xf, overlay.drag.result.changes, overlay.drag.item);
     return;
   }
   let svg = wrap.querySelector(':scope > svg.t6-gizmo');
@@ -128,7 +128,7 @@ export function drawGizmo(wrap, o) {
     ev.stopPropagation();
     const h = ev.currentTarget;
     h.setPointerCapture?.(ev.pointerId);
-    overlay.drag = { name, x0: ev.clientX, y0: ev.clientY, result: null };
+    overlay.drag = { name, x0: ev.clientX, y0: ev.clientY, result: null, item };
     svg.classList.add('dragging');
     h.classList.add('active');
     const move = (mv) => {
@@ -168,7 +168,7 @@ export function drawGizmo(wrap, o) {
         }
       }
       overlay.drag.result = res;
-      o.preview(res.xf, res.changes);
+      o.preview(res.xf, res.changes, item);
       drawGuides(res.guides);
       // the handles ride along with the piece
       const off = toLocal(o.project(origin.map((v, i) => v + (res.xf.offset?.[i] || 0))));
@@ -182,7 +182,7 @@ export function drawGizmo(wrap, o) {
       overlay.drag = null;
       svg.classList.remove('dragging');
       guides.replaceChildren();
-      if (res && ev.type === 'pointerup') o.commit(res.changes, item); else o.preview(null); // a cancelled drag puts it back
+      if (res && ev.type === 'pointerup') o.commit(res.changes, item); else o.preview(null, null, item); // a cancelled drag puts it back
     };
     h.addEventListener('pointermove', move);
     h.addEventListener('pointerup', end);

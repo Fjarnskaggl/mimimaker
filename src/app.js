@@ -725,16 +725,24 @@ function drawHandles(stage) {
   const on = view.step === 'design' && view.tab === 'preview';
   drawGizmo(wrap, {
     stage, kit, faces: compiled.faces3d, sel: on ? view.sel : null, project: on ? stageProjector(stage) : null, grid: view.snap,
-    preview: (xf, changes) => {
-      previewItem(stage, view.sel?.index, xf);
-      // the inspector's position fields follow the drag, as on the plan
-      view.dragging = xf ? { item: kit.items[view.sel?.index], changes } : null;
+    preview: (xf, changes, item) => {
+      const at = kit.items.indexOf(item);
+      previewItem(stage, at >= 0 ? at : view.sel?.index, xf); // the dragged piece, even if the selection moved on
+      // the inspector's position fields follow the drag, as on the plan; a
+      // turn also shows where it lands once kept in the room, as on release
+      if (xf && changes && 'rot' in changes) {
+        const turns = (((changes.rot - (Number(item.rot) || 0)) / 90) % 4 + 4) % 4;
+        const probe = { room: kit.room, items: [{ ...item }] };
+        if (turns) rotateItem(probe, 0, turns);
+        changes = { x: probe.items[0].x, y: probe.items[0].y, rot: probe.items[0].rot };
+      }
+      view.dragging = xf ? { item, changes } : null;
       if (!inspectorFrame) inspectorFrame = requestAnimationFrame(() => { inspectorFrame = 0; renderInspector({ keepScroll: true }); });
     },
     commit: (changes, item) => {
       view.dragging = null;
       const i = kit.items.indexOf(item); // the piece the drag began on, wherever it is now (or gone)
-      if (i < 0) return;
+      if (i < 0) { renderInspector({ keepScroll: true }); drawScene(); return; } // gone (undone mid-drag): show the kit as it is
       if ('rot' in changes) { // one turn about the centre, kept in the room, as the Rotate button does
         const turns = (((changes.rot - (Number(item.rot) || 0)) / 90) % 4 + 4) % 4;
         if (turns) rotateItem(kit, i, turns);
