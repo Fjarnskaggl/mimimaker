@@ -544,6 +544,17 @@ function lightsOffNotice(why) {
 }
 function turnLightsOn() { kit.lighting.enabled = true; restructured(); }
 
+/** Which wall the power box is on; a shell that wires its own LEDs keeps it on its back wall. */
+function powerWallField(L) {
+  const field = selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); });
+  if (shellWiresLights(kit)) {
+    const sel = field.querySelector('select');
+    sel.disabled = true;
+    sel.title = 'The shell wires its LEDs through its back wall, so the power box stays there.';
+  }
+  return field;
+}
+
 function lightingInspectorPower(L) {
   return [
     checkField('Lights on (cut the wire holes)', L.enabled, (v) => { L.enabled = v; restructured(); }),
@@ -556,7 +567,7 @@ function lightingInspectorPower(L) {
     renderShoppingButton(() => { const f = shoppingFile(compiled.lighting); if (f) download(f.name, f.data, f.type); }), // [T5] shopping list
     // a hidden base sits on the floor, so its height does nothing there
     h('div', { class: L.power.mount === 'base' ? 'grid2' : 'grid3' },
-      selectField('Power box', L.power.wall, WALL_OPTIONS, (v) => { L.power.wall = v; changed(); }),
+      powerWallField(L),
       numberField('Along wall', L.power.pos, (v) => { L.power.pos = v; changed(); }, { min: 0, unit: 'cm' }),
       L.power.mount === 'base' ? null : numberField('Height', L.power.elev, (v) => { L.power.elev = v; changed(); }, { min: 0, unit: 'cm' })),
   ];
