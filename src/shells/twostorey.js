@@ -71,6 +71,7 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
   // ---------------------------------------------------------------- stairs
   const withStair = P.stairs === 'straight' || P.stairs === 'spiral';
   let sw = 0, run = 0, stair = null;
+  const rods = [];
   if (P.stairs === 'spiral') {
     // a square stairwell in the front-left corner, the post 1 mm in from each side
     // big enough to cut, small enough to leave 30 mm of floor beside it and a 25 mm landing behind it
@@ -91,8 +92,10 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
     wallHoles.bottom.push(ellipsePoly(sp.center[0], sp.center[1], sp.post.diameter / 2 + 0.1, sp.post.diameter / 2 + 0.1, 20));
     const post = { ...sp.post, length: Math.min(sp.post.length + t, H - 2 * t) };
     stair = { kind: 'spiral', steps: n, rise, turn, radius: R, center: sp.center, run, width: sw, post };
+    // bought stock: from the shelf, up through the floor hole, to a newel above the top tread
+    rods.push({ name: 'Stair post', stock: 'dowel', d: post.diameter, from: [sp.center[0], sp.center[1], 0], to: [sp.center[0], sp.center[1], post.length], group: 'Stairs' });
     stairSteps.push(
-      { group: 'Stairs', text: `Cut a ${post.diameter} mm dowel (or a bamboo skewer) ${Math.floor(post.length)} mm long for the post. Push it down through the small hole in the floor near the front-left corner until it touches the shelf, and glue it upright.` },
+      { group: 'Stairs', text: `Push the post down through the small hole in the floor near the front-left corner until it touches the shelf, and glue it upright.` },
       { group: 'Stairs', text: `Thread the ${n - 1} treads onto the post in order, each with its baluster glued under its outer end, standing on the tread below — every tread turns ${turn.toFixed(0)}° on from the last. The top tread points at the landing strip.` },
     );
   } else if (withStair) {
@@ -236,7 +239,7 @@ export function buildTwoStorey({ W, D, H, t, fingerWidth, holes = {} }, params) 
   ];
 
   return {
-    parts, joints, lights, steps, warnings, minFinger: shell.minFinger,
+    parts, joints, lights, steps, warnings, rods, minFinger: shell.minFinger,
     twostorey: { floorTop, ground, upper, stair, wall: xp },
   };
 }

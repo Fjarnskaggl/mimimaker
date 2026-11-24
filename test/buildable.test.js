@@ -346,3 +346,51 @@ test('a laminated block keeps its outside score lines, open boxes stay open, slo
   const r = attachmentReport(soloKit(base, 'bookrow', { th: 2 }, 'chip2'), row)[0];
   assert.deepEqual(r.crossings, []);
 });
+
+test('the spiral stair post is a bought dowel: drawn in 3D, in the bill and in its guide step', () => {
+  const kit = { ...defaultKit(), items: [], shell: { type: 'twostorey', gap: { w: 250, h: 280, d: 200 }, clearance: 2, params: { stairs: 'spiral' } } };
+  const c = compileKit(kit);
+  const k = c.hardware.findIndex((h) => h.name === 'Stair post');
+  assert.ok(k >= 0, 'post listed as hardware');
+  const post = c.hardware[k];
+  assert.equal(post.stock, 'dowel');
+  assert.equal(post.group, 'Stairs');
+  assert.ok(Math.hypot(post.to[0] - post.from[0], post.to[1] - post.from[1]) < 1e-6 && post.to[2] > post.from[2], 'post stands upright');
+  assert.ok(post.length > 50, `post ${post.length} mm`);
+  assert.ok(c.faces3d.some((f) => f.hardware === k), 'post drawn in 3D');
+  assert.match(bomText(billOfMaterials(kit, c)), /dowel/i);
+  const steps = buildSteps(kit, c);
+  const step = steps.find((s) => (s.hardware || []).includes(k));
+  assert.ok(step, 'a step puts the post in');
+  assert.equal(step.text.filter((x) => /\bcut\b/i.test(x) && /dowel/i.test(x)).length, 1, 'cut once');
+  assert.ok(explodedFaces(kit, c, steps, step.n).some((f) => f.part === `rod${k}` && f.moving), 'post moves in its step');
+});
+
+test('every lighting and hidden-base part is drawn in 3D where it goes', () => {
+  const kit = defaultKit();
+  kit.openings = [];
+  kit.room.ceiling = true;
+  kit.lighting.enabled = true;
+  kit.lighting.power = { ...kit.lighting.power, wall: 'back', pos: 150, elev: 60, kind: 'battery', supply: 'aa2', mount: 'base' };
+  kit.lighting.leds = [
+    { mount: 'wall', wall: 'back', pos: 80, elev: 150, color: 'warm' },
+    { mount: 'ceiling', x: 150, y: 100, effect: 'fan', sizeMm: 60 },
+    { mount: 'floor', x: 100, y: 100, effect: 'turntable', sizeMm: 50 },
+  ];
+  kit.lighting.cover = { enabled: true };
+  const c = compileKit(kit);
+  const owner = faceParts(kit, c);
+  const drawn = new Set(owner.filter((id) => id != null));
+  const parts = c.parts.filter((p) => p.group === 'Lighting' || p.group === 'Hidden base');
+  assert.ok(parts.some((p) => /motor mount/.test(p.name)) && parts.some((p) => /Hatch stop/.test(p.name)) && parts.some((p) => /Cable cover panel/.test(p.name)));
+  for (const p of parts) assert.ok(drawn.has(p.id), `${p.name} (#${p.id}) is drawn in 3D`);
+  // each one is drawn as its own part, not guessed from its outline
+  for (const p of parts) assert.ok(c.faces3d.some((f) => f.part === p.id), `${p.name} carries its part id`);
+  // the fan's motor mount sits on top of the ceiling, the turntable's under the floor
+  const zs = (name) => c.faces3d.filter((f, k) => owner[k] === c.parts.find((p) => p.name === name)?.id)
+    .flatMap((f) => f.polys.flat().flatMap((q) => [q[2], q[2] - f.n[2] * f.thickness]));
+  const ceiling = Math.max(...zs('Ceiling')), floor = Math.min(...zs('Floor'));
+  const mounts = c.parts.filter((p) => /motor mount/.test(p.name)).map((p) => zs(p.name));
+  assert.ok(mounts.some((z) => Math.abs(Math.min(...z) - ceiling) < 0.01), `a mount on the ceiling at ${ceiling}: ${mounts.map((z) => Math.min(...z)).join(', ')}`);
+  assert.ok(mounts.some((z) => Math.abs(Math.max(...z) - floor) < 0.01), `a mount under the floor at ${floor}`);
+});

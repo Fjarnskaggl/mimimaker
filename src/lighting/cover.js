@@ -60,7 +60,7 @@ export function planCover({ cover, leds, power, openings, W, H, s = 1, t = 0 }) 
     const pieces = splitInterval(st.from, st.to, gaps[st.side].map((c) => [c - COVER.gap / 2, c + COVER.gap / 2]));
     pieces.forEach(([s, e], i) => out.parts.push({
       name: `Cable cover frame – ${st.side}${pieces.length > 1 ? ` ${i + 1}` : ''}`,
-      role: 'frame', material: cover.frameMaterial, polys: [st.rect(s, e)],
+      role: 'frame', material: cover.frameMaterial, polys: [st.rect(s, e)], place: { face: 'back', u: 0, v: 0, layer: 0 },
     }));
   }
 
@@ -88,7 +88,7 @@ export function planCover({ cover, leds, power, openings, W, H, s = 1, t = 0 }) 
       }
     }
   }
-  out.parts.push({ name: 'Cable cover panel', role: 'panel', material: cover.panelMaterial, polys: [rectPoly(0, 0, W, H), ...holes] });
+  out.parts.push({ name: 'Cable cover panel', role: 'panel', material: cover.panelMaterial, polys: [rectPoly(0, 0, W, H), ...holes], place: { face: 'back', u: 0, v: 0, layer: 1 } });
 
   out.steps.push(
     'Cable cover: lay each wire on the outside of the back wall along its route on the LED map. Where a wire leaves the back wall it passes through a gap between the frame strips.',
