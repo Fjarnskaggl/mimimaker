@@ -57,16 +57,16 @@ for (const webgl of [false, true]) {
 
     // x arrow toward the bookshelf: a guide while it lines up, flush on release, y untouched
     const n = await item(page, 2);
-    const shelfRight = (await item(page, 0)).x + 80; // the bookshelf is 80 cm wide
+    const shelf = await item(page, 0);
+    const shelfRight = shelf.x + shelf.params.w;
     const k = await axisPx(page, 'x');
     const want = shelfRight + 1.4 - n.x;
     const start = await F.settled(page, STAGE);
     const release = await press(page, await handle(page, 'x'), want * k[0], want * k[1]);
     await page.waitForFunction(() => document.querySelectorAll('.t6-gizmo .gizmo-guide').length > 0, null, { timeout: within });
     assert.ok(F.pixelDiff(await F.settled(page, STAGE), start) > 40, 'the piece moves on screen during the drag');
-    const live = await item(page, 2);
-    assert.equal(Number(await positionField(page, 'From left').inputValue()), live.x, 'the From left field follows the drag');
     await release();
+    assert.equal(Number(await positionField(page, 'From left').inputValue()), shelfRight, 'the From left field shows where it landed');
     const moved = await item(page, 2);
     assert.equal(moved.x, shelfRight, 'snapped flush with the bookshelf');
     assert.equal(moved.y, n.y, 'the x arrow leaves y alone');
@@ -102,7 +102,7 @@ for (const webgl of [false, true]) {
     const r0 = (await item(page, 2)).rot || 0;
     const ring = await page.evaluate(() => JSON.parse(document.querySelector('.t6-gizmo [data-handle="rot"]').dataset.ring));
     const from = await handle(page, 'rot');
-    const a0 = Math.atan2(from.y - ring.cy, from.x - ring.cx);
+    const a0 = Math.atan2((from.y - ring.cy) / ring.ry, (from.x - ring.cx) / ring.rx); // the ellipse's own angle
     await F.expectRedraw(page, STAGE, async () => {
       await page.mouse.move(from.x, from.y);
       await page.mouse.down();
@@ -122,11 +122,11 @@ for (const webgl of [false, true]) {
     assert.equal(await page.locator('input[aria-label=Rotate]').inputValue(), '-32', 'handle drags never orbit');
 
     F.assertClean(page);
-    await page.context().close();
   });
 
-  test(`flow: move a picture along its wall and up it with the handles in ${label}`, async () => {
+  test(`flow: move a picture along its wall and up it with the handles in ${label}`, async (t) => {
     const page = await F.openApp(browser, URL, { webgl });
+    t.after(() => page.context().close().catch(() => {})); // also when an assertion fails mid-drag
     await F.settled(page, STAGE, { timeout: webgl ? 15000 : 5000 });
     await F.expectRedraw(page, STAGE, () => page.click('[data-select-item="5"]'), `picking the picture frame in ${label}`, { within });
     for (const h of ['pos', 'up', 'plane']) assert.ok(await page.locator(`.t6-gizmo [data-handle="${h}"]`).isVisible(), `the ${h} handle is on screen`);
@@ -141,16 +141,16 @@ for (const webgl of [false, true]) {
     const up = await item(page, 5);
     assert.notEqual(up.elev, fr.elev, 'moved up the wall');
     assert.equal(up.pos, slid.pos, 'along-wall untouched');
-    await page.click('#btn-undo');
+    await F.expectRedraw(page, STAGE, () => page.click('#btn-undo'), `undoing the lift in ${label}`, { within });
     assert.equal((await item(page, 5)).elev, fr.elev, 'one undo per drag');
     assert.equal((await item(page, 5)).pos, slid.pos);
     F.assertClean(page);
-    await page.context().close();
   });
 }
 
-test('flow: on the floor plan, snap to pieces and the grid with guides, Snap Off and Alt move freely, wall pieces keep their grip', async () => {
+test('flow: on the floor plan, snap to pieces and the grid with guides, Snap Off and Alt move freely, wall pieces keep their grip', async (t) => {
   const page = await F.openApp(browser, URL);
+  t.after(() => page.context().close().catch(() => {}));
   await page.click('[data-view=plan]');
   const plan = '.plan-canvas';
   const guides = () => page.locator(`${plan} .plan-guide`).count();
@@ -171,7 +171,8 @@ test('flow: on the floor plan, snap to pieces and the grid with guides, Snap Off
   };
 
   // the nightstand toward the bookshelf: a guide on screen while it lines up, flush on release
-  const shelfRight = (await item(page, 0)).x + 80;
+  const shelf = await item(page, 0);
+  const shelfRight = shelf.x + shelf.params.w;
   const n = await item(page, 2);
   const start = await F.settled(page, plan);
   await drag(await planPoint(n.x + 5, n.y + 5), await planPoint(shelfRight + 1.5 + 5, n.y + 5 + 31), {
@@ -184,14 +185,15 @@ test('flow: on the floor plan, snap to pieces and the grid with guides, Snap Off
   assert.equal(snapped.x, shelfRight, 'flush against the bookshelf');
   assert.equal(snapped.y % 5, 0, 'on the grid the other way');
   assert.equal(await guides(), 0, 'guides go on release');
-  await page.click('#btn-undo');
+  await F.expectRedraw(page, plan, () => page.click('#btn-undo'), 'undoing the drag on the plan');
   assert.deepEqual([(await item(page, 2)).x, (await item(page, 2)).y], [n.x, n.y], 'one undo per drag');
 
   // a coarser grid: lands on 10 cm
   await page.selectOption('.snap select', '10');
-  await drag(await planPoint(n.x + 5, n.y + 5), await planPoint(n.x + 5 - 33, n.y + 5 + 47));
+  // straight toward the front, clear of other pieces: y 167 is 165 on a 5 cm grid, 170 on 10 cm
+  await drag(await planPoint(n.x + 5, n.y + 5), await planPoint(n.x + 5, 167 + 5));
   const ten = await item(page, 2);
-  assert.ok(ten.x % 10 === 0 || ten.y % 10 === 0, `on the 10 cm grid (${ten.x}, ${ten.y})`);
+  assert.deepEqual([ten.x, ten.y], [n.x, 170], 'on the 10 cm grid');
 
   // Snap Off: lands exactly where it is dropped, no guides
   await page.selectOption('.snap select', '0');
@@ -217,9 +219,10 @@ test('flow: on the floor plan, snap to pieces and the grid with guides, Snap Off
   await page.keyboard.down('Alt'); // no window-edge snapping, so the numbers are exact
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
-  const nudge = await planPoint(grab + 0.5, 2);
+  const nudge = await planPoint(grab + 3, 2); // past the 1 cm the plan waits for before a drag starts
   await page.mouse.move(nudge.x, nudge.y, { steps: 2 });
-  assert.ok(Math.abs((await item(page, 5)).pos - fr.pos) < 2, `no jump when grabbed off-centre (${fr.pos} → ${(await item(page, 5)).pos})`);
+  const early = (await item(page, 5)).pos;
+  assert.ok(Math.abs(early - (fr.pos + 3)) < 1, `moves by the drag, no jump to its centre (${fr.pos} → ${early})`);
   const to = await planPoint(grab - 20, 2);
   await page.mouse.move(to.x, to.y, { steps: 6 });
   await page.mouse.up();
@@ -227,5 +230,4 @@ test('flow: on the floor plan, snap to pieces and the grid with guides, Snap Off
   const slid = await item(page, 5);
   assert.ok(Math.abs(slid.pos - (fr.pos - 20)) < 1, `moved by the drag (${fr.pos} → ${slid.pos})`);
   F.assertClean(page);
-  await page.context().close();
 });
