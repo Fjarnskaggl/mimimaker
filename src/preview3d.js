@@ -181,7 +181,7 @@ export function renderScene(faces, { yaw = -32, pitch = 26, night = false, selec
     // furniture faces carry their item index so a click can select the piece
     const item = d.face.item != null ? ` data-item="${d.face.item}"` : '';
     if (selected != null && d.face.item === selected) {
-      return `<path class="sel"${item} d="${dStr}" fill="${d.fill}" fill-opacity="${d.opacity}" fill-rule="evenodd" stroke="#1f7a8c" stroke-width="${sw(0.7)}" stroke-linejoin="round"/>`;
+      return `<path class="sel"${item} d="${dStr}" fill="${d.fill}" fill-opacity="${d.opacity}" fill-rule="evenodd" stroke="#2340a8" stroke-width="${sw(0.7)}" stroke-linejoin="round"/>`;
     }
     // ghosted walls are drawn on top but are see-through: let clicks pass to the piece behind
     const ghost = d.ghost ? ' pointer-events="none"' : '';
