@@ -55,12 +55,12 @@ let overlay = null; // { svg, drag }
  * @param {object|null} o.kit, o.sel, o.faces   the kit, view.sel and compiled faces3d
  * @param {Function|null} o.project   world mm → client px (null: no handles)
  * @param {number} o.grid      grid step in cm (0: none)
- * @param {Function} o.preview (xf|null) show the piece moved: {offset, turns, centre}
+ * @param {Function} o.preview (xf|null, changes) show the piece moved: {offset, turns, centre}; changes as for commit
  * @param {Function} o.commit  (changes, item) apply {x, y} | {pos, elev} | {rot} to `item` (the piece the drag began on) for good
  */
 export function drawGizmo(wrap, o) {
   if (overlay?.drag) { // mid-drag: the drag owns the overlay; a redraw only needs the piece put back where it's being dragged
-    if (overlay.drag.result) o.preview(overlay.drag.result.xf);
+    if (overlay.drag.result) o.preview(overlay.drag.result.xf, overlay.drag.result.changes);
     return;
   }
   let svg = wrap.querySelector(':scope > svg.t6-gizmo');
@@ -168,7 +168,7 @@ export function drawGizmo(wrap, o) {
         }
       }
       overlay.drag.result = res;
-      o.preview(res.xf);
+      o.preview(res.xf, res.changes);
       drawGuides(res.guides);
       // the handles ride along with the piece
       const off = toLocal(o.project(origin.map((v, i) => v + (res.xf.offset?.[i] || 0))));
