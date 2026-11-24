@@ -390,7 +390,7 @@ test('hovering a row in the pieces list points at that piece in 3D (sketch and R
     await page.waitForTimeout(50);
     assert.deepEqual(await now(), [3], `the floor lamp is marked (${webgl ? 'Realistic 3D' : 'sketch'})`);
     assert.equal(await page.evaluate(() => document.querySelector('.stage').classList.contains('t6-over-piece')), false, 'the stage cursor is left alone');
-    await page.mouse.move(600, 790); // off the list
+    await page.mouse.move(2, 2); // off the list, and not over the stage
     await page.waitForTimeout(50);
     assert.deepEqual(await now(), [], 'cleared when the pointer leaves the row');
     await page.focus('[data-select-item="1"]'); // keyboard too

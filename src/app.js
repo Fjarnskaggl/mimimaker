@@ -267,13 +267,13 @@ function notice(tone, word, text) {
     ic(tone === 'success' ? 'check' : tone === 'info' ? 'info' : 'alert'), h('div', {}, h('b', {}, word), ' ', text));
 }
 
-// a row of the pieces list points at its piece in 3D; the row goes away when
-// the inspector re-renders without firing pointerleave, so selecting clears it
-let listPointing = false;
-function pointAt(index) { listPointing = index != null; hoverPiece(index); }
+// a row of the pieces list points at its piece in 3D, under the pointer or
+// focused (the pointer wins); rows go away when the inspector re-renders
+// without firing pointerleave or blur, so a re-render clears both
+const listPoint = { over: null, focus: null };
+function pointAt(key, index) { listPoint[key] = index; hoverPiece(listPoint.over ?? listPoint.focus); }
 
 function select(sel) {
-  if (listPointing) pointAt(null);
   view.sel = sel;
   renderInspector();
   // the stage on screen shows the selection too, right away (the 3D view
@@ -287,6 +287,7 @@ function renderInspector({ keepScroll = false } = {}) {
   const sb = $('#sidebar');
   if (view.step === 'make' || view.step === 'build') { sb.replaceChildren(); return; }
   const scroll = sb.scrollTop;
+  if (listPoint.over != null || listPoint.focus != null) { listPoint.over = listPoint.focus = null; hoverPiece(null); } // its rows are about to go
   const e = selectedEntity();
   let content;
   if (view.step === 'light') content = e?.kind === 'led' ? ledInspector(e) : lightingInspector();
@@ -310,7 +311,7 @@ function roomInspector() {
     const mat = kit.materials.find((m) => m.id === item.material);
     return h('button', { type: 'button', class: `insp-row${clashes.has(i) ? ' clash' : ''}`, 'data-select-item': i, onclick: () => select({ kind: 'item', index: i }),
       // point at the piece in the 3D view while the row is under the pointer or focused
-      onpointerenter: () => pointAt(i), onpointerleave: () => pointAt(null), onfocus: () => pointAt(i), onblur: () => pointAt(null) },
+      onpointerenter: () => pointAt('over', i), onpointerleave: () => pointAt('over', null), onfocus: () => pointAt('focus', i), onblur: () => pointAt('focus', null) },
       h('span', { class: 'sw', style: `background:${mat?.color || '#ccc'}` }),
       h('span', { class: 'grow' }, def?.label || item.type),
       clashes.has(i) ? h('span', { class: 'mm-chip mm-chip--danger' }, 'Overlaps') : h('span', { class: 'k2' }, def?.group || ''));

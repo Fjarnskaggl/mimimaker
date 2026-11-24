@@ -10,7 +10,7 @@ import { resolveLook, faceTexture, textureChoices, textureChoice, setTextureChoi
 const PREF_KEY = 'mimimaker.t6.webgl';
 // zoom is the viewer's own (wheel), kept here so every redraw uses it: the app
 // may pass a fresh copy of its view each time (the Light step does)
-const state = { want: readPref(), viewer: null, loading: false, failed: null, last: null, button: null, zoom: 1 };
+const state = { want: readPref(), viewer: null, loading: false, failed: null, last: null, button: null, zoom: 1, listHover: null };
 
 function readPref() {
   try { return localStorage.getItem(PREF_KEY) === '1'; } catch { return false; }
@@ -155,20 +155,22 @@ function setHover(stage, index, kind = 'item') {
   stage.classList.toggle('t6-over-piece', index != null); // pointer cursor: a click would pick something
   if (kind !== 'item') index = null; // lights only get the cursor
   stage.t6hover = index;
-  if (stage.dataset.renderer === 'webgl' && state.viewer) { state.viewer.hover(index); return; }
-  paintSvgHover(stage);
+  showHover(stage);
 }
 /** Point at a piece from outside the stage, e.g. a row of the pieces list (null: stop). The cursor is left alone. */
 export function hoverPiece(index) {
+  state.listHover = index ?? null;
   const stage = state.last?.stage;
-  if (!stage?.isConnected) return;
-  index = index ?? null;
-  stage.t6hover = index;
-  if (stage.dataset.renderer === 'webgl' && state.viewer) state.viewer.hover(index);
+  if (stage?.isConnected) showHover(stage);
+}
+/** The marked piece: one pointed at from the list wins over the one under the stage pointer. */
+const hoverShown = (stage) => state.listHover ?? stage.t6hover ?? null;
+function showHover(stage) {
+  if (stage.dataset.renderer === 'webgl' && state.viewer) state.viewer.hover(hoverShown(stage));
   else paintSvgHover(stage);
 }
 function paintSvgHover(stage) {
-  const index = stage.t6hover ?? null;
+  const index = hoverShown(stage);
   for (const el of stage.querySelectorAll('path.hover')) if (Number(el.dataset.item) !== index) el.classList.remove('hover');
   if (index != null) for (const el of stage.querySelectorAll(`path[data-item="${index}"]`)) el.classList.add('hover');
 }
