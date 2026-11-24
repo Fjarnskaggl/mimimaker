@@ -124,6 +124,20 @@ test('WebGL viewer: every mesh but the LED glows wears a texture, in each room t
   await page.close();
 });
 
+test('WebGL viewer: a rebuild of the same room reuses its texture images instead of drawing them again', async () => {
+  const page = await open();
+  await switchOn(page);
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().texturesReady, null, { timeout: 15000 });
+  const made = (await sample(page)).texturesMade;
+  assert.ok(made >= 4, `textures drawn: ${made}`);
+  // the same kit again (new faces, same look): nothing new to draw
+  await page.evaluate(() => window.mimimaker.refresh());
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer?.sample().texturesReady);
+  assert.equal((await sample(page)).texturesMade, made);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('texture picker: change the floor, switch a texture off, undo; only shown with Realistic 3D', async () => {
   const page = await open();
   await page.click('[data-step=design]');
