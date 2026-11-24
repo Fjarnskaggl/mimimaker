@@ -1177,7 +1177,7 @@ async function init() {
   nameInput.addEventListener('input', () => {
     kit.name = nameInput.value;
     saveKit();
-    if (view.step === 'build') renderView(); // the guide's title
+    if (view.step === 'build' || view.step === 'make') renderView(); // the guide's title, the sheet files' titles
     scheduleCommit();
   });
   $('#btn-new').addEventListener('click', openStart);
