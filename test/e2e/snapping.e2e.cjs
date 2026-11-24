@@ -149,7 +149,10 @@ const handle = async (page, name) => {
   }, name);
 };
 /** Screen direction (px per cm) of a handle's axis, from the gizmo's own data. */
-const axisPx = (page, name) => page.evaluate((n) => JSON.parse(document.querySelector(`.t6-gizmo [data-handle="${n}"]`).dataset.pxPerCm));
+const axisPx = async (page, name) => {
+  await page.locator(`.t6-gizmo [data-handle="${name}"]`).waitFor({ state: 'attached', timeout: 10000 });
+  return page.evaluate((n) => JSON.parse(document.querySelector(`.t6-gizmo [data-handle="${n}"]`).dataset.pxPerCm), name);
+};
 async function dragBy(page, from, dx, dy, { alt = false, steps = 8 } = {}) {
   if (alt) await page.keyboard.down('Alt');
   await page.mouse.move(from.x, from.y);
@@ -204,8 +207,17 @@ test('3D handles: the floor plane moves in both directions on the grid; Alt move
   let end = await dragBy(page, await handle(page, 'xy'), dx, dy);
   await end();
   const b = await item(page, 1);
-  assert.equal(b.x % 5, 0, `x on the grid (${b.x})`);
-  assert.equal(b.y % 5, 0, `y on the grid (${b.y})`);
+  // each side lands on the grid or lines up with another piece's edge or centre
+  const lines = await page.evaluate(async () => {
+    const { footprint } = await import('./src/plan.js');
+    const k = window.mimimaker.kit, xs = [], ys = [];
+    k.items.forEach((it, i) => { const f = i !== 1 && footprint(it); if (f) { xs.push(f.x0, (f.x0 + f.x1) / 2, f.x1); ys.push(f.y0, (f.y0 + f.y1) / 2, f.y1); } });
+    const me = footprint(k.items[1]);
+    return { xs, ys, w: me.x1 - me.x0, d: me.y1 - me.y0 };
+  });
+  const snapped = (v, size, targets) => v % 5 === 0 || [0, size / 2, size].some((o) => targets.some((t) => Math.abs(v + o - t) < 1e-6));
+  assert.ok(snapped(b.x, lines.w, lines.xs), `x snapped (${b.x})`);
+  assert.ok(snapped(b.y, lines.d, lines.ys), `y snapped (${b.y})`);
   assert.ok(b.x > a.x && b.y > a.y, 'moved right and forward');
   end = await dragBy(page, await handle(page, 'xy'), dx, dy, { alt: true });
   await end();

@@ -245,6 +245,28 @@ button:disabled, .mm-btn:disabled { opacity: .45; cursor: not-allowed; backgroun
 .stage canvas:active { cursor: grabbing; }
 .stage.t6-over-piece canvas { cursor: pointer; }
 .stage.night { background: var(--night-bg); }
+/* T6 move handles over the 3D view: white knobs with a coloured edge per axis
+   (score = across the room, success = toward the front, glow = up), the mat
+   ring for turning, score-pink snapping guides */
+.t6-gizmo { position: absolute; z-index: 1; pointer-events: none; overflow: visible; }
+.gizmo-handle { pointer-events: auto; cursor: grab; --ax: var(--mat); }
+.t6-gizmo.dragging .gizmo-handle { cursor: grabbing; }
+.t6-gizmo.dragging .gizmo-handle:not(.active) { opacity: .35; transition: opacity 120ms ease-out; }
+.gizmo-handle.ax-x { --ax: var(--score); }
+.gizmo-handle.ax-y { --ax: var(--success); }
+.gizmo-handle.ax-z { --ax: var(--glow); }
+.gizmo-handle .hit { stroke: transparent; stroke-width: 16; fill: none; stroke-linecap: round; }
+.gizmo-handle .line { stroke: var(--ax); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+.gizmo-handle .knob { fill: var(--surface); stroke: var(--ax); stroke-width: 2.5; filter: drop-shadow(0 1px 2px rgba(24,33,30,.25)); transition: transform 120ms ease-out; transform-box: fill-box; transform-origin: center; }
+.gizmo-handle .glyph { fill: none; stroke: var(--ax); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.gizmo-handle:hover .knob, .gizmo-handle.active .knob { transform: scale(1.18); }
+.gizmo-handle.plane .knob { fill: color-mix(in srgb, var(--mat) 22%, transparent); stroke: var(--mat); stroke-width: 1.5; stroke-linejoin: round; }
+.gizmo-handle.ring .line { stroke: var(--mat); stroke-width: 2; stroke-dasharray: 5 4; opacity: .8; }
+.gizmo-handle.ring:hover .line, .gizmo-handle.ring.active .line { stroke-dasharray: none; opacity: 1; }
+.gizmo-origin { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; }
+.gizmo-guide { stroke: var(--score); stroke-width: 1.5; stroke-dasharray: 4 3; stroke-linecap: round; }
+.gizmo-guide.wall { stroke-dasharray: none; }
+@media (prefers-reduced-motion: reduce) { .gizmo-handle .knob { transition: none; } }
 .stage-bar { position: absolute; z-index: 2; top: var(--space-3); left: var(--space-3); right: var(--space-3); display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; pointer-events: none; }
 .stage-bar > * { pointer-events: auto; }
 .stage-bar .grow { flex: 1; }

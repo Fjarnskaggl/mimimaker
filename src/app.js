@@ -26,7 +26,8 @@ import { makeZip } from './zip.js';
 import { icon, MIMI, MARK } from './ui/art.js';
 import { checksSummary } from './ui/checks.js';
 // T6: WebGL viewer + SVG fallback
-import { drawStage, rendererToggle, texturePicker, attachPicking, resetZoom } from './ui/t6.js';
+import { drawStage, rendererToggle, texturePicker, attachPicking, resetZoom, stageProjector, previewItem, onStageDrawn } from './ui/t6.js';
+import { drawGizmo } from './ui/gizmo.js';
 // T1: piece library (search, difficulty, part counts)
 import { pieceLibrary } from './ui/t1.js';
 // T3 wiring: per-machine cut files
@@ -675,7 +676,7 @@ function build3d(bar) {
   }
   bar.append(rendererToggle(drawScene)); // T6
   const foot = h('div', { class: 'stage-foot' },
-    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit · click a light to select it' : 'Drag to orbit · scroll to zoom · click a piece to select · R turn · D duplicate · Del remove'),
+    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit · click a light to select it' : 'Drag to orbit · scroll to zoom · drag a piece’s handles to move it (Alt: no snap) · R turn · Del remove'),
     h('div', { class: 'orbit' }, h('label', {}, 'Rotate', yaw), h('label', {}, 'Tilt', pitch)));
   let drag = null;
   stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
@@ -696,6 +697,28 @@ function build3d(bar) {
   }, { picks: () => (view.step === 'design' ? 'item' : view.step === 'light' ? 'led' : null) });
   return h('div', { class: 'stage-wrap' }, stage, bar, foot);
 }
+// T6: move handles on the selected piece, redrawn after every draw of the 3D view
+function drawHandles(stage) {
+  const wrap = stage.parentElement;
+  if (!wrap || !compiled) return;
+  const on = view.step === 'design' && view.tab === 'preview';
+  drawGizmo(wrap, {
+    stage, kit, faces: compiled.faces3d, sel: on ? view.sel : null, project: on ? stageProjector(stage) : null, grid: view.snap,
+    preview: (xf) => previewItem(stage, view.sel?.index, xf),
+    commit: (changes) => {
+      const i = view.sel?.index, item = kit.items[i];
+      if (!item) return;
+      if ('rot' in changes) { // quarter turns about the centre, kept in the room, as the Rotate button does
+        const turns = (((changes.rot - (Number(item.rot) || 0)) / 90) % 4 + 4) % 4;
+        for (let k = 0; k < turns; k++) rotateItem(kit, i);
+      } else Object.assign(item, changes);
+      restructured();
+    },
+  });
+}
+onStageDrawn(drawHandles);
+window.addEventListener('resize', () => { if (view.tab === 'preview') drawScene(); });
+
 function drawScene() {
   const stage = document.querySelector('.stage');
   if (!stage || !compiled) return;
