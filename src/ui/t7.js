@@ -24,7 +24,7 @@ export function remixCredit(kit, { h }) {
 /** Toast text for opening a shared design. */
 export function openedSharedText(kit) {
   const o = kitOrigin(kit);
-  if (!o) return `Opened a shared design: ${kit.name}. Your own designs are untouched until you edit this one.`;
+  if (!o) return `Opened a shared design: ${kit.name}. Your own design is one Undo away.`;
   return `Opened ${o.title}${o.author ? ` by ${o.author}` : ''}. It's your copy to change; the credit stays with it.`;
 }
 
