@@ -60,6 +60,11 @@ without a coordinator note on #1.
    **Browser-test servers:** e2e files run in parallel, so never hard-code a
    port. Start the dev server with `startServer()` from
    `test/e2e/helpers.cjs` (free port, waits until ready, `close()` after).
+   **User-journey flows:** `test/e2e/flow-*.e2e.cjs` walk whole journeys
+   the way a person does and check that the screen visibly answers each step
+   (`expectRedraw` in `test/e2e/flow-helpers.cjs`), with no console errors.
+   When you change how something is used, extend the matching flow, and add a
+   flow for a new journey.
    **WebGL tests without the CDN:** if cdnjs is blocked in your sandbox, run
    `npm pack three@0.128.0`, untar it, and set
    `MIMI_THREE_JS=<dir>/package/build/three.min.js`.

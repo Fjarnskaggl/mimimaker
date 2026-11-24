@@ -22,11 +22,16 @@ jobs:
         run: npm test
       - name: Single-file build
         run: npm run build
-      - name: Browser tests
+      - name: Browser tests and user-journey flows
+        # The flow-*.e2e.cjs files drive whole journeys (new kit, furniture in
+        # 2D/3D, lights, make and export, build, save/share) and check the
+        # screen answers each step. three.js comes from npm, not the CDN, so a
+        # CDN hiccup can't fail a merge (the app still checks its SRI hash).
         run: |
           npm install --no-save playwright@1.48.2
           npx playwright install --with-deps chromium
-          npm run test:e2e
+          mkdir -p "$RUNNER_TEMP/three" && (cd "$RUNNER_TEMP/three" && npm pack --silent three@0.128.0 && tar xzf three-0.128.0.tgz)
+          MIMI_THREE_JS="$RUNNER_TEMP/three/package/build/three.min.js" npm run test:e2e
       - name: Tests before code
         # The branch's new or changed tests must fail on main and pass here.
         run: |
