@@ -205,7 +205,7 @@ export function createViewer(THREE) {
    * tint alone barely shows on pale pieces. Made on first use, as a child of
    * the mesh so a drag preview carries it along.
    */
-  function outline(entry, on, night) {
+  function outline(entry, on, night, opacity = 1) {
     if (!on && !entry.edge) return;
     if (!entry.edge) {
       entry.edge = new THREE.LineSegments(new THREE.EdgesGeometry(entry.mesh.geometry, 30), new THREE.LineBasicMaterial({ color: SELECT_RING.day }));
@@ -213,6 +213,8 @@ export function createViewer(THREE) {
     }
     entry.edge.visible = on;
     entry.edge.material.color.setHex(night ? SELECT_RING.night : SELECT_RING.day);
+    entry.edge.material.transparent = opacity < 1; // a see-through piece gets a see-through outline
+    entry.edge.material.opacity = opacity;
   }
 
   function applyView() {
@@ -231,7 +233,6 @@ export function createViewer(THREE) {
     const cam = cameraDirection(view);
     for (const entry of entries) {
       const { face, mesh, ring } = entry;
-      if (!face.glow) outline(entry, face.item != null && face.item === selectedItem, night);
       const m = mesh.material;
       if (ring) {
         ring.visible = selectedLed != null && face.led === selectedLed;
@@ -247,6 +248,8 @@ export function createViewer(THREE) {
       const opacity = ghost ? (face.layer === 0 ? 0.12 : 0.06) : face.opacity;
       m.transparent = opacity < 1;
       m.opacity = opacity;
+      // a ghosted wall's piece stays ghosted: no hard outline across the room
+      outline(entry, face.item != null && face.item === selectedItem && !ghost && opacity > 0, night, opacity);
       // the selected piece glows softly so you can see what the inspector shows
       if (m.emissive) {
         const tint = face.item == null ? 0 : face.item === selectedItem ? SELECT_TINT : face.item === hoverItem ? HOVER_TINT : 0;
@@ -362,7 +365,7 @@ export function createViewer(THREE) {
     },
     /** What the viewer last drew with, without rendering (cheap, for tests). */
     shown() {
-      const outlined = [...new Set(entries.filter((e) => e.edge?.visible).map((e) => e.face.item))];
+      const outlined = [...new Set(entries.filter((e) => e.edge?.visible && e.mesh.visible).map((e) => e.face.item))];
       return { selected: selectedItem, selectedLed, hovered: hoverItem, zoom: view.zoom || 1, night: !!view.night, outlined };
     },
     /** Render now and read back the pixels — for tests and thumbnails. */
