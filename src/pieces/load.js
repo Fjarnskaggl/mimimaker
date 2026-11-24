@@ -69,7 +69,9 @@ function plane(pl, env) {
 
 function component(c, env) {
   const out = { kind: c.kind, name: fillTemplate(c.name, env) };
-  if (c.kind === 'box') {
+  if (c.kind === 'rod') {
+    Object.assign(out, { stock: c.stock, d: ev(c.d, env), from: vec(c.from, env), to: vec(c.to, env) });
+  } else if (c.kind === 'box') {
     out.size = vec(c.size, env);
     out.faces = c.faces === 'all' ? [...ALL_FACES] : [...c.faces];
     if (c.shelves !== undefined) {

@@ -12,7 +12,9 @@ import { compileExpr, templateExprs, FUNCTIONS, CONSTANTS } from './expr.js';
 export const FACES = ['bottom', 'top', 'front', 'back', 'left', 'right'];
 export const PLACEMENTS = ['floor', 'wall'];
 export const MATS = ['board', 'card', 'fabric'];
-export const KINDS = ['box', 'flat'];
+export const KINDS = ['box', 'flat', 'rod'];
+/** Bought round stock a rod component stands for (not cut: listed in the bill of materials). */
+export const STOCKS = ['dowel', 'wire', 'tube'];
 export const UNITS = ['cm'];
 export const RESERVED = ['t'];
 
@@ -28,6 +30,7 @@ export const PLANES = ['upright', 'floor', 'custom'];
 const HEADER = ['id', 'label', 'theme', 'placement', 'mat', 'params', 'defaults', 'size', 'let', 'components', 'note', 'tags', 'difficulty'];
 const BOX_FIELDS = ['kind', 'name', 'size', 'at', 'faces', 'shelves', 'scores', 'holes', 'when', 'material'];
 const FLAT_FIELDS = ['kind', 'name', 'polys', 'scores', 'plane', 'wall', 'surface', 'at', 'when', 'material'];
+const ROD_FIELDS = ['kind', 'name', 'stock', 'd', 'from', 'to', 'at', 'when'];
 const REPEAT_FIELDS = ['repeat', 'as', 'let', 'each', 'when'];
 const IDENT_RE = /^[A-Za-z_]\w*$/;
 const ID_RE = /^[a-z][a-z0-9-]*$/;
@@ -245,6 +248,16 @@ export function validatePiece(piece) {
     template(`${path}.name`, c.name, scope);
     if (c.at !== undefined) exprList(`${path}.at`, c.at, scope, 3);
     if (c.material !== undefined && !str(c.material)) err(`${path}.material`, 'must be a material id');
+    if (c.kind === 'rod') {
+      for (const k of Object.keys(c)) if (!ROD_FIELDS.includes(k)) err(`${path}.${k}`, 'unknown field');
+      oneOf(`${path}.stock`, c.stock, STOCKS);
+      if (c.d === undefined) err(`${path}.d`, 'required');
+      else expr(`${path}.d`, c.d, scope);
+      exprList(`${path}.from`, c.from, scope, 3);
+      exprList(`${path}.to`, c.to, scope, 3);
+      if (piece.placement === 'wall') err(path, 'rods stand in floor pieces');
+      return;
+    }
     if (c.kind === 'box') {
       for (const k of Object.keys(c)) {
         if (!BOX_FIELDS.includes(k)) err(`${path}.${k}`, FLAT_FIELDS.includes(k) ? 'only flat parts have this' : 'unknown field');

@@ -4,7 +4,7 @@
 //
 // billOfMaterials(kit, compiled, steps?) → {
 //   sheets:   [{ id, qty, name, note, cost: { low, high, currency }, unpriced }]   one line per material
-//   supplies: [{ id, qty, name, note, cost }]                   glue, acetate, vellum
+//   supplies: [{ id, qty, name, note, cost }]                   glue, acetate, vellum, rods (dowel, wire, tube)
 //   lights:   T5's shoppingList items (LEDs, power), unchanged
 //   totals: [{ currency, low, high }]   one per currency
 //   total:  the total in the kit's currency (the only one unless mixed)
@@ -21,6 +21,7 @@ import { shoppingList } from '../lighting/shopping.js';
 import { buildSteps } from './steps.js';
 import { kitMaterialCost } from '../export/cost.js';
 import { defaultCurrency, formatMoney } from '../materials.js';
+import { HARDWARE } from '../hardware.js';
 
 const TIME_NOTE = 'Times are for a first build; cutting runs on the machine while you start gluing.';
 export const BOM_NOTE = `Sheet prices come from your material library (edit them on the Make step). Glue and light prices are rough estimates in US dollars from typical craft and online shops — check your local shop. ${TIME_NOTE}`;
@@ -46,6 +47,8 @@ export const totalText = (bom) => bom.totals.map(costText).join(' + ')
 export const DIFFICULTY = ['Beginner', 'Intermediate', 'Advanced'];
 
 const SUPPLY_PRICES = { pva: [2, 5], stick: [1, 3], clear: [3, 6], acetate: [0.5, 1.5], vellum: [0.5, 1.5] };
+/** A length of round stock (a pack of skewers, a coil of wire, a brass tube). */
+const ROD_PRICES = { dowel: [0.5, 2], wire: [0.5, 2], tube: [1.5, 4] };
 
 /** Minutes of hands-on work per step: a base, plus each part and joint. */
 const MIN_PER_STEP = { build: 4, place: 3, info: 10 };
@@ -85,6 +88,20 @@ export function billOfMaterials(kit, compiled, steps = buildSteps(kit, compiled)
   if (acetateCut) supplies.push(line('clear', 1, 'Clear-drying glue', 'for acetate panes; keep it off the openings', SUPPLY_PRICES.clear));
   const windows = parts.some((p) => p.group === 'Window & door trim' && /window/i.test(p.name));
   if (windows && !acetateCut) supplies.push(line('acetate', 1, 'Clear acetate sheet (optional)', 'window glass behind the frames', SUPPLY_PRICES.acetate));
+  // bought rods that pieces stand on (lamp stems, posts): one line per kind and size
+  const rods = new Map();
+  for (const h of compiled.hardware || []) {
+    const key = `${h.stock}-${Math.round(h.d * 10)}`;
+    const r = rods.get(key) || { ...h, count: 0, total: 0 };
+    r.count += 1;
+    r.total += h.length;
+    rods.set(key, r);
+  }
+  for (const [key, r] of rods) {
+    const H = HARDWARE[r.stock] || HARDWARE.dowel;
+    const mm = Math.round(r.d * 10) / 10;
+    supplies.push(line(`rod-${key}`, 1, `${mm} mm ${H.name}`, `${H.alt}: ${r.count} piece${r.count === 1 ? '' : 's'}, ${Math.ceil(r.total)} mm in all`, ROD_PRICES[r.stock] || ROD_PRICES.dowel));
+  }
   if (/vellum|tracing paper/i.test(text)) supplies.push(line('vellum', 1, 'Vellum or tracing paper', 'diffuses the light behind lit windows', SUPPLY_PRICES.vellum));
 
   // ------------------------------------------------------------ lights

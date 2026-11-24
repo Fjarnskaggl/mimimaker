@@ -12,6 +12,7 @@ import { archPoly, ellipsePoly, rectPoly, bbox, translatePolys } from './geometr
 // T2 shells
 import { prepareShell, compileShell, compileRoof, shellLighting } from './shells/kit.js';
 import { buildBase } from './lighting/base.js';
+import { HARDWARE_COLORS, hardwareName } from './hardware.js';
 import { fanRotor, turntableDisc } from './lighting/motion.js';
 
 /** Material left under a door so the wall panel stays in one piece (mm). */
@@ -40,6 +41,7 @@ function rotZ(rot, w, d) {
 
 const fmtIds = (ids) => ids.map((i) => `#${i}`).join(', ');
 
+
 export function compileKit(kit) {
   const warnings = [];
   const warn = (msg, level = 'warn') => warnings.push({ level, msg });
@@ -49,6 +51,7 @@ export function compileKit(kit) {
   const tabWidth = kit.tabWidth || 5;
   const fingerWidth = kit.fingerWidth || 0;
   const parts = [], groups = [], faces3d = [];
+  const hardware = []; // bought round stock (dowels, wire, tube) that pieces stand on: not cut, in the bill
   let currentItem = null; // index of the item whose 3D faces are being added
   let nextId = 1;
 
@@ -88,6 +91,7 @@ export function compileKit(kit) {
       ...(opts.print ? { print: true } : {}), // wallpaper / floor covering: wears the printed pattern
       polys: polys2d.map((poly) => poly.map((p) => xf.p(map(p)))), n: xf.n(plane.n),
       ...(opts.led != null ? { led: opts.led } : {}), // a light's glow: its index in kit.lighting.leds (click to select)
+      ...(opts.part != null ? { part: opts.part } : {}), // the cut part this face shows, where the compiler knows it
     });
   };
   // Joint tabs never go narrower than the machine cuts cleanly in that material.
@@ -369,17 +373,50 @@ export function compileKit(kit) {
     for (const c of def.build(p, { t: mat.thickness })) {
       const at = c.at || [0, 0, 0];
       const cxf = { p: (q) => xf.p(v3.add(q, at)), n: xf.n };
-      if (c.kind === 'box') compileBox(c, mat, group, cxf, title);
+      if (c.kind === 'rod') addRod(c, mat, group, cxf, title);
+      else if (c.kind === 'box') compileBox(c, mat, group, cxf, title);
       else {
         const plane = c.wall ? wallPlane : c.plane;
         const fmat = c.material ? getMat(c.material, title) : mat;
         const pid = addPart(group, c.name, fmat, c.polys, c.scores || []);
-        add3d(c.surface ? 1.5 : 2, c.polys, plane, c.wall ? worldXf : cxf, fmat.color, { cull: false, thickness: c.surface ? undefined : fmat.thickness, material: fmat.id });
+        add3d(c.surface ? 1.5 : 2, c.polys, plane, c.wall ? worldXf : cxf, fmat.color, { cull: false, thickness: c.surface ? undefined : fmat.thickness, material: fmat.id, part: pid });
         group.steps.push(`Glue the ${c.name.toLowerCase()} (#${pid}) in place.`);
       }
     }
     if (def.note) group.steps.push(def.note);
   });
+
+  // A bought rod (dowel, wire, tube), cut to length: drawn as an eight-sided
+  // prism from c.from to c.to, listed in compiled.hardware, never on a sheet.
+  function addRod(c, mat, group, xf, title) {
+    const a = xf.p(c.from), b = xf.p(c.to);
+    const axis = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const length = Math.hypot(...axis);
+    if (!(length > 0) || !(c.d > 0)) return;
+    const k = v3.mul(axis, 1 / length);
+    const ref = Math.abs(k[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+    const cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]];
+    const u0 = cr(k, ref), lu = Math.hypot(...u0);
+    const u = v3.mul(u0, 1 / lu), w = cr(k, u);
+    const r = c.d / 2, n = 8;
+    const ring = (o) => Array.from({ length: n }, (_, i) => {
+      const ang = (2 * Math.PI * (i + 0.5)) / n;
+      return v3.add(o, v3.add(v3.mul(u, r * Math.cos(ang)), v3.mul(w, r * Math.sin(ang))));
+    });
+    const lo = ring(a), hi = ring(b);
+    const index = hardware.length;
+    const color = HARDWARE_COLORS[c.stock] || HARDWARE_COLORS.dowel;
+    const face = (poly, nrm) => faces3d.push({ layer: 2, color, opacity: 1, cull: false, glow: false, item: currentItem, thickness: 0, material: mat.id, polys: [poly], n: nrm, hardware: index });
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      const ang = (2 * Math.PI * (i + 1)) / n;
+      face([lo[i], lo[j], hi[j], hi[i]], v3.add(v3.mul(u, Math.cos(ang)), v3.mul(w, Math.sin(ang))));
+    }
+    face([...lo].reverse(), v3.mul(k, -1));
+    face(hi, k);
+    hardware.push({ name: c.name, stock: c.stock, d: c.d, length, group: group.title, item: currentItem, from: a, to: b });
+    group.steps.push(`Cut ${hardwareName(c.stock, c.d)} ${Math.round(length)} mm long for the ${c.name.toLowerCase()}.`);
+  }
 
   function compileBox(c, mat, group, xf, title) {
     const [bw, bd, bh] = c.size;
@@ -394,12 +431,14 @@ export function compileKit(kit) {
       const res = buildBox({ W: bw, D: bd, H: bh, t: mt, faces: c.faces, shelves: c.shelves || [], scores: c.scores || {}, holes: c.holes || {}, fingerWidth: jointWidth(mat), minFeature: minJointFeature(machine, mat) });
       checkFingers(res.minFinger, mat, title);
       const ids = res.panels.map((pn) => {
-        add3d(2, [pn.outline, ...pn.holes], faceFrame(pn.face, bw, bd, bh), xf, mat.color, { cull: closed, thickness: mt, material: mat.id });
-        return addPart(group, `${c.name} ${pn.face}`, mat, [pn.outline, ...pn.holes], pn.scores);
+        const pid = addPart(group, `${c.name} ${pn.face}`, mat, [pn.outline, ...pn.holes], pn.scores);
+        add3d(2, [pn.outline, ...pn.holes], faceFrame(pn.face, bw, bd, bh), xf, mat.color, { cull: closed, thickness: mt, material: mat.id, part: pid });
+        return pid;
       });
       const shelfIds = res.shelves.map((sp, k) => {
-        add3d(2, [sp.outline], { o: [sp.x0, sp.y0, sp.z + mt], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, xf, mat.color, { cull: true, thickness: mt, material: mat.id });
-        return addPart(group, `${c.name} shelf ${k + 1}`, mat, [sp.outline]);
+        const pid = addPart(group, `${c.name} shelf ${k + 1}`, mat, [sp.outline]);
+        add3d(2, [sp.outline], { o: [sp.x0, sp.y0, sp.z + mt], U: [1, 0, 0], V: [0, 1, 0], n: [0, 0, 1] }, xf, mat.color, { cull: true, thickness: mt, material: mat.id, part: pid });
+        return pid;
       });
       group.steps.push(`${c.name}: dry-fit panels ${fmtIds(ids)} — the tabs drop into their notches. Glue and hold square until set.`);
       if (shelfIds.length) group.steps.push(`Slide shelves ${fmtIds(shelfIds)} into the slots in the sides${c.faces.includes('back') ? ' and back' : ''} before the second side goes on.`);
@@ -414,7 +453,8 @@ export function compileKit(kit) {
     const ids = net.pieces.map((pc, k) => addPart(group, net.pieces.length > 1 ? `${c.name} ${pc.faces[0]}` : `${c.name} net`, mat, pc.polys, pc.scores));
     for (const f of c.faces) {
       const [a, b] = f === 'bottom' || f === 'top' ? [bw, bd] : f === 'front' || f === 'back' ? [bw, bh] : [bd, bh];
-      add3d(2, [rectPoly(0, 0, a, b), ...((c.holes || {})[f] || [])], faceFrame(f, bw, bd, bh), xf, mat.color, { cull: c.faces.length === 6, thickness: mt, material: mat.id });
+      const k = net.pieces.findIndex((pc) => pc.faces.includes(f));
+      add3d(2, [rectPoly(0, 0, a, b), ...((c.holes || {})[f] || [])], faceFrame(f, bw, bd, bh), xf, mat.color, { cull: c.faces.length === 6, thickness: mt, material: mat.id, part: ids[k >= 0 ? k : 0] });
     }
     const shelfIds = (c.shelves || []).map((z, k) => {
       const sw = bw - 2 * mt, sd = bd - (c.faces.includes('back') ? mt : 0);
@@ -446,7 +486,7 @@ export function compileKit(kit) {
   }
 
   return {
-    parts, groups, faces3d, sheets, warnings, usedMats, machine,
+    parts, groups, faces3d, sheets, warnings, usedMats, machine, hardware,
     dims: { W, D, H, Wi, Di, Hi, t }, lighting, openings, ceiling: !!room.ceiling,
     shell, // T2 shells: { type, dims, joints (by part id), lights } or null
   };

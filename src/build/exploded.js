@@ -3,8 +3,8 @@
 // place, the step's own parts are pulled apart along the way they go on, and
 // later parts are left out.
 //
-// compiled.faces3d carries no part ids, so faceParts() matches each 3D face
-// to the part it was made from: same outline (area, perimeter, holes) within
+// Furniture faces carry their part id (face.part); for the rest faceParts()
+// matches each 3D face to the part it was made from: same outline (area, perimeter, holes) within
 // the same item, in creation order. Faces of a fold-up card net have their own
 // rectangles, so those inherit the unmatched net made next to them.
 
@@ -35,7 +35,7 @@ const sig2 = (polys) => ({ a: area2(polys[0]), p: perim(polys[0], d2), h: polys.
 const sig3 = (polys) => ({ a: area3(polys[0]), p: perim(polys[0], d3), h: polys.length });
 const same = (s, t) => s.h === t.h && Math.abs(s.a - t.a) <= 0.5 + 0.002 * s.a && Math.abs(s.p - t.p) <= 0.5;
 
-/** For each face in compiled.faces3d, the id of the part it shows (or null for LED glows). */
+/** For each face in compiled.faces3d, the id of the part it shows (or null for LED glows and bought rods). */
 export function faceParts(kit, compiled) {
   const faces = compiled.faces3d;
   const owner = faces.map(() => null);
@@ -48,9 +48,14 @@ export function faceParts(kit, compiled) {
   const sigs = new Map(compiled.parts.map((p) => [p.id, sig2(p.polys)]));
   const used = new Set();
 
+  // 0. faces the compiler tagged with their part
+  faces.forEach((f, k) => {
+    if (f.part != null && f.hardware == null && !f.glow) { owner[k] = f.part; used.add(f.part); }
+  });
   // 1. exact matches by shape, in order
   faces.forEach((f, k) => {
-    if (f.glow) return;
+    if (owner[k] != null) return;
+    if (f.glow || f.hardware != null) return; // bought rods aren't cut parts
     const s = sig3(f.polys);
     const p = pool(f).find((q) => !used.has(q.id) && same(sigs.get(q.id), s));
     if (p) { owner[k] = p.id; used.add(p.id); }
@@ -61,7 +66,7 @@ export function faceParts(kit, compiled) {
   //    else all go to the first
   const key = (f) => (f.item != null && groupOfItem.has(f.item) ? `i${f.item}` : 's');
   const classes = new Map();
-  faces.forEach((f, k) => { if (!f.glow) { const c = key(f); if (!classes.has(c)) classes.set(c, []); classes.get(c).push(k); } });
+  faces.forEach((f, k) => { if (!f.glow && f.hardware == null) { const c = key(f); if (!classes.has(c)) classes.set(c, []); classes.get(c).push(k); } });
   for (const ks of classes.values()) {
     const cand = pool(faces[ks[0]]).filter((p) => !used.has(p.id));
     let i = 0;

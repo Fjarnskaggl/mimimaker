@@ -56,9 +56,19 @@
         "let": { "$ref": "#/$defs/lets" }, "when": { "$ref": "#/$defs/expr" }, "each": {}
       }
     },
-    "componentEntry": { "oneOf": [{ "$ref": "#/$defs/box" }, { "$ref": "#/$defs/flat" }, { "allOf": [{ "$ref": "#/$defs/repeat" }, { "properties": { "each": { "$ref": "#/$defs/componentEntry" } } }] }] },
+    "componentEntry": { "oneOf": [{ "$ref": "#/$defs/box" }, { "$ref": "#/$defs/flat" }, { "$ref": "#/$defs/rod" }, { "allOf": [{ "$ref": "#/$defs/repeat" }, { "properties": { "each": { "$ref": "#/$defs/componentEntry" } } }] }] },
     "shapeEntry": { "oneOf": [{ "$ref": "#/$defs/shape" }, { "allOf": [{ "$ref": "#/$defs/repeat" }, { "properties": { "each": { "$ref": "#/$defs/shapeEntry" } } }] }] },
     "scoreEntry": { "oneOf": [{ "$ref": "#/$defs/score" }, { "allOf": [{ "$ref": "#/$defs/repeat" }, { "properties": { "each": { "$ref": "#/$defs/scoreEntry" } } }] }] },
+    "rod": {
+      "type": "object", "required": ["kind", "name", "stock", "d", "from", "to"], "additionalProperties": false,
+      "description": "Bought round stock (dowel, wire or tube) cut to length: not on the cut sheets, listed in the bill of materials and drawn in 3D from `from` to `to`.",
+      "properties": {
+        "kind": { "const": "rod" }, "name": { "type": "string" }, "stock": { "enum": ["dowel", "wire", "tube"] },
+        "d": { "$ref": "#/$defs/expr", "description": "Diameter (mm)." },
+        "from": { "$ref": "#/$defs/vec3" }, "to": { "$ref": "#/$defs/vec3" }, "at": { "$ref": "#/$defs/vec3" },
+        "when": { "$ref": "#/$defs/expr" }
+      }
+    },
     "box": {
       "type": "object", "required": ["kind", "name", "size", "faces"], "additionalProperties": false,
       "properties": {
