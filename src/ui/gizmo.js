@@ -126,12 +126,14 @@ export function drawGizmo(wrap, o) {
   const begin = (ev, name) => {
     ev.preventDefault();
     ev.stopPropagation();
+    if (overlay.drag) return; // one drag at a time: a second finger doesn't take over
     const h = ev.currentTarget;
     h.setPointerCapture?.(ev.pointerId);
     overlay.drag = { name, x0: ev.clientX, y0: ev.clientY, result: null, item };
     svg.classList.add('dragging');
     h.classList.add('active');
     const move = (mv) => {
+      if (mv.pointerId !== ev.pointerId || !overlay.drag) return;
       const d = { x: mv.clientX - overlay.drag.x0, y: mv.clientY - overlay.drag.y0 };
       if (!overlay.drag.result && Math.hypot(d.x, d.y) < 3) return; // a click, or a wobble, isn't a move
       const free = mv.altKey || !o.grid; // Alt, or Snap set to Off
@@ -174,7 +176,8 @@ export function drawGizmo(wrap, o) {
       const off = toLocal(o.project(origin.map((v, i) => v + (res.xf.offset?.[i] || 0))));
       handles.setAttribute('transform', `translate(${off.x - lo.x} ${off.y - lo.y})`);
     };
-    const end = (ev) => {
+    const end = (up) => {
+      if (up.pointerId !== ev.pointerId) return;
       h.removeEventListener('pointermove', move);
       h.removeEventListener('pointerup', end);
       h.removeEventListener('pointercancel', end);
@@ -182,7 +185,7 @@ export function drawGizmo(wrap, o) {
       overlay.drag = null;
       svg.classList.remove('dragging');
       guides.replaceChildren();
-      if (res && ev.type === 'pointerup') o.commit(res.changes, item); else o.preview(null, null, item); // a cancelled drag puts it back
+      if (res && up.type === 'pointerup') o.commit(res.changes, item); else o.preview(null, null, item); // a cancelled drag puts it back
     };
     h.addEventListener('pointermove', move);
     h.addEventListener('pointerup', end);
@@ -221,17 +224,6 @@ export function drawGizmo(wrap, o) {
     const ring = { cx: sr.left + (Math.min(...xs) + Math.max(...xs)) / 2, cy: sr.top + (Math.min(...ys) + Math.max(...ys)) / 2, rx: (Math.max(...xs) - Math.min(...xs)) / 2, ry: Math.max(1, (Math.max(...ys) - Math.min(...ys)) / 2) };
     g.dataset.ring = JSON.stringify(ring);
   }
-  // plane square, between the two arrows
-  {
-    const [k1, k2] = wall ? ['pos', 'up'] : ['x', 'y'];
-    const u1 = unit(sa[k1]), u2 = unit(sa[k2]);
-    const at = (a, b) => ({ x: lo.x + u1.x * a + u2.x * b, y: lo.y + u1.y * a + u2.y * b });
-    const q = [at(14, 14), at(34, 14), at(34, 34), at(14, 34)];
-    const g = handle(wall ? 'plane' : 'xy', 'plane');
-    const c = at(24, 24);
-    el('circle', { class: 'hit-knob', cx: c.x, cy: c.y, r: 14 }, g);
-    el('path', { class: 'knob', d: 'M' + q.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L') + 'Z' }, g);
-  }
   // arrows
   for (const [name, v] of Object.entries(sa)) {
     const u = unit(v);
@@ -244,6 +236,17 @@ export function drawGizmo(wrap, o) {
     el('circle', { class: 'knob', cx: tip.x, cy: tip.y, r: 7 }, g);
     const n = { x: -u.y, y: u.x }; // a small chevron in the knob, pointing the way it moves
     el('path', { class: 'glyph', 'pointer-events': 'none', d: `M${tip.x - u.x * 2 + n.x * 3} ${tip.y - u.y * 2 + n.y * 3}L${tip.x + u.x * 2.5} ${tip.y + u.y * 2.5}L${tip.x - u.x * 2 - n.x * 3} ${tip.y - u.y * 2 - n.y * 3}` }, g);
+  }
+  // plane square, between the two arrows: drawn last so it sits on top of the arrows' wide finger bands
+  {
+    const [k1, k2] = wall ? ['pos', 'up'] : ['x', 'y'];
+    const u1 = unit(sa[k1]), u2 = unit(sa[k2]);
+    const at = (a, b) => ({ x: lo.x + u1.x * a + u2.x * b, y: lo.y + u1.y * a + u2.y * b });
+    const q = [at(14, 14), at(34, 14), at(34, 34), at(14, 34)];
+    const g = handle(wall ? 'plane' : 'xy', 'plane');
+    const c = at(24, 24);
+    el('circle', { class: 'hit-knob', cx: c.x, cy: c.y, r: 14 }, g);
+    el('path', { class: 'knob', d: 'M' + q.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L') + 'Z' }, g);
   }
   el('circle', { class: 'gizmo-origin', cx: lo.x, cy: lo.y, r: 3 }, handles);
 }
