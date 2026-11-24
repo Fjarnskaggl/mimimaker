@@ -152,3 +152,21 @@ test('build mode: each step shows its exploded view', async () => {
   assert.deepEqual(page.errors, []);
   await context.close();
 });
+
+test('renaming the room mid-build keeps the ticked steps', async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await openBuild(context);
+  const boxes = page.locator('.t4-parts input[type=checkbox]');
+  for (let i = 0; i < await boxes.count(); i++) await boxes.nth(i).check();
+  assert.match(await page.locator('.t4-summary').innerText(), /^1 of \d+ steps done/m);
+  await page.focus('#kit-name');
+  await page.keyboard.press('End');
+  await page.keyboard.type(' for Gran');
+  await page.waitForSelector('.t4-build');
+  assert.match(await page.locator('.t4-summary').innerText(), /1 of \d+ steps done/, 'ticks survive the rename');
+  await page.reload();
+  await page.click('[data-step=build]');
+  if (!(await page.locator('.t4-build').isVisible())) await page.click('.t4-mode [data-mode=steps]');
+  assert.match(await page.locator('.t4-summary').innerText(), /1 of \d+ steps done/, 'and a reload');
+  await context.close();
+});

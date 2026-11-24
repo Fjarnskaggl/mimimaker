@@ -6,7 +6,7 @@ import { compileKit } from '../src/kit.js';
 import { defaultKit } from '../src/catalog.js';
 import { buildSteps } from '../src/build/steps.js';
 import {
-  progressKey, emptyProgress, loadProgress, saveProgress,
+  progressKey, legacyProgressKey, migrateProgress, emptyProgress, loadProgress, saveProgress,
   toggleStep, togglePart, goTo, summary, startTimer, timerLeft, formatClock,
 } from '../src/build/progress.js';
 
@@ -100,4 +100,27 @@ test('glue timer counts down from the step cure time and is saved with the progr
   assert.equal(formatClock(30 * 60), '30:00');
   assert.equal(formatClock(65), '1:05');
   assert.equal(formatClock(0), '0:00');
+});
+
+test('renaming the kit keeps its build progress: the key follows the steps, not the name', () => {
+  const { kit, steps } = setup();
+  const renamed = { ...kit, name: `${kit.name} (mine)` };
+  assert.equal(progressKey(renamed, buildSteps(renamed, compileKit(renamed))), progressKey(kit, steps));
+});
+
+test('progress saved under the old name-based key moves to the new key once', () => {
+  const { kit, steps } = setup();
+  const mem = new Map();
+  const store = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
+  const s = steps[0];
+  saveProgress(store, legacyProgressKey(kit, steps), { current: 2, done: [s.n], parts: { [s.n]: s.parts }, timers: {} });
+  migrateProgress(store, kit, steps);
+  const p = loadProgress(store, progressKey(kit, steps), steps);
+  assert.deepEqual(p.done, [s.n]);
+  assert.equal(p.current, 2);
+  assert.equal(store.getItem(legacyProgressKey(kit, steps)), null, 'the old copy is gone');
+  // newer progress is never overwritten by an old copy
+  saveProgress(store, legacyProgressKey(kit, steps), { current: 1, done: [], parts: {}, timers: {} });
+  migrateProgress(store, kit, steps);
+  assert.deepEqual(loadProgress(store, progressKey(kit, steps), steps).done, [s.n]);
 });
