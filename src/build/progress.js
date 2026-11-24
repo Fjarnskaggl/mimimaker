@@ -21,10 +21,37 @@ function hash(str) {
   return h.toString(36);
 }
 
-/** Storage key: changes whenever the steps or their parts change, so stale ticks never carry over. */
+const stepsSig = (steps) => steps.map((s) => `${s.title}:${s.parts.join(',')}`);
+
+/**
+ * Storage key: changes whenever the steps or their parts change, so stale
+ * ticks never carry over. It hashes the kit's id (stable across renames; the
+ * app gives every room its own) rather than its name, so renaming the room
+ * mid-build keeps its progress while two rooms never share theirs.
+ */
 export function progressKey(kit, steps) {
-  const sig = [kit.name || '', ...steps.map((s) => `${s.title}:${s.parts.join(',')}`)].join('|');
-  return `mimimaker.build.${hash(sig)}`;
+  return `mimimaker.build.v2.${hash([kit.id || '', ...stepsSig(steps)].join('|'))}`;
+}
+
+/** The key used before 2026-11-24, which hashed the kit's name. */
+export function legacyProgressKey(kit, steps, name = kit.name) {
+  return `mimimaker.build.${hash([name || '', ...stepsSig(steps)].join('|'))}`;
+}
+
+/**
+ * Move progress saved under the legacy key to the current one. `name` is the
+ * name the kit had when the app first gave it an id (kit.progressName), so a
+ * rename since then still finds the old ticks. Newer progress is never
+ * overwritten, and the old copy is removed only once it has moved.
+ */
+export function migrateProgress(storage, kit, steps, name = kit.progressName ?? kit.name) {
+  try {
+    const old = legacyProgressKey(kit, steps, name), key = progressKey(kit, steps);
+    const raw = storage?.getItem(old);
+    if (raw == null || storage.getItem(key) != null) return;
+    storage.setItem(key, raw);
+    storage.removeItem?.(old);
+  } catch { /* storage blocked: nothing to move */ }
 }
 
 const clampStep = (steps, n) => Math.min(Math.max(1, Math.round(Number(n) || 1)), Math.max(1, steps.length));

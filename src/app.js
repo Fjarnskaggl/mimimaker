@@ -46,7 +46,7 @@ import { shoppingFile } from './lighting/shopping.js';
 const STORE_KEY = 'mimimaker.kit.v1';
 const $ = (sel) => document.querySelector(sel);
 
-let kit = loadKit() || defaultKit();
+let kit = loadKit() || normalizeKit(defaultKit());
 let compiled = null;
 // step: design | light | make | build. views: what the stage shows per step.
 // tab mirrors the old tab names for thread modules (T3 re-renders on 'sheets').
@@ -117,9 +117,15 @@ function loadKit() {
 function saveKit() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(kit)); } catch { /* storage unavailable */ }
 }
+function newKitId() {
+  try { return [...crypto.getRandomValues(new Uint8Array(8))].map((b) => b.toString(16).padStart(2, '0')).join(''); } catch { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+}
 function normalizeKit(k) {
   const base = defaultKit();
   const out = { ...base, ...k, room: { ...base.room, ...(k.room || {}) } };
+  // a stable id for this room, kept across renames: build progress is saved under it.
+  // A room from before ids remembers its name so its old build progress can move over.
+  if (typeof out.id !== 'string' || !out.id) { out.id = newKitId(); if (out.name) out.progressName = out.name; }
   if (!Array.isArray(out.materials) || !out.materials.length) out.materials = structuredClone(DEFAULT_MATERIALS);
   out.materials = out.materials.map(withMaterialDefaults);
   out.openings = Array.isArray(k.openings) ? k.openings : [];
@@ -1114,6 +1120,8 @@ async function shareLink() {
 // T7: a room started from Start is not a remix, so it drops the remix credit.
 function freshRoom(next) { delete next.origin; return next; }
 function replaceKit(next, message) {
+  next.id = newKitId(); // a new room starts its own build progress
+  delete next.progressName;
   kit = next;
   resetZoom(); // T6: a new room starts in its fitted view
   $('#kit-name').value = kit.name;
