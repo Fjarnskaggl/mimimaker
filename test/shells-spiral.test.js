@@ -76,7 +76,7 @@ test('two-storey: a spiral stair in the corner, up through the stairwell', () =>
       const nx = Math.max(x0, Math.min(cx, x1)), ny = Math.max(y0, Math.min(cy, y1));
       assert.ok(Math.hypot(nx - cx, ny - cy) >= R - 1e-6, `${f.key} clears the stairwell`);
     }
-    assert.ok(sh.steps.some((s) => s.group === 'Stairs' && /dowel/i.test(s.text)), 'steps say which post to buy');
+    assert.ok(sh.rods.some((r) => r.group === 'Stairs' && r.stock === 'dowel' && r.d > 0), 'the post to buy is listed as a dowel');
   }
 });
 
@@ -104,7 +104,7 @@ test('review: the post stands in a locating hole at the centre of the spiral', (
     const xs = h.map(([x]) => x), ys = h.map(([, y]) => y);
     return Math.abs((Math.min(...xs) + Math.max(...xs)) / 2 - cx) < 0.01 && Math.abs((Math.min(...ys) + Math.max(...ys)) / 2 - cy) < 0.01;
   }), 'a hole in the floor at the post');
-  const step = sh.steps.find((s) => /dowel/i.test(s.text)).text;
+  const step = sh.steps.find((s) => /\bpost\b/i.test(s.text)).text;
   assert.match(step, /hole/i);
   assert.doesNotMatch(step, /first baluster's tread points/);
   // and it ends below the roof
