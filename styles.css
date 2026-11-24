@@ -264,7 +264,15 @@ button:disabled, .mm-btn:disabled { opacity: .45; cursor: not-allowed; backgroun
 .gizmo-handle.ax-x { --ax: var(--score); }
 .gizmo-handle.ax-y { --ax: var(--success); }
 .gizmo-handle.ax-z { --ax: var(--glow); }
+.t6-gizmo { touch-action: none; }
+.gizmo-handle { touch-action: none; }
 .gizmo-handle .hit { stroke: transparent; stroke-width: 16; fill: none; stroke-linecap: round; }
+.gizmo-handle .hit-knob { fill: transparent; stroke: none; }
+/* fingers: 44 px targets round each knob, and a wider band along the arrows and ring */
+@media (pointer: coarse) {
+  .gizmo-handle .hit-knob { r: 22px; }
+  .gizmo-handle .hit { stroke-width: 28; }
+}
 .gizmo-handle .line { stroke: var(--ax); stroke-width: 2.5; fill: none; stroke-linecap: round; }
 .gizmo-handle .knob { fill: var(--surface); stroke: var(--ax); stroke-width: 2.5; filter: drop-shadow(0 1px 2px rgba(24,33,30,.25)); transition: transform 120ms ease-out; transform-box: fill-box; transform-origin: center; }
 .gizmo-handle .glyph { fill: none; stroke: var(--ax); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }

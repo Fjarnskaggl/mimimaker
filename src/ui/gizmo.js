@@ -194,6 +194,9 @@ export function drawGizmo(wrap, o) {
   const handle = (name, cls) => {
     const g = el('g', { class: `gizmo-handle ${cls}`, 'data-handle': name }, handles);
     g.addEventListener('pointerdown', (ev) => begin(ev, name));
+    // a finger on a handle drags it: never let the browser take the touch to
+    // scroll or zoom the page (that cancels the pointer and drops the drag)
+    g.addEventListener('touchstart', (ev) => ev.preventDefault(), { passive: false });
     return g;
   };
   // rotate ring (floor pieces): a circle on the floor round the piece, drawn first so arrows sit on top
@@ -212,6 +215,7 @@ export function drawGizmo(wrap, o) {
     el('path', { class: 'line', d }, g);
     // knob at the back left of the ring, away from the arrows (which point right and to the front)
     const k = toLocal(o.project([origin[0] - Math.SQRT1_2 * R, origin[1] + Math.SQRT1_2 * R, origin[2]]));
+    el('circle', { class: 'hit-knob', cx: k.x, cy: k.y, r: 14 }, g); // finger-sized target round the small knob
     el('circle', { class: 'knob', cx: k.x, cy: k.y, r: 7 }, g);
     el('path', { class: 'glyph', d: `M${k.x - 3.5} ${k.y - 1}a3.5 3.5 0 1 1 1 3.2`, 'pointer-events': 'none' }, g);
     const ring = { cx: sr.left + (Math.min(...xs) + Math.max(...xs)) / 2, cy: sr.top + (Math.min(...ys) + Math.max(...ys)) / 2, rx: (Math.max(...xs) - Math.min(...xs)) / 2, ry: Math.max(1, (Math.max(...ys) - Math.min(...ys)) / 2) };
@@ -224,6 +228,8 @@ export function drawGizmo(wrap, o) {
     const at = (a, b) => ({ x: lo.x + u1.x * a + u2.x * b, y: lo.y + u1.y * a + u2.y * b });
     const q = [at(14, 14), at(34, 14), at(34, 34), at(14, 34)];
     const g = handle(wall ? 'plane' : 'xy', 'plane');
+    const c = at(24, 24);
+    el('circle', { class: 'hit-knob', cx: c.x, cy: c.y, r: 14 }, g);
     el('path', { class: 'knob', d: 'M' + q.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L') + 'Z' }, g);
   }
   // arrows
@@ -233,6 +239,7 @@ export function drawGizmo(wrap, o) {
     const g = handle(name, `arrow ${AXIS_CLASS[name]}`);
     g.dataset.pxPerCm = JSON.stringify([(v.x / 100) * s, (v.y / 100) * s]);
     el('line', { class: 'hit', x1: lo.x, y1: lo.y, x2: tip.x, y2: tip.y }, g);
+    el('circle', { class: 'hit-knob', cx: tip.x, cy: tip.y, r: 14 }, g);
     el('line', { class: 'line', x1: lo.x + u.x * 10, y1: lo.y + u.y * 10, x2: tip.x - u.x * 7, y2: tip.y - u.y * 7 }, g);
     el('circle', { class: 'knob', cx: tip.x, cy: tip.y, r: 7 }, g);
     const n = { x: -u.y, y: u.x }; // a small chevron in the knob, pointing the way it moves
