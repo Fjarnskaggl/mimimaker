@@ -150,7 +150,7 @@ export function createViewer(THREE) {
     retired = [];
   }
   function clear(keepTextures = false) {
-    const old = [...entries.flatMap((e) => (e.ring ? [e.mesh, e.ring] : [e.mesh])), ...windows.children];
+    const old = [...entries.flatMap((e) => [e.mesh, e.ring, e.edge].filter(Boolean)), ...windows.children];
     if (!keepTextures) {
       for (const t of textures.values()) t.texture.dispose();
       textures.clear();
@@ -237,6 +237,23 @@ export function createViewer(THREE) {
     sun.shadow.camera.updateProjectionMatrix();
   }
 
+  /**
+   * Edges drawn round the selected piece in the selection ink: the emissive
+   * tint alone barely shows on pale pieces. Made on first use, as a child of
+   * the mesh so a drag preview carries it along.
+   */
+  function outline(entry, on, night, opacity = 1) {
+    if (!on && !entry.edge) return;
+    if (!entry.edge) {
+      entry.edge = new THREE.LineSegments(new THREE.EdgesGeometry(entry.mesh.geometry, 30), new THREE.LineBasicMaterial({ color: SELECT_RING.day }));
+      entry.mesh.add(entry.edge);
+    }
+    entry.edge.visible = on;
+    entry.edge.material.color.setHex(night ? SELECT_RING.night : SELECT_RING.day);
+    entry.edge.material.transparent = opacity < 1; // a see-through piece gets a see-through outline
+    entry.edge.material.opacity = opacity;
+  }
+
   function applyView() {
     const night = !!view.night;
     if (night !== litNight) { litNight = night; litStates.add(night); renderer.shadowMap.needsUpdate = true; } // window lights cast shadows at night
@@ -252,7 +269,8 @@ export function createViewer(THREE) {
     }
     // walls seen from outside are ghosted, as in the SVG preview, so they never hide the room
     const cam = cameraDirection(view);
-    for (const { face, mesh, ring } of entries) {
+    for (const entry of entries) {
+      const { face, mesh, ring } = entry;
       const m = mesh.material;
       if (ring) {
         ring.visible = selectedLed != null && face.led === selectedLed;
@@ -270,6 +288,8 @@ export function createViewer(THREE) {
       // needs a new program, so don't flag the material (that re-keys it every frame)
       m.transparent = opacity < 1;
       m.opacity = opacity;
+      // a ghosted wall's piece stays ghosted: no hard outline across the room
+      outline(entry, face.item != null && face.item === selectedItem && !ghost && opacity > 0, night, opacity);
       // the selected piece glows softly so you can see what the inspector shows
       if (m.emissive) {
         const tint = face.item == null ? 0 : face.item === selectedItem ? SELECT_TINT : face.item === hoverItem ? HOVER_TINT : 0;
@@ -398,7 +418,8 @@ export function createViewer(THREE) {
     },
     /** What the viewer last drew with, without rendering (cheap, for tests). */
     shown() {
-      return { selected: selectedItem, selectedLed, hovered: hoverItem, zoom: view.zoom || 1 };
+      const outlined = [...new Set(entries.filter((e) => e.edge?.visible && e.mesh.visible).map((e) => e.face.item))];
+      return { selected: selectedItem, selectedLed, hovered: hoverItem, zoom: view.zoom || 1, night: !!view.night, outlined };
     },
     /** Render now and read back the pixels — for tests and thumbnails. */
     sample() {
