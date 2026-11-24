@@ -75,13 +75,22 @@ export function createViewer(THREE) {
   let hoverItem = null;
   let selectedLed = null;
   const raycaster = new THREE.Raycaster();
-  const textures = new Map(); // spec key -> { id, texture, ready }
+  const textures = new Map(); // spec key -> { id, texture, ready }; kept across rebuilds
+  let used = new Set(), texturesMade = 0, repaint = 0;
+  // texture images land one by one: repaint once per frame, not once per image
+  const repaintSoon = () => {
+    if (repaint) return;
+    const raf = globalThis.requestAnimationFrame || ((f) => setTimeout(f, 16));
+    repaint = raf(() => { repaint = 0; if (faces) render(); });
+  };
 
   // One texture image per spec, big enough to cover any face without repeating,
   // rasterised from the same SVG that would be printed.
   function textureFor(spec, scale, sizeMm, fallback) {
     const key = JSON.stringify([spec.id, spec.params, spec.seed, scale, sizeMm]);
+    used.add(key);
     if (textures.has(key)) return textures.get(key);
+    texturesMade++;
     const px = Math.min(2048, Math.max(512, Math.round(sizeMm * 8)));
     const cnv = document.createElement('canvas');
     cnv.width = cnv.height = px;
@@ -97,7 +106,7 @@ export function createViewer(THREE) {
       ctx.drawImage(img, 0, 0, px, px);
       texture.needsUpdate = true;
       entry.ready = true;
-      if (faces) render();
+      repaintSoon();
     };
     img.onerror = () => { entry.ready = true; entry.failed = true; };
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(textureSVG(spec.id, { width: sizeMm, height: sizeMm, scale, seed: spec.seed, params: spec.params }));
@@ -106,10 +115,12 @@ export function createViewer(THREE) {
   }
   let size = [0, 0];
 
-  function clear() {
+  function clear(keepTextures = false) {
     for (const e of entries) { e.mesh.geometry.dispose(); e.mesh.material.dispose(); e.ring?.geometry.dispose(); e.ring?.material.dispose(); }
-    for (const t of textures.values()) t.texture.dispose();
-    textures.clear();
+    if (!keepTextures) {
+      for (const t of textures.values()) t.texture.dispose();
+      textures.clear();
+    }
     model.clear();
     leds.clear();
     for (const o of windows.children) { o.geometry?.dispose(); o.material?.dispose(); o.shadow?.map?.dispose(); }
@@ -118,7 +129,8 @@ export function createViewer(THREE) {
   }
 
   function build(next, opts) {
-    clear();
+    clear(true); // texture images carry over: re-rasterising them is the slow part of a rebuild
+    used = new Set();
     faces = next;
     bounds = sceneBounds(faces);
     const texSize = Math.ceil(Math.max(...bounds.max.map((v, i) => v - bounds.min[i]), 10));
@@ -126,14 +138,16 @@ export function createViewer(THREE) {
       if (!face.polys.length || face.polys[0].length < 3) continue;
       const glow = face.glow;
       const spec = !glow && opts.textureOf ? opts.textureOf(face) : null;
-      const tex = spec ? textureFor(spec, opts.scale || 12, texSize, face.color) : null;
+      // raw material finishes repeat on a small tile; printed patterns span the scene
+      const size = spec?.tile > 0 ? spec.tile : texSize;
+      const tex = spec ? textureFor(spec, opts.scale || 12, size, face.color) : null;
       const material = glow
         ? new THREE.MeshBasicMaterial({ color: face.color, transparent: face.opacity < 1, opacity: face.opacity, depthWrite: face.opacity >= 1 })
         : new THREE.MeshStandardMaterial({
           color: tex ? 0xffffff : face.color, map: tex ? tex.texture : null, roughness: 0.88, metalness: 0,
           side: face.cull || faceThickness(face) > 0 ? THREE.FrontSide : THREE.DoubleSide,
         });
-      const mesh = new THREE.Mesh(faceGeometry(THREE, face, tex ? texSize : 0), material);
+      const mesh = new THREE.Mesh(faceGeometry(THREE, face, tex ? size : 0), material);
       mesh.castShadow = !glow;
       mesh.receiveShadow = !glow;
       model.add(mesh);
@@ -148,6 +162,7 @@ export function createViewer(THREE) {
       }
       entries.push(entry);
     }
+    for (const [key, t] of textures) if (!used.has(key)) { t.texture.dispose(); textures.delete(key); }
     ledData = ledLights(faces);
     // several LEDs share the room: keep the total roughly constant so it doesn't blow out
     const strength = Math.max(0.6, Math.min(1.6, 2.2 / Math.sqrt(ledData.length || 1)));
@@ -324,6 +339,8 @@ export function createViewer(THREE) {
       return {
         lit: lit / (W * H), mean: lit ? sum / lit : 0, max, hash,
         textured: entries.filter((e) => e.texture).length,
+        untextured: entries.filter((e) => !e.texture && !e.face.glow).length,
+        texturesMade,
         textures: [...new Set(entries.filter((e) => e.texture).map((e) => e.texture.id))].sort(),
         texturesReady: [...textures.values()].every((t) => t.ready),
         meshes: entries.length, solids: entries.filter((e) => e.solid).length, flat: entries.filter((e) => !e.solid).length, pointLights: leds.visible ? leds.children.length : 0,
