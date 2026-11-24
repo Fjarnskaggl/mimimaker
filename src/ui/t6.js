@@ -158,6 +158,15 @@ function setHover(stage, index, kind = 'item') {
   if (stage.dataset.renderer === 'webgl' && state.viewer) { state.viewer.hover(index); return; }
   paintSvgHover(stage);
 }
+/** Point at a piece from outside the stage, e.g. a row of the pieces list (null: stop). The cursor is left alone. */
+export function hoverPiece(index) {
+  const stage = state.last?.stage;
+  if (!stage?.isConnected) return;
+  index = index ?? null;
+  stage.t6hover = index;
+  if (stage.dataset.renderer === 'webgl' && state.viewer) state.viewer.hover(index);
+  else paintSvgHover(stage);
+}
 function paintSvgHover(stage) {
   const index = stage.t6hover ?? null;
   for (const el of stage.querySelectorAll('path.hover')) if (Number(el.dataset.item) !== index) el.classList.remove('hover');
