@@ -10,7 +10,7 @@
 
 import { buildSteps, stepJointKinds } from '../build/steps.js';
 import {
-  progressKey, emptyProgress, loadProgress, saveProgress,
+  progressKey, migrateProgress, emptyProgress, loadProgress, saveProgress,
   toggleStep, togglePart, goTo, summary, startTimer, timerLeft, formatClock,
 } from '../build/progress.js';
 import { billOfMaterials, costText, totalText } from '../build/bom.js';
@@ -128,6 +128,7 @@ export function buildCompanion(page, kit, compiled) {
   if (!document.getElementById(STYLE_ID)) document.head.append(el('style', { id: STYLE_ID }, CSS));
   const steps = buildSteps(kit, compiled);
   if (!steps.length) return null;
+  migrateProgress(store(), kit, steps); // ticks saved under the old name-based key
   const key = progressKey(kit, steps);
   const partById = new Map(compiled.parts.map((p) => [p.id, p]));
   const matOf = new Map(compiled.groups.map((g) => [g.title, g.material]));
