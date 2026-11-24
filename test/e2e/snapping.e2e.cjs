@@ -251,6 +251,66 @@ test('3D handles: the rotate ring turns a piece in quarter turns, one undo step'
   await page.close();
 });
 
+/** Where the armchair's tall back sits, from its centre, in world mm (x right, y toward the back wall). */
+const backSide = (page, i) => page.evaluate((k) => {
+  const pts = window.mimimaker.compiled.faces3d.filter((f) => f.item === k).flatMap((f) => f.polys.flat());
+  const top = Math.max(...pts.map((p) => p[2]));
+  const mid = (j) => (Math.min(...pts.map((p) => p[j])) + Math.max(...pts.map((p) => p[j]))) / 2;
+  const hi = pts.filter((p) => p[2] > top - 1);
+  return { x: hi.reduce((a, p) => a + p[0], 0) / hi.length - mid(0), y: hi.reduce((a, p) => a + p[1], 0) / hi.length - mid(1) };
+}, i);
+
+test('3D handles: the ring turns the way you drag it (clockwise on screen turns it clockwise)', async () => {
+  const page = await open();
+  await page.click('[data-select-item="1"]'); // the armchair, its back to the back wall
+  const b0 = await backSide(page, 1);
+  assert.ok(b0.y > 0 && Math.abs(b0.x) < 1, `the back faces the back wall (${JSON.stringify(b0)})`);
+  const ring = await page.evaluate(() => JSON.parse(document.querySelector('.t6-gizmo [data-handle="rot"]').dataset.ring));
+  const from = await handle(page, 'rot');
+  const a0 = Math.atan2(from.y - ring.cy, from.x - ring.cx);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) { // screen y runs down, so a growing angle is clockwise on screen
+    const a = a0 + (i / 10) * (Math.PI / 2) * 1.1;
+    await page.mouse.move(ring.cx + Math.cos(a) * ring.rx, ring.cy + Math.sin(a) * ring.ry);
+  }
+  await page.mouse.up();
+  const b1 = await backSide(page, 1);
+  assert.ok(b1.x > 0 && Math.abs(b1.y) < 1, `turned clockwise seen from above: the back now faces right (${JSON.stringify(b1)})`);
+  await page.close();
+});
+
+test('3D handles: a click on a handle without a drag leaves the piece where it is', async () => {
+  const page = await open();
+  await page.evaluate(() => { const k = window.mimimaker.kit; k.items[2].x = 237.3; window.mimimaker.refresh(); }); // off the grid
+  await page.click('[data-select-item="2"]');
+  const before = await item(page, 2);
+  const from = await handle(page, 'x');
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 1, from.y); // a 1 px wobble
+  await page.mouse.up();
+  const after1 = await item(page, 2);
+  assert.equal(after1.x, before.x, 'not pulled onto the grid');
+  await page.close();
+});
+
+test('3D handles: Delete during a drag does not land the move on another piece', async () => {
+  const page = await open();
+  await page.click('[data-select-item="2"]');
+  const n = (await page.evaluate(() => window.mimimaker.kit.items.length));
+  const next = await item(page, 3);
+  const from = await handle(page, 'x');
+  const release = await dragBy(page, from, 40, 0);
+  await page.keyboard.press('Delete');
+  await release();
+  assert.equal(await page.evaluate(() => window.mimimaker.kit.items.length), n - 1, 'the piece was removed');
+  const moved = await item(page, 2); // what was piece 3
+  assert.equal(moved.type, next.type);
+  assert.deepEqual([moved.x, moved.y], [next.x, next.y], 'the piece that slid into its place did not move');
+  await page.close();
+});
+
 test('3D handles: a wall piece moves along its wall and up it, snapping to the window edge', async () => {
   const page = await open();
   await page.click('[data-select-item="5"]'); // the frame on the back wall
