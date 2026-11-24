@@ -174,10 +174,11 @@ test('Light step: pieces are not pickable in the room view (their inspector live
   await page.mouse.click(p.x, p.y);
   assert.deepEqual(await outlined(page), [], 'no outline on a piece you can’t edit here');
   assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Lighting');
-  // picking a light from the list stays selected after a click in the room
+  // a click on a piece is a click off the lights, as empty space is
   await page.click('[data-select-led="0"]');
   await page.mouse.click(p.x, p.y);
-  assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Light', 'the LED stays selected');
+  assert.equal(await page.locator('#sidebar .insp-kind').first().textContent(), 'Lighting', 'back to the circuit');
+  assert.deepEqual(await outlined(page), [], 'and the piece is not outlined');
   assert.deepEqual(page.errors, []);
   await page.close();
 });
@@ -325,5 +326,56 @@ test('wheel zoom: line-mode wheels zoom a useful step, the page scrolls past the
   await wheel({ deltaY: -600 });
   assert.equal(await page.evaluate(() => document.querySelector('.stage').t6hover ?? null), null);
   assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+const ledRing = (page) => page.evaluate(() => [...new Set([...document.querySelectorAll('.stage path.sel-led')].map((p) => Number(p.dataset.led)))]);
+const kindNow = (page) => page.locator('#sidebar .insp-kind').first().textContent();
+
+test('Light step: the selected light is ringed in the room view, and a click on a bulb selects it', async () => {
+  const page = await open();
+  await page.click('[data-step=light]');
+  assert.deepEqual(await ledRing(page), []);
+  await page.click('[data-select-led="1"]');
+  assert.deepEqual(await ledRing(page), [1], 'ringed at once');
+  await shot(page, 'led-ring');
+  await page.click('[data-action=back]');
+  assert.deepEqual(await ledRing(page), []);
+  const p = await page.evaluate(() => document.querySelector('.stage').t6pickPoint({ kind: 'led', index: 0 }));
+  assert.ok(p, 'bulb 0 is visible');
+  await page.mouse.move(p.x, p.y);
+  await page.waitForFunction(() => document.querySelector('.stage').classList.contains('t6-over-piece'), null, { timeout: 10000 });
+  await page.mouse.click(p.x, p.y);
+  assert.equal(await kindNow(page), 'Light', 'the inspector opens on the light');
+  assert.deepEqual(await ledRing(page), [0]);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('Light step in Realistic 3D: the selected light is marked, and a click on a bulb selects it', async () => {
+  const page = await open({ webgl: true });
+  await page.click('[data-step=light]');
+  await page.click('[data-select-led="1"]');
+  assert.equal((await shown(page)).selectedLed, 1);
+  await page.click('[data-action=back]');
+  assert.equal((await shown(page)).selectedLed, null);
+  const p = await page.evaluate(() => document.querySelector('.stage').t6pickPoint({ kind: 'led', index: 0 }));
+  assert.ok(p, 'bulb 0 is visible');
+  await page.mouse.click(p.x, p.y);
+  assert.equal(await kindNow(page), 'Light');
+  assert.equal((await shown(page)).selectedLed, 0);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('a light picked on Light clears with a click on empty space back on Design', async () => {
+  const page = await open();
+  await page.click('[data-step=light]');
+  await page.click('[data-select-led="0"]');
+  await page.click('[data-step=design]');
+  const box = await page.locator('.stage').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + 70);
+  assert.equal(await kindNow(page), 'Room');
+  assert.deepEqual(await ledRing(page), []);
   await page.close();
 });

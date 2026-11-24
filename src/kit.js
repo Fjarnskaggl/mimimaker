@@ -87,6 +87,7 @@ export function compileKit(kit) {
       ...(opts.material ? { material: opts.material } : {}), // the material it is cut from: picks its texture (T6)
       ...(opts.print ? { print: true } : {}), // wallpaper / floor covering: wears the printed pattern
       polys: polys2d.map((poly) => poly.map((p) => xf.p(map(p)))), n: xf.n(plane.n),
+      ...(opts.led != null ? { led: opts.led } : {}), // a light's glow: its index in kit.lighting.leds (click to select)
     });
   };
   // Joint tabs never go narrower than the machine cuts cleanly in that material.
@@ -261,6 +262,7 @@ export function compileKit(kit) {
   // ----------------------------------------------------------------- lights
   if (lighting.enabled && lighting.leds.length) {
     for (const led of lighting.leds) {
+      const ledIndex = led.src; // index in kit.lighting.leds, for click-to-select
       if (led.inside) continue; // T2 shells: a shell's own LEDs already glow where they sit (#16)
       const fr = faceFrame(led.face, W, D, H, t + 0.6, 'inner');
       // >>> [T5] motion and sound: a fan rotor or turntable shows where it turns; no glow
@@ -272,8 +274,8 @@ export function compileKit(kit) {
       }
       // <<< [T5]
       const hex = LED_COLORS[led.color]?.hex || LED_COLORS.warm.hex;
-      add3d(1.7, [ellipsePoly(led.u, led.v, 7, 7, 24)], fr, worldXf, hex, { opacity: 0.28, glow: true });
-      add3d(1.8, [ellipsePoly(led.u, led.v, 2, 2, 16)], fr, worldXf, hex, { glow: true });
+      add3d(1.7, [ellipsePoly(led.u, led.v, 7, 7, 24)], fr, worldXf, hex, { opacity: 0.28, glow: true, led: ledIndex });
+      add3d(1.8, [ellipsePoly(led.u, led.v, 2, 2, 16)], fr, worldXf, hex, { glow: true, led: ledIndex });
     }
     const powerName = POWER_KINDS[lighting.power.kind] || POWER_KINDS.battery;
     const lightGroup = newGroup('Lighting', null, { // [T5] kept in a variable for the cable cover

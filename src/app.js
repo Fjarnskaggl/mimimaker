@@ -674,7 +674,7 @@ function build3d(bar) {
   }
   bar.append(rendererToggle(drawScene)); // T6
   const foot = h('div', { class: 'stage-foot' },
-    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit' : 'Drag to orbit · scroll to zoom · click a piece to select · R turn · D duplicate · Del remove'),
+    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit · click a light to select it' : 'Drag to orbit · scroll to zoom · click a piece to select · R turn · D duplicate · Del remove'),
     h('div', { class: 'orbit' }, h('label', {}, 'Rotate', yaw), h('label', {}, 'Tilt', pitch)));
   let drag = null;
   stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
@@ -688,10 +688,11 @@ function build3d(bar) {
   const end = () => { drag = null; };
   stage.addEventListener('pointerup', end);
   stage.addEventListener('pointercancel', end);
-  attachPicking(stage, (index) => {
-    if (index != null) select({ kind: 'item', index });
-    else if (view.sel?.kind === 'item') select(null); // a click off the pieces; a window or light picked from the list stays
-  }, { enabled: () => view.step === 'design' }); // T6: click a piece to select it (pieces are edited on Design)
+  // T6: click a piece (Design) or a light (Light) to select it
+  attachPicking(stage, (index, kind) => {
+    if (index != null) select({ kind, index });
+    else if (view.sel?.kind === kind || view.sel?.kind === 'led') select(null); // a click off them; a window picked from the list stays
+  }, { picks: () => (view.step === 'design' ? 'item' : view.step === 'light' ? 'led' : null) });
   return h('div', { class: 'stage-wrap' }, stage, bar, foot);
 }
 function drawScene() {
