@@ -105,7 +105,7 @@ function shade(hex, k, tint = [1, 1, 1]) {
  * @param {Array} faces  {layer, polys: [[x,y,z]…][], n, color, opacity, cull}
  * @param {object} view  {yaw, pitch} in degrees; night; selected = item index to outline
  */
-export function renderScene(faces, { yaw = -32, pitch = 26, night = false, selected = null } = {}) {
+export function renderScene(faces, { yaw = -32, pitch = 26, night = false, selected = null, zoom = 1 } = {}) {
   const ya = (yaw * Math.PI) / 180, pa = (pitch * Math.PI) / 180;
   const cam = [Math.sin(ya) * Math.cos(pa), -Math.cos(ya) * Math.cos(pa), Math.sin(pa)];
   const fwd = cam.map((v) => -v);
@@ -155,7 +155,11 @@ export function renderScene(faces, { yaw = -32, pitch = 26, night = false, selec
   }
   if (!drawn.length) return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>';
   const pad = Math.max(x1 - x0, y1 - y0) * 0.06;
-  const vb = [x0 - pad, y0 - pad, x1 - x0 + 2 * pad, y1 - y0 + 2 * pad].map((v) => v.toFixed(2)).join(' ');
+  // zoom > 1 closes in on the centre of the fitted view, < 1 backs off
+  const z = zoom > 0 ? zoom : 1;
+  const w = (x1 - x0 + 2 * pad) / z, hgt = (y1 - y0 + 2 * pad) / z;
+  const vb = [(x0 + x1) / 2 - w / 2, (y0 + y1) / 2 - hgt / 2, w, hgt].map((v) => v.toFixed(2)).join(' ');
+  const sw = (v) => +(v / z).toFixed(3); // keep line weights steady as the view zooms
   const paths = drawn.map((d) => {
     const dStr = d.poly2.map((poly) => 'M' + poly.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join('L') + 'Z').join('');
     if (d.face.halo) return `<path class="halo" pointer-events="none" d="${dStr}" fill="${d.face.color}" fill-opacity="${d.opacity}"/>`;
@@ -163,11 +167,11 @@ export function renderScene(faces, { yaw = -32, pitch = 26, night = false, selec
     // furniture faces carry their item index so a click can select the piece
     const item = d.face.item != null ? ` data-item="${d.face.item}"` : '';
     if (selected != null && d.face.item === selected) {
-      return `<path class="sel"${item} d="${dStr}" fill="${d.fill}" fill-opacity="${d.opacity}" fill-rule="evenodd" stroke="#1f7a8c" stroke-width="0.7" stroke-linejoin="round"/>`;
+      return `<path class="sel"${item} d="${dStr}" fill="${d.fill}" fill-opacity="${d.opacity}" fill-rule="evenodd" stroke="#1f7a8c" stroke-width="${sw(0.7)}" stroke-linejoin="round"/>`;
     }
     // ghosted walls are drawn on top but are see-through: let clicks pass to the piece behind
     const ghost = d.ghost ? ' pointer-events="none"' : '';
-    return `<path${item}${ghost} d="${dStr}" fill="${d.fill}" fill-opacity="${d.opacity}" fill-rule="evenodd" stroke="rgba(40,30,20,${d.ghost ? 0.25 : 0.55})" stroke-width="0.25" stroke-linejoin="round"/>`;
+    return `<path${item}${ghost} d="${dStr}" fill="${d.fill}" fill-opacity="${d.opacity}" fill-rule="evenodd" stroke="rgba(40,30,20,${d.ghost ? 0.25 : 0.55})" stroke-width="${sw(0.25)}" stroke-linejoin="round"/>`;
   });
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" class="scene-svg" role="img" aria-label="3D preview of the assembled kit">${paths.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" class="scene-svg" style="--scene-zoom:${z}" role="img" aria-label="3D preview of the assembled kit">${paths.join('')}</svg>`;
 }

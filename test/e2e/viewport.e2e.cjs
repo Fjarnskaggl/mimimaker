@@ -258,3 +258,72 @@ test('hover clears when the pieces change under it, and the stage keeps its grab
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.stage .scene-svg')).cursor), 'grab');
   await page.close();
 });
+
+const viewBoxWidth = (page) => page.evaluate(() => Number(document.querySelector('.stage svg.scene-svg').getAttribute('viewBox').split(' ')[2]));
+
+test('the sketch view zooms with the wheel, like Realistic 3D, and keeps it through redraws', async () => {
+  const page = await open();
+  const w0 = await viewBoxWidth(page);
+  const box = await page.locator('.stage').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -400);
+  await page.waitForFunction((w) => Number(document.querySelector('.stage svg.scene-svg').getAttribute('viewBox').split(' ')[2]) < w * 0.8, w0, { timeout: 10000 });
+  const w1 = await viewBoxWidth(page);
+  assert.equal(await page.evaluate(() => window.scrollY), 0, 'the page itself does not scroll');
+  await page.click('[data-select-item="1"]'); // redraw
+  assert.equal(await viewBoxWidth(page), w1, 'zoom kept after a selection');
+  await page.locator('input[aria-label=Rotate]').fill('10');
+  assert.ok(await viewBoxWidth(page) < w0 * 0.8, 'zoom kept after orbiting');
+  await shot(page, 'svg-zoom');
+  // zooming out is bounded
+  for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 800);
+  await page.waitForTimeout(100);
+  assert.ok(await viewBoxWidth(page) <= w0 / 0.6 + 1, 'never smaller than 0.6x');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('zoom carries between the sketch view and Realistic 3D, and resets when another kit opens', async () => {
+  const page = await open();
+  const box = await page.locator('.stage').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -400);
+  await page.waitForFunction(() => Number(document.querySelector('.stage').dataset.zoom) > 1.2, null, { timeout: 10000 });
+  const z = Number(await page.locator('.stage').getAttribute('data-zoom'));
+  await page.click('#renderer-toggle');
+  await page.waitForSelector('.stage[data-renderer=webgl] canvas', { timeout: 15000 });
+  assert.equal((await shown(page)).zoom, z, 'Realistic 3D opens at the same zoom');
+  await page.locator('.rt-card[aria-label="Start from Little café"]').evaluate((e) => { e.click(); e.click(); });
+  await page.waitForFunction(() => /caf/i.test(window.mimimaker.kit.name) && Number(document.querySelector('.stage').dataset.zoom) === 1, null, { timeout: 10000 });
+  assert.equal((await shown(page)).zoom, 1, 'a new kit starts at 1x');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('wheel zoom: line-mode wheels zoom a useful step, the page scrolls past the limits, hover clears', async () => {
+  const page = await open();
+  const wheel = (init) => page.evaluate((i) => {
+    const stage = document.querySelector('.stage');
+    const r = stage.getBoundingClientRect();
+    const ev = new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, ...i });
+    const notPrevented = (stage.querySelector('svg') || stage).dispatchEvent(ev);
+    return new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => res({ prevented: !notPrevented, zoom: Number(stage.dataset.zoom) }))));
+  }, init);
+  // Firefox mouse wheels report lines: 3 lines up is one notch
+  const notch = await wheel({ deltaY: -3, deltaMode: 1 });
+  assert.ok(notch.prevented);
+  assert.ok(notch.zoom > 1.05, `one line-mode notch zooms in (${notch.zoom})`);
+  // zoomed all the way out, more wheel-down is left to the page
+  for (let i = 0; i < 10; i++) await wheel({ deltaY: 1000 });
+  const atLimit = await wheel({ deltaY: 100 });
+  assert.equal(atLimit.zoom, 0.6);
+  assert.equal(atLimit.prevented, false, 'the page can scroll once zoom is at its limit');
+  // the hover outline doesn't stay on a piece the zoom moved away
+  const p = await pointFor(page, 2);
+  await page.mouse.move(p.x, p.y);
+  await page.waitForFunction(() => document.querySelector('.stage path.hover'), null, { timeout: 10000 });
+  await wheel({ deltaY: -600 });
+  assert.equal(await page.evaluate(() => document.querySelector('.stage').t6hover ?? null), null);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
