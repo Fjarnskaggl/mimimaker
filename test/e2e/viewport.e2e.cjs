@@ -400,3 +400,20 @@ test('hovering a row in the pieces list points at that piece in 3D (sketch and R
     await page.close();
   }
 });
+
+test('Realistic 3D outlines the selected piece, so pale pieces read as selected too, by day and night', async () => {
+  const page = await open({ webgl: true });
+  await page.waitForFunction(() => document.querySelector('.stage')?.t6viewer, null, { timeout: 10000 });
+  const outlined = () => page.evaluate(() => document.querySelector('.stage').t6viewer.shown().outlined);
+  assert.deepEqual(await outlined(), [], 'nothing outlined before a selection');
+  await page.click('[data-select-item="3"]'); // the floor lamp: a pale shade
+  await page.waitForFunction(() => String(document.querySelector('.stage').t6viewer.shown().outlined) === '3', null, { timeout: 10000 });
+  await shot(page, 'webgl-outline');
+  await page.click('#night-toggle');
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.shown().night === true, null, { timeout: 10000 });
+  assert.deepEqual(await outlined(), [3], 'still outlined at night');
+  await page.click('#sidebar button:has-text("Done")');
+  await page.waitForFunction(() => document.querySelector('.stage').t6viewer.shown().outlined.length === 0, null, { timeout: 10000 });
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
