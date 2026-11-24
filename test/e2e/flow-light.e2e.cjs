@@ -208,3 +208,22 @@ test('flow: in Realistic 3D, adding and recolouring a light shows at once', asyn
   F.assertClean(page);
   await page.context().close();
 });
+
+test('flow: the 3D view\'s hint follows the room: no pieces, no lights, lights off', async () => {
+  const page = await F.openApp(browser, URL);
+  await page.click('#btn-file'); await page.click('#btn-new');
+  await page.click('#start-blank');
+  const hint = page.locator('[data-stage-hint]');
+  assert.match(await hint.innerText(), /add a piece/, 'an empty room doesn\'t say to click a piece');
+  await page.click('[data-step=light]');
+  assert.match(await hint.innerText(), /No lights yet/, 'no lights to glow or click');
+  await page.locator('#sidebar .mm-empty button').click();
+  await page.waitForFunction(() => window.mimimaker.kit.lighting.leds.length === 1);
+  await page.waitForFunction(() => /as they glow/.test(document.querySelector('[data-stage-hint]').textContent));
+  const power = page.locator('#sidebar details.section', { has: page.locator('summary', { hasText: 'Power' }) });
+  await power.locator('summary').click();
+  await power.locator('label', { hasText: 'Lights on' }).locator('input').uncheck();
+  await page.waitForFunction(() => /Lights are off/.test(document.querySelector('[data-stage-hint]').textContent));
+  F.assertClean(page);
+  await page.context().close();
+});

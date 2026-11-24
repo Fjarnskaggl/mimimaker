@@ -730,7 +730,7 @@ function build3d(bar) {
   }
   bar.append(rendererToggle(drawScene)); // T6
   const foot = h('div', { class: 'stage-foot' },
-    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit · click a light to select it' : 'Drag to orbit · scroll to zoom · click a piece, then drag its handles (Alt: no snap) · R turn · D duplicate · Del remove'),
+    h('span', { class: 'mm-chip', 'data-stage-hint': '' }, stageHint()),
     h('div', { class: 'orbit' }, h('label', {}, 'Rotate', yaw), h('label', {}, 'Tilt', pitch)));
   let drag = null;
   stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
@@ -791,9 +791,23 @@ window.addEventListener('resize', () => { if (view.tab === 'preview') drawScene(
 const stageSize = new ResizeObserver((entries) => requestAnimationFrame(() => { for (const en of entries) if (en.target.isConnected) drawHandles(en.target); }));
 onStageDrawn((stage) => { if (!stage.t6sizeWatched) { stage.t6sizeWatched = true; stageSize.observe(stage); } });
 
+/** What the 3D view's hint says; it follows the room (no pieces, no lights, lights off). */
+function stageHint() {
+  if (view.step === 'light') {
+    const lit = compiled?.lighting;
+    if (!kit.lighting.leds.length && !shellWiresLights(kit)) return 'No lights yet: add one in the panel · drag to orbit';
+    if (!kit.lighting.enabled || !lit?.enabled) return 'Lights are off: turn them on in the panel · drag to orbit · click a light to select it';
+    return 'The lights as they glow · drag to orbit · click a light to select it';
+  }
+  if (!kit.items.length && !kit.shell) return 'Drag to orbit · scroll to zoom · add a piece from the Pieces drawer';
+  return 'Drag to orbit · scroll to zoom · click a piece, then drag its handles (Alt: no snap) · R turn · D duplicate · Del remove';
+}
+
 function drawScene() {
   const stage = document.querySelector('.stage');
   if (!stage || !compiled) return;
+  const hint = document.querySelector('[data-stage-hint]');
+  if (hint) { const t = stageHint(); if (hint.textContent !== t) hint.textContent = t; }
   const night = view.step === 'light' || view.night;
   stage.classList.toggle('night', night);
   drawStage(stage, compiled.faces3d, night === view.night ? view : { ...view, night }, kit); // T6
