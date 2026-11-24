@@ -112,7 +112,7 @@
         "arch": { "$ref": "#/$defs/args", "description": "[x, y, w, h, radius?, segments?]" },
         "ellipse": { "$ref": "#/$defs/args", "description": "[cx, cy, rx, ry, segments?]" },
         "circle": { "$ref": "#/$defs/args", "description": "[cx, cy, r, segments?]" },
-        "plant": { "$ref": "#/$defs/args", "description": "[w, h, lobes?] leafy silhouette" },
+        "plant": { "$ref": "#/$defs/args", "description": "[w, h, lobes?, stemW?, stemH?, slit?] leafy silhouette; a stem tab stemH tall under it, a cross-lap slit from the top (slit > 0) or bottom (slit < 0, not with a stem)" },
         "drape": { "$ref": "#/$defs/args", "description": "[x, w, h] curtain panel with a wavy edge" },
         "poly": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/vec2" } },
         "when": { "$ref": "#/$defs/expr" }

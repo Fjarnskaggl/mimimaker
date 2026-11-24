@@ -129,10 +129,10 @@ export const DECOR = [
   {
     id: 'planter', label: 'Garden planter', theme: 'Decor', placement: 'floor', mat: 'board',
     tags: ['plant', 'garden', 'green'], difficulty: 1,
-    params: [num('w', 'Length', 30, 150), num('d', 'Width', 20, 50), num('h', 'Height', 20, 60), num('leaf', 'Plant height', 20, 80)],
+    params: [num('w', 'Length', 30, 150), num('d', 'Width', 25, 50), num('h', 'Height', 20, 60), num('leaf', 'Plant height', 20, 80)],
     defaults: { w: 80, d: 30, h: 35, leaf: 40 },
     size: ['w', 'd', 'h + max(1, leaf * 0.05) + leaf * 0.9'],
-    let: { sw: 'max(3, w * 0.5)', gap: 'max(1, leaf * 0.05)', slot: 't + 0.3' },
+    let: { sw: 'max(3, min(w * 0.5, w - 2 * t - 8))', gap: 'max(1, leaf * 0.05)', slot: 't + 0.3' },
     components: [
       {
         kind: 'box', name: 'Planter', size: ['w', 'd', 'h'], faces: 'all', at: [0, 0, 0],

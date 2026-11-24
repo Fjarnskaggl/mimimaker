@@ -176,22 +176,37 @@ test('rod components are validated', () => {
   assert.match(validatePiece(piece({ stock: 'wire', from: [5, 5, 0], to: [5, 5, 10] })).join(), /\.d: required/);
 });
 
-test('plants stand on a stem in a slot in the soil, from the pot floor up', () => {
-  for (const [type, leafName] of [['plant', 'Leaves'], ['littleplant', 'Leaves'], ['planter', 'Greenery'], ['pottedtree', 'Crown A']]) {
+test('plants stand on a stem in a slot in the soil top, from the pot floor up', () => {
+  for (const [type, potName, leafName] of [['plant', 'Pot net', 'Leaves'], ['littleplant', 'Pot net', 'Leaves'], ['planter', 'Planter top', 'Greenery'], ['pottedtree', 'Pot net', 'Crown A']]) {
     const kit = soloKit(base, type, {}, defaultMaterialFor(CATALOG[type], base.materials));
     const c = compileKit(kit);
     const [r] = attachmentReport(kit, c);
-    const id = (n) => c.parts.find((p) => p.name === n)?.id;
-    const pot = c.parts.find((p) => /^(Pot|Planter) (net|top)$/.test(p.name) || p.name === 'Pot top');
-    assert.ok(pot, `${type}: ${c.parts.map((p) => p.name).join(', ')}`);
-    // the soil top has a slot in it
-    const top = c.parts.find((p) => / top$/.test(p.name)) || pot;
-    assert.ok(top.polys.length >= 2, `${type}: a slot in the soil top`);
-    // the leaves touch the pot (through the slot, standing on its floor)
-    const leaf = id(leafName);
-    assert.ok(r.contacts.some(([a, b]) => a === leaf || b === leaf), `${type}: ${leafName} touches something`);
-    assert.deepEqual(r.floating, []);
-    assert.deepEqual(r.crossings, []);
+    const part = (n) => c.parts.find((p) => p.name === n);
+    const pot = part(potName), leaf = part(leafName);
+    assert.ok(pot && leaf, `${type}: ${c.parts.map((p) => p.name).join(', ')}`);
+    // the stem goes through the soil, so the two touch, nothing floats and nothing runs through
+    assert.ok(r.contacts.some(([a, b]) => [a, b].includes(pot.id) && [a, b].includes(leaf.id)), `${type}: ${leafName} stands in the ${potName}`);
+    assert.deepEqual(r.floating, [], type);
+    assert.deepEqual(r.crossings, [], type);
+    // without the slot, the stem would run through the soil top
+    const own = faceParts(kit, c);
+    const noSlot = { ...c, faces3d: c.faces3d.map((f, k) => (own[k] === pot.id && f.polys.length > 1 && Math.abs(f.n[2]) > 0.9 ? { ...f, polys: [f.polys[0]] } : f)) };
+    const [r2] = attachmentReport(kit, noSlot);
+    assert.ok(r2.crossings.length > 0, `${type}: the stem needs its slot`);
+  }
+});
+
+test('plant pieces keep every strip cuttable at their smallest and largest sizes too', () => {
+  for (const type of ['plant', 'littleplant', 'planter', 'pottedtree', 'floorlamp']) {
+    const def = CATALOG[type];
+    for (const [label, params] of sizes(def)) {
+      const kit = soloKit(base, type, params, defaultMaterialFor(def, base.materials));
+      const c = compileKit(kit);
+      for (const p of c.parts.filter((q) => q.group === c.groups.at(-1).title)) {
+        const min = minJointFeature(c.machine, kit.materials.find((m) => m.id === p.material));
+        assert.ok(narrowestStrip(p.polys) >= min - 1e-6, `${type} ${label}: ${p.name} ${narrowestStrip(p.polys).toFixed(2)} mm`);
+      }
+    }
   }
 });
 
@@ -207,8 +222,10 @@ test('potted tree crowns cross-lap: slits cut in both, crown B held by crown A',
 
 test('plantPoly: a stem tab down to y = 0 under the leaves, and slits from the top or bottom', () => {
   const ys = (pts) => pts.map((p) => p[1]);
-  const plain = plantPoly(20, 30, 4);
-  assert.equal(Math.min(...ys(plain)), 0, 'the leaves sit on y = 0');
+  const raw = plantPoly(20, 30, 4);
+  assert.ok(Math.min(...ys(raw)) > 0, 'a plain plant stays where it always was');
+  const low = Math.min(...ys(raw));
+  const plain = raw.map(([x, y]) => [x, y - low]); // where a stem or slit puts it: on y = 0
   const stem = plantPoly(20, 30, 4, 3, 10);
   assert.equal(Math.min(...ys(stem)), 0);
   const foot = stem.filter((p) => p[1] === 0).map((p) => p[0]).sort((a, b) => a - b);
@@ -221,4 +238,6 @@ test('plantPoly: a stem tab down to y = 0 under the leaves, and slits from the t
   const slitEnd = (pts) => pts.filter(([x]) => Math.abs(x - 9.25) < 1e-9 || Math.abs(x - 10.75) < 1e-9).map((p) => p[1]);
   assert.ok(slitEnd(top).some((y) => Math.abs(y - (mid - 0.1)) < 1e-9), 'from the top down to the middle');
   assert.ok(slitEnd(bottom).some((y) => Math.abs(y - (mid + 0.1)) < 1e-9), 'from the bottom up to the middle');
+  // the mouth is cut square, so the leaf beside the slit is at least 1.5 mm wide
+  assert.ok(narrowestStrip([top]) >= 1.5 && narrowestStrip([bottom]) >= 1.5, `${narrowestStrip([top])} ${narrowestStrip([bottom])}`);
 });

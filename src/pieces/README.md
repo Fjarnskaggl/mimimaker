@@ -60,7 +60,7 @@ front at depth `y`; `{ "floor": { "z" } }` lays it flat;
 `{ "custom": { "o", "U", "V", "n" } }` for anything else.
 
 Shapes: `rect [x, y, w, h]`, `arch [x, y, w, h, r?, seg?]`,
-`ellipse [cx, cy, rx, ry, seg?]`, `circle [cx, cy, r, seg?]`, `plant [w, h, lobes?, stemW?, stemH?, slit?]` (a stem tab stemH tall under the leaves; a cross-lap slit from the top when slit > 0, from the bottom when < 0),
+`ellipse [cx, cy, rx, ry, seg?]`, `circle [cx, cy, r, seg?]`, `plant [w, h, lobes?, stemW?, stemH?, slit?]` (a stem tab stemH tall under the leaves; a cross-lap slit from the top when slit > 0, from the bottom when < 0, which can't be combined with a stem),
 `drape [x, w, h]`, `poly [[x, y], …]`.
 
 Scores: `line [[x, y], [x, y]]`, `loop [[x, y], …]`, `rect`, `circle`

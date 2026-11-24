@@ -86,7 +86,7 @@ export const ACCESSORIES = [
   {
     id: 'littleplant', label: 'Little plant', theme: 'Accessories', placement: 'floor', mat: 'card',
     tags: ['accessory', 'plant', 'green'], difficulty: 1,
-    params: [num('p', 'Pot width', 5, 25), num('h', 'Plant height', 5, 40), sel('kind', 'Leaves', ['succulent', 'fern', 'grass'])],
+    params: [num('p', 'Pot width', 7, 25), num('h', 'Plant height', 5, 40), sel('kind', 'Leaves', ['succulent', 'fern', 'grass'])],
     defaults: { p: 10, h: 15, kind: 'succulent' },
     size: ['p * 1.6', 'p', 'p * 0.9 + max(0.5, h * 0.05) + h * 0.9'],
     let: { W: 'p * 1.6', lobes: "kind == 'succulent' ? 2.5 : kind == 'fern' ? 5.5 : 9.5", sw: 'max(1.5, p * 0.15)', gap: 'max(0.5, h * 0.05)', slot: 'max(1.5, t + 0.3)' },

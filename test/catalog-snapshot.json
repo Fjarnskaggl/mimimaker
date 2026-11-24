@@ -893,17 +893,17 @@
    "flat:Crown B"
   ],
   "cases": {
-   "defaults@board": "80d99d6ea1e8a94d",
-   "defaults@card": "f4dde82afdb188c8",
-   "min@board": "3185413e913bad76",
-   "min@card": "9248c281ebac87a3",
-   "max@board": "653932cdbafacd94",
-   "max@card": "6187d9684d8f1129"
+   "defaults@board": "39f9a73e61d4fc26",
+   "defaults@card": "d300b9d3f929ae1a",
+   "min@board": "a3311a43adc23642",
+   "min@card": "6fc86c573fd6f1f0",
+   "max@board": "129015ed82d10de9",
+   "max@card": "1172beab66cb5eb5"
   }
  },
  "planter": {
   "label": "Garden planter",
-  "meta": "41b417ce1f7c99a9",
+  "meta": "166ae254a3cd47e4",
   "components": [
    "box:Planter",
    "flat:Greenery"
@@ -911,8 +911,8 @@
   "cases": {
    "defaults@board": "9bf7bc98680ad142",
    "defaults@card": "9f63a352cd6e419c",
-   "min@board": "6c72c8a26cf34f5a",
-   "min@card": "5653b0aad73fb8db",
+   "min@board": "df339555ec401cc4",
+   "min@card": "058703a58a91ad50",
    "max@board": "4658e2c143480706",
    "max@card": "6db577e46c79a28e"
   }
@@ -1004,7 +1004,7 @@
  },
  "littleplant": {
   "label": "Little plant",
-  "meta": "12ab0850f9d87305",
+  "meta": "33beeb761f85c3e3",
   "components": [
    "box:Pot",
    "flat:Leaves"
@@ -1012,8 +1012,8 @@
   "cases": {
    "defaults@board": "ae02b33c3a1827ef",
    "defaults@card": "ba67619f2a2db70a",
-   "min@board": "7c6a9f0e1053113e",
-   "min@card": "c50fe49ad464c906",
+   "min@board": "29c09394e33b9bec",
+   "min@card": "ea9cf06da59e4d57",
    "max@board": "b2d485f2b70626a8",
    "max@card": "301115ede0834428",
    "kind=succulent@board": "ae02b33c3a1827ef",
