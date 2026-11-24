@@ -93,7 +93,8 @@ export function slideOnWall(entity, pos, room, { width = 0, step = 0 } = {}) {
 // Shared by the floor plan and the 3D move handles. Each axis snaps on its
 // own: the piece's low edge, centre and high edge are tried against walls and
 // other pieces' edges and centres; the nearest within `reach` cm wins, and
-// otherwise the low edge goes to the `grid`. `free` (Alt) skips all of it.
+// otherwise the low edge (the centre, for things on a wall) goes to the
+// `grid`. `free` (Alt, or snapping set to Off) skips all of it.
 // Guides say what lined up, for drawing: {axis, at, from, to, kind}.
 
 /** The best snap of a span [lo, lo + len] to targets on one axis, or null. */
@@ -109,11 +110,14 @@ function snapSpan(lo, len, targets, reach) {
   return best;
 }
 
-function snapAxis(lo, len, min, max, targets, { grid, reach, free }) {
+function snapAxis(lo, len, min, max, targets, { grid, reach, free, centred = false }) {
   if (free) return { v: clamp(lo, min, max - len), hit: null };
   const hit = reach > 0 ? snapSpan(lo, len, targets, reach) : null;
-  const v = hit ? lo + hit.d : snap(lo - min, grid) + min;
-  return { v: clamp(v, min, max - len), hit };
+  const mid = centred ? len / 2 : 0;
+  const v = hit ? lo + hit.d : snap(lo + mid - min, grid) + min - mid;
+  const c = clamp(v, min, max - len);
+  // the room's edge can push it off the line it snapped to: then nothing lined up
+  return { v: c, hit: hit && Math.abs(c - v) < EPS ? hit : null };
 }
 
 /**
@@ -176,7 +180,7 @@ export function snapWallMove(kit, who, pos, elev, { w = 0, h = 0, grid = 5, reac
     for (const at of [p0, (p0 + p1) / 2, p1]) tp.push({ at, kind: 'piece', span: [e0, e1] });
     for (const at of [e0, (e0 + e1) / 2, e1]) te.push({ at, kind: 'piece', span: [p0, p1] });
   }
-  const opts = { grid, reach, free };
+  const opts = { grid, reach, free, centred: true };
   const sp = snapAxis(pos - w / 2, w, 0, len, tp, opts);
   const se = snapAxis(elev - h / 2, h, 0, top, te, opts);
   const guides = [];
