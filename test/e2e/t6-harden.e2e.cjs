@@ -74,10 +74,12 @@ test('a tampered three.js is refused and the SVG preview stays', async () => {
   await page.close();
 });
 
-// The budget behind "60 fps orbit on a mid laptop": a frame of the café,
-// shadow pass included, stays under these counts. They are deterministic, so
-// CI can hold the line even though its software WebGL can't hit 60 fps.
+// The budget behind "60 fps orbit on a mid laptop": an orbit frame of the
+// café stays under these counts. They are deterministic, so CI can hold the
+// line even though its software WebGL can't hit 60 fps.
 // Measured 2026-11-23 (shadow pass included): 112 calls, ~16.7k triangles.
+// Since 2026-11-24 orbit frames reuse the shadow maps (test/e2e/perf.e2e.cjs):
+// 59 calls, ~4.9k triangles.
 const BUDGET = { calls: 200, triangles: 50000, shadowLights: 1, pixelRatio: 2 };
 
 test('perf budget: orbiting the café stays inside the 60 fps budget', async () => {
