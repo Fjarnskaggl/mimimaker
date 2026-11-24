@@ -53,11 +53,11 @@ export function moveItem(kit, index, x, y, { step = 0 } = {}) {
 }
 
 /** Turn a floor item 90° about its centre, then keep it inside the room. */
-export function rotateItem(kit, index) {
+export function rotateItem(kit, index, turns = 1) {
   const item = kit.items[index];
   const f = footprint(item);
   const cx = (f.x0 + f.x1) / 2, cy = (f.y0 + f.y1) / 2;
-  item.rot = ((((Number(item.rot) || 0) + 90) % 360) + 360) % 360;
+  item.rot = ((((Number(item.rot) || 0) + 90 * turns) % 360) + 360) % 360;
   const { fw, fd } = size(item);
   item.x = clamp(cx - fw / 2, 0, kit.room.width - fw);
   item.y = clamp(cy - fd / 2, 0, kit.room.depth - fd);

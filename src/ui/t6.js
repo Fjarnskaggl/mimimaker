@@ -177,6 +177,7 @@ function attachZoom(stage) {
   let frame = 0;
   stage.addEventListener('wheel', (e) => {
     if (state.last?.stage !== stage || e.metaKey) return; // ⌘-wheel stays the browser's
+    if (stage.parentElement?.querySelector(':scope > .t6-gizmo.dragging')) { e.preventDefault(); return; } // no zooming mid-drag: the drag's screen maths would go stale
     // wheels report pixels, lines (Firefox mice) or pages
     const px = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? (globalThis.innerHeight || 800) : 1);
     const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, state.zoom * Math.exp(-px * 0.0015)));
@@ -235,7 +236,9 @@ export function previewItem(stage, index, xf) {
   const l = state.last;
   if (!l || l.stage !== stage) return;
   if (stage.dataset.renderer === 'webgl' && state.viewer) { state.viewer.previewItem(index, xf); return; }
-  stage.innerHTML = renderScene(xf ? moveFaces(l.faces, index, xf) : l.faces, svgOptions(l.view));
+  const old = stage.querySelector(':scope > svg.scene-svg');
+  const html = renderScene(xf ? moveFaces(l.faces, index, xf) : l.faces, svgOptions(l.view));
+  if (old) old.outerHTML = html; else stage.innerHTML = html; // keep anything else on the stage, like the no-WebGL note
   paintSvgHover(stage);
 }
 

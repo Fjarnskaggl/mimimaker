@@ -56,10 +56,13 @@ let overlay = null; // { svg, drag }
  * @param {Function|null} o.project   world mm → client px (null: no handles)
  * @param {number} o.grid      grid step in cm (0: none)
  * @param {Function} o.preview (xf|null) show the piece moved: {offset, turns, centre}
- * @param {Function} o.commit  (changes) apply {x, y} | {pos, elev} | {rot} to the piece for good
+ * @param {Function} o.commit  (changes, item) apply {x, y} | {pos, elev} | {rot} to `item` (the piece the drag began on) for good
  */
 export function drawGizmo(wrap, o) {
-  if (overlay?.drag) return; // mid-drag: the drag owns the overlay
+  if (overlay?.drag) { // mid-drag: the drag owns the overlay; a redraw only needs the piece put back where it's being dragged
+    if (overlay.drag.result) o.preview(overlay.drag.result.xf);
+    return;
+  }
   let svg = wrap.querySelector(':scope > svg.t6-gizmo');
   const item = o.sel?.kind === 'item' ? o.kit?.items[o.sel.index] : null;
   const def = item && CATALOG[item.type];
@@ -130,6 +133,7 @@ export function drawGizmo(wrap, o) {
     h.classList.add('active');
     const move = (mv) => {
       const d = { x: mv.clientX - overlay.drag.x0, y: mv.clientY - overlay.drag.y0 };
+      if (!overlay.drag.result && Math.hypot(d.x, d.y) < 3) return; // a click, or a wobble, isn't a move
       const free = mv.altKey || !o.grid; // Alt, or Snap set to Off
       let res;
       if (name === 'rot') {
@@ -138,7 +142,7 @@ export function drawGizmo(wrap, o) {
         let deg = ((ang({ x: mv.clientX, y: mv.clientY }) - ang({ x: overlay.drag.x0, y: overlay.drag.y0 })) * 180) / Math.PI;
         deg = ((deg + 540) % 360) - 180;
         const ccw = sa.x.x * sa.y.y - sa.x.y * sa.y.x < 0 ? 1 : -1; // world x→(−y) seen on screen
-        const rot = snapRotation(start.rot, -deg * ccw);
+        const rot = snapRotation(start.rot, deg * ccw);
         const turns = (((rot - start.rot) / 90) % 4 + 4) % 4;
         res = { changes: { rot }, xf: { turns, centre: box.centre, offset: [0, 0, 0] }, guides: [] };
       } else {
@@ -178,7 +182,7 @@ export function drawGizmo(wrap, o) {
       overlay.drag = null;
       svg.classList.remove('dragging');
       guides.replaceChildren();
-      if (res && ev.type === 'pointerup') o.commit(res.changes); else o.preview(null); // a cancelled drag puts it back
+      if (res && ev.type === 'pointerup') o.commit(res.changes, item); else o.preview(null); // a cancelled drag puts it back
     };
     h.addEventListener('pointermove', move);
     h.addEventListener('pointerup', end);

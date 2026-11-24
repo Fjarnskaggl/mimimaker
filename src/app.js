@@ -676,7 +676,7 @@ function build3d(bar) {
   }
   bar.append(rendererToggle(drawScene)); // T6
   const foot = h('div', { class: 'stage-foot' },
-    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit · click a light to select it' : 'Drag to orbit · scroll to zoom · drag a piece’s handles to move it (Alt: no snap) · R turn · Del remove'),
+    h('span', { class: 'mm-chip' }, view.step === 'light' ? 'The lights as they glow · drag to orbit · click a light to select it' : 'Drag to orbit · scroll to zoom · click a piece, then drag its handles (Alt: no snap) · R turn · D duplicate · Del remove'),
     h('div', { class: 'orbit' }, h('label', {}, 'Rotate', yaw), h('label', {}, 'Tilt', pitch)));
   let drag = null;
   stage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch }; stage.setPointerCapture(e.pointerId); });
@@ -705,12 +705,12 @@ function drawHandles(stage) {
   drawGizmo(wrap, {
     stage, kit, faces: compiled.faces3d, sel: on ? view.sel : null, project: on ? stageProjector(stage) : null, grid: view.snap,
     preview: (xf) => previewItem(stage, view.sel?.index, xf),
-    commit: (changes) => {
-      const i = view.sel?.index, item = kit.items[i];
-      if (!item) return;
-      if ('rot' in changes) { // quarter turns about the centre, kept in the room, as the Rotate button does
+    commit: (changes, item) => {
+      const i = kit.items.indexOf(item); // the piece the drag began on, wherever it is now (or gone)
+      if (i < 0) return;
+      if ('rot' in changes) { // one turn about the centre, kept in the room, as the Rotate button does
         const turns = (((changes.rot - (Number(item.rot) || 0)) / 90) % 4 + 4) % 4;
-        for (let k = 0; k < turns; k++) rotateItem(kit, i);
+        if (turns) rotateItem(kit, i, turns);
       } else Object.assign(item, changes);
       restructured();
     },
@@ -718,6 +718,9 @@ function drawHandles(stage) {
 }
 onStageDrawn(drawHandles);
 window.addEventListener('resize', () => { if (view.tab === 'preview') drawScene(); });
+// the stage can change size without the window (the layout reflowing): Realistic 3D re-renders itself, so follow it
+const stageSize = new ResizeObserver((entries) => requestAnimationFrame(() => { for (const en of entries) if (en.target.isConnected) drawHandles(en.target); }));
+onStageDrawn((stage) => { if (!stage.t6sizeWatched) { stage.t6sizeWatched = true; stageSize.observe(stage); } });
 
 function drawScene() {
   const stage = document.querySelector('.stage');

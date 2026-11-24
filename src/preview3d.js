@@ -102,11 +102,6 @@ function shade(hex, k, tint = [1, 1, 1]) {
 }
 
 /**
- * @param {Array} faces  {layer, polys: [[x,y,z]…][], n, color, opacity, cull}
- * @param {object} view  {yaw, pitch} in degrees; night; selected = item index to outline;
- *                       selectedLed = LED index to ring; zoom
- */
-/**
  * The sketch view's camera for a yaw/pitch (degrees): screen right and up as
  * world vectors. A world point p lands at viewBox [p·right, -p·up].
  */
@@ -118,6 +113,11 @@ export function viewBasis(yaw = -32, pitch = 26) {
   return { cam, fwd, right, up: cross(right, fwd) };
 }
 
+/**
+ * @param {Array} faces  {layer, polys: [[x,y,z]…][], n, color, opacity, cull}
+ * @param {object} view  {yaw, pitch} in degrees; night; selected = item index to outline;
+ *                       selectedLed = LED index to ring; zoom
+ */
 export function renderScene(faces, { yaw = -32, pitch = 26, night = false, selected = null, selectedLed = null, zoom = 1 } = {}) {
   const { cam, fwd, right, up } = viewBasis(yaw, pitch);
   const light = normalize([-0.4, -0.8, 1]);
