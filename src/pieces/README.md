@@ -81,7 +81,8 @@ Names may contain `{expr}` placeholders.
 
 `test/buildable.test.js` compiles every piece at its default, smallest and
 largest sizes and fails when a part floats (touches nothing that leads to the
-floor or wall) or runs through the middle of another part. So:
+floor or wall) or runs through the middle of another part, and at the default
+size when a strip of material is narrower than the cutter manages. So:
 
 - a shade, top or shelf needs something real under it: a stem (`rod`) with a
   spider or socket, legs, slots or a glue face;

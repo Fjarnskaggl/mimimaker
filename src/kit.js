@@ -392,7 +392,10 @@ export function compileKit(kit) {
     const a = xf.p(c.from), b = xf.p(c.to);
     const axis = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
     const length = Math.hypot(...axis);
-    if (!(length > 0) || !(c.d > 0)) return;
+    if (!(length > 0.01) || !(c.d > 0)) {
+      warn(`${title}: the ${c.name.toLowerCase()} has no length or thickness at this size — make the piece bigger.`);
+      return;
+    }
     const k = v3.mul(axis, 1 / length);
     const ref = Math.abs(k[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
     const cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]];
@@ -414,8 +417,10 @@ export function compileKit(kit) {
     }
     face([...lo].reverse(), v3.mul(k, -1));
     face(hi, k);
-    hardware.push({ name: c.name, stock: c.stock, d: c.d, length, group: group.title, item: currentItem, from: a, to: b });
-    group.steps.push(`Cut ${hardwareName(c.stock, c.d)} ${Math.round(length)} mm long for the ${c.name.toLowerCase()}.`);
+    const h = { name: c.name, stock: c.stock, d: c.d, length, group: group.title, item: currentItem, from: a, to: b };
+    h.text = `Cut ${hardwareName(c.stock, c.d)} ${Math.round(length)} mm long for the ${c.name.toLowerCase()}.`;
+    hardware.push(h);
+    group.steps.push(h.text);
   }
 
   function compileBox(c, mat, group, xf, title) {

@@ -159,9 +159,10 @@ function crossing(a, b, tol) {
     return pts.some((p) => deepIn(a, sub(p, mul(a.n, dot(sub(p, a.o), a.n))), 0.4) && deepIn(b, p, 0.4));
   }
   // a point on both planes, then walk the line where they meet
-  const dir = norm(cross(a.n, b.n));
+  const c0 = cross(a.n, b.n), sin = Math.hypot(...c0);
+  const dir = mul(c0, 1 / sin);
   const da = dot(a.n, a.o), db = dot(b.n, b.o);
-  const p0 = add(mul(cross(b.n, dir), da), mul(cross(dir, a.n), db));
+  const p0 = mul(add(mul(cross(b.n, dir), da), mul(cross(dir, a.n), db)), 1 / sin);
   const lo = a.box.lo.map((v, i) => Math.max(v, b.box.lo[i]) - 1), hi = a.box.hi.map((v, i) => Math.min(v, b.box.hi[i]) + 1);
   let t0 = -Infinity, t1 = Infinity;
   for (let i = 0; i < 3; i++) {

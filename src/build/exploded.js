@@ -104,16 +104,19 @@ export function explodedFaces(kit, compiled, steps = buildSteps(kit, compiled), 
   const owner = owners || faceParts(kit, compiled);
   const builtAt = new Map();
   for (const s of steps) for (const id of s.parts) builtAt.set(id, s.n);
+  for (const s of steps) for (const k of s.hardware || []) builtAt.set(`rod${k}`, s.n); // bought rods
   // a place step moves the whole piece (built in earlier steps)
   const movingIds = new Set(step.kind === 'place'
-    ? compiled.parts.filter((p) => p.group === step.group).map((p) => p.id)
-    : step.parts);
+    ? [...compiled.parts.filter((p) => p.group === step.group).map((p) => p.id),
+      ...(compiled.hardware || []).flatMap((h, k) => (h.group === step.group ? [`rod${k}`] : []))]
+    : [...step.parts, ...(step.hardware || []).map((k) => `rod${k}`)]);
   // furniture is built on the bench: zoom in on the piece, without the room
   const bench = step.kind === 'build' && [...itemGroups(kit, compiled).keys()].some((g) => g.title === step.group);
   const groupOf = new Map(compiled.parts.map((p) => [p.id, p.group]));
   const faces = [];
+  (compiled.hardware || []).forEach((h, k) => groupOf.set(`rod${k}`, h.group));
   compiled.faces3d.forEach((f, k) => {
-    const id = owner[k];
+    const id = f.hardware != null ? `rod${f.hardware}` : owner[k];
     if (id == null || (bench && groupOf.get(id) !== step.group)) return;
     const at = builtAt.get(id);
     if (movingIds.has(id)) faces.push({ source: f, part: id, moving: true });

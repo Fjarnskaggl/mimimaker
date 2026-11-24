@@ -6,13 +6,20 @@ import assert from 'node:assert/strict';
 import { CATALOG, defaultKit, defaultMaterialFor } from '../src/catalog.js';
 import { compileKit } from '../src/kit.js';
 import { buildShell } from '../src/shells/index.js';
-import { attachmentReport, soloKit, planeSlabs, holdCheck, onLowest, crossings } from '../src/build/attach.js';
+import { attachmentReport, soloKit, planeSlabs, holdCheck, onLowest, crossings, narrowestStrip } from '../src/build/attach.js';
+import { minJointFeature } from '../src/box.js';
+import { buildSteps } from '../src/build/steps.js';
+import { explodedFaces } from '../src/build/exploded.js';
+import { faceTexture } from '../src/textures/look.js';
 import { billOfMaterials, bomText } from '../src/build/bom.js';
 import { faceParts } from '../src/build/exploded.js';
 import { validatePiece } from '../src/pieces/schema.js';
 
 /** Pieces from the audit still waiting for their fix (each later PR empties this). */
 const PENDING = new Set(['pottedtree', 'planter', 'plant', 'littleplant', 'coatrack', 'crib']);
+
+/** Pieces with strips narrower than the cutter manages, waiting for their fix. */
+const PENDING_STRIPS = new Set(['fireplace', 'piano', 'firescreen', 'loveseat', 'dressingtable', 'crib', 'vanity', 'ladder', 'coatrack', 'bookrow']);
 
 const base = defaultKit();
 const sizes = (def) => [
@@ -46,6 +53,33 @@ test('the pending list only names pieces that still need their fix', () => {
     assert.ok(CATALOG[type], `${type} is a piece`);
     assert.ok(problems(type).length > 0, `${type} builds now: take it off the pending list`);
   }
+});
+
+/** Parts (at the default size) with a strip narrower than the cutter's smallest clean feature. */
+function thinStrips(type) {
+  const def = CATALOG[type];
+  const kit = soloKit(base, type, {}, defaultMaterialFor(def, base.materials));
+  const c = compileKit(kit);
+  const title = c.groups.at(-1).title;
+  return c.parts.filter((p) => p.group === title).flatMap((p) => {
+    const min = minJointFeature(c.machine, kit.materials.find((m) => m.id === p.material));
+    const w = narrowestStrip(p.polys);
+    return w < min - 1e-6 ? [`${p.name}: ${w.toFixed(2)} mm strip, under ${min} mm`] : [];
+  });
+}
+
+test('no catalogue piece has a strip of material too narrow for the cutter (default size)', () => {
+  for (const type of Object.keys(CATALOG)) {
+    if (PENDING_STRIPS.has(type)) continue;
+    assert.deepEqual(thinStrips(type), [], `${CATALOG[type].label} (${type})`);
+  }
+  for (const type of PENDING_STRIPS) assert.ok(thinStrips(type).length > 0, `${type} has no thin strips now: take it off the pending list`);
+});
+
+test('narrowestStrip measures across the material, including between holes', () => {
+  assert.equal(narrowestStrip([[[0, 0], [20, 0], [20, 5], [0, 5]]]), 5);
+  // a 10 mm square with a hole leaving 2 mm on the left
+  assert.ok(Math.abs(narrowestStrip([[[0, 0], [10, 0], [10, 10], [0, 10]], [[2, 3], [7, 3], [7, 7], [2, 7]]]) - 2) < 1e-9);
 });
 
 test('the checker catches a floating part, a part through another, and passes a T-joint', () => {
@@ -104,6 +138,30 @@ test('floor lamp: the shade sits on a spider threaded on a brass-tube stem that 
   const bom = billOfMaterials(kit, c);
   assert.ok(bom.supplies.some((s) => /brass tube/.test(s.name)), bomText(bom));
   assert.ok(c.groups.some((g) => g.steps.some((s) => /brass tube/.test(s) && /stem/.test(s))));
+  // the build guide says how long to cut it, and its exploded view shows it
+  const steps = buildSteps(kit, c);
+  const step = steps.find((s) => s.text.some((x) => /Cut a 1\.5 mm brass tube .* \d+ mm long for the stem/.test(x)));
+  assert.ok(step, steps.map((s) => s.text.join(' ')).join('\n'));
+  assert.ok(explodedFaces(kit, c, steps, step.n).some((f) => f.moving && f.source.hardware === 0), 'stem in the exploded view');
+  // in Realistic 3D it wears its own colour, not the card's
+  const tex = faceTexture(rodFaces[0][0], kit);
+  assert.equal(tex.params.colors[0], rodFaces[0][0].color);
+});
+
+test('floor lamp spider: no strip under the fine blade minimum at any size', () => {
+  const def = CATALOG.floorlamp;
+  for (const [label, params] of sizes(def)) {
+    const c = compileKit(soloKit(base, 'floorlamp', params, 'card110'));
+    const spider = c.parts.find((p) => p.name === 'Shade spider');
+    assert.ok(narrowestStrip(spider.polys) >= 1.5 - 1e-6, `${label}: ${narrowestStrip(spider.polys)}`);
+  }
+});
+
+test('a rod with no length warns instead of vanishing quietly', () => {
+  const kit = soloKit(base, 'floorlamp', {}, 'card110');
+  kit.items[0].params.h = (0.38 * kit.scale) / 10; // below its range: the stem would end where it starts
+  const c = compileKit(kit);
+  assert.ok(c.warnings.some((w) => /stem has no length/.test(w.msg)), JSON.stringify(c.warnings));
 });
 
 test('rod components are validated', () => {

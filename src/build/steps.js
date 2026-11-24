@@ -208,11 +208,14 @@ export function buildSteps(kit, compiled, graph = jointGraph(kit, compiled)) {
     const flats = ns.filter((n) => n.role === 'flat');
     const boxJoins = graph.joints.filter((j) => j.note === 'boxes of one piece' && nodeById.get(j.a)?.group === g.title);
     const note = def.note && !/shelves/i.test(def.note) ? [def.note] : [];
-    if (units.length && (flats.length || boxJoins.length)) {
+    // bought rods (stems, posts): cut to length in the step that puts them in
+    const rods = (compiled.hardware || []).map((h, k) => ({ h, k })).filter(({ h }) => h.group === g.title);
+    if (units.length && (flats.length || boxJoins.length || rods.length)) {
       push({
-        title: flats.length ? `Finish the ${lc(g.title)}` : `Join the ${lc(g.title)}`, group: g.title, unit: units[0], parts: flats.map((n) => n.id), cureMin: CURE.flat,
-        joins: boxJoins,
+        title: flats.length || rods.length ? `Finish the ${lc(g.title)}` : `Join the ${lc(g.title)}`, group: g.title, unit: units[0], parts: flats.map((n) => n.id), cureMin: CURE.flat,
+        joins: boxJoins, hardware: rods.map(({ k }) => k),
         text: [
+          ...rods.map(({ h }) => h.text),
           ...flats.map((n) => `Glue the ${lc(n.name)} (#${n.id}) in place.`),
           ...boxJoins.map((j) => `Attach the ${lc(unitName(nodeById.get(j.a).unit))} to the ${lc(unitName(nodeById.get(j.b).unit))}.`),
           ...note,

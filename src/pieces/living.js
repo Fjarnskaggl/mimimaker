@@ -58,7 +58,7 @@ export const LIVING = [
     size: ['w', 'w', 'h'],
     let: {
       base: 'w * 0.7', bh: 'max(3, h * 0.03)', d: 'max(1.5, min(3, w * 0.08))', hole: 'd / 2 + 0.1',
-      rim: 'max(1.5, w * 0.06)', arm: 'd + 3', q: '(w - 2 * rim - arm) / 2',
+      rim: 'max(1.5, w * 0.06)', arm: 'd + 3.4', q: '(w - 2 * rim - arm) / 2',
     },
     components: [
       { kind: 'box', name: 'Base', size: ['base', 'base', 'bh'], faces: 'all', at: ['(w - base) / 2', '(w - base) / 2', 0], holes: { top: [{ circle: ['base / 2', 'base / 2', 'hole', 24] }] } },
@@ -68,8 +68,8 @@ export const LIVING = [
         kind: 'flat', name: 'Shade spider', plane: { floor: { z: 'h' } },
         polys: [
           { rect: [0, 0, 'w', 'w'] },
-          { rect: ['rim', 'rim', 'q', 'q'] }, { rect: ['w - rim - q', 'rim', 'q', 'q'] },
-          { rect: ['rim', 'w - rim - q', 'q', 'q'] }, { rect: ['w - rim - q', 'w - rim - q', 'q', 'q'] },
+          { when: 'q >= 1.5', rect: ['rim', 'rim', 'q', 'q'] }, { when: 'q >= 1.5', rect: ['w - rim - q', 'rim', 'q', 'q'] },
+          { when: 'q >= 1.5', rect: ['rim', 'w - rim - q', 'q', 'q'] }, { when: 'q >= 1.5', rect: ['w - rim - q', 'w - rim - q', 'q', 'q'] },
           { circle: ['w / 2', 'w / 2', 'hole', 24] },
         ],
       },
