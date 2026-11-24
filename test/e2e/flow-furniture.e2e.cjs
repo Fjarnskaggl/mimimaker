@@ -244,3 +244,49 @@ for (const webgl of [false, true]) {
     await page.context().close();
   });
 }
+
+for (const webgl of [false, true]) {
+  const label = webgl ? 'Realistic 3D' : 'the sketch view';
+  test(`flow: move a piece with the 3D handles in ${label}: the fields follow the drag, and undo keeps it selected`, async () => {
+    const page = await F.openApp(browser, URL, { webgl });
+    if (webgl) await F.settled(page, STAGE, { timeout: 15000 });
+    await page.click('[data-select-item="2"]'); // the nightstand
+    await page.locator('#sidebar summary', { hasText: 'Position' }).click();
+    const field = (name) => page.evaluate((n) => Number([...document.querySelectorAll('#sidebar .field')].find((f) => f.textContent.includes(n)).querySelector('input').value), name);
+    const x0 = await field('From left');
+    const knob = page.locator('.t6-gizmo [data-handle="x"]');
+    await knob.waitFor({ state: 'attached', timeout: 10000 });
+    const at = await page.evaluate(() => { const r = (document.querySelector('.t6-gizmo [data-handle="x"] .knob') || document.querySelector('.t6-gizmo [data-handle="x"]')).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    const dir = await page.evaluate(() => JSON.parse(document.querySelector('.t6-gizmo [data-handle="x"]').dataset.pxPerCm));
+    // drag 30 cm toward the left wall, and look at the fields before letting go
+    await page.mouse.move(at.x, at.y);
+    await page.mouse.down();
+    await page.mouse.move(at.x - dir[0] * 30, at.y - dir[1] * 30, { steps: 8 });
+    await page.waitForTimeout(50);
+    const live = await field('From left');
+    assert.ok(Math.abs(live - (x0 - 30)) <= 5, `From left reads ${live} mid-drag (started at ${x0})`);
+    await page.mouse.up();
+    const moved = (await F.kit(page)).items[2].x;
+    assert.equal(await field('From left'), moved, 'the field shows where it landed');
+
+    // undo: the piece goes back and stays selected, handles and all, so you can try again
+    await page.click('#btn-undo');
+    assert.equal((await F.kit(page)).items[2].x, x0);
+    assert.match(await F.inspectorTitle(page), /nightstand/i, 'still selected after undo');
+    await knob.waitFor({ state: 'attached', timeout: 10000 });
+    assert.equal(await field('From left'), x0);
+    await page.click('#btn-redo');
+    assert.equal((await F.kit(page)).items[2].x, moved);
+    assert.match(await F.inspectorTitle(page), /nightstand/i, 'still selected after redo');
+
+    // an undo that takes a piece away still clears a selection that would point at the wrong thing
+    await page.keyboard.press('Escape');
+    await page.click('#rail-pieces');
+    await page.click('.piece[data-piece="table"]');
+    await page.click('#drawer [data-action=close]');
+    await page.click('#btn-undo');
+    assert.doesNotMatch(await F.inspectorTitle(page).catch(() => ''), /table/i, 'the removed table is not left selected');
+    F.assertClean(page);
+    await page.context().close();
+  });
+}
