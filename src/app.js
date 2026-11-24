@@ -46,7 +46,9 @@ import { shoppingFile } from './lighting/shopping.js';
 const STORE_KEY = 'mimimaker.kit.v1';
 const $ = (sel) => document.querySelector(sel);
 
-let kit = loadKit() || normalizeKit(defaultKit());
+let kit = loadKit();
+const hadStoredKit = !!kit; // a design of the person's own was saved here before this visit
+kit ||= normalizeKit(defaultKit());
 let compiled = null;
 // step: design | light | make | build. views: what the stage shows per step.
 // tab mirrors the old tab names for thread modules (T3 re-renders on 'sheets').
@@ -1190,17 +1192,48 @@ function openStart() {
 }
 
 // ------------------------------------------------------------------- init
-async function init() {
-  const shared = kitFromHash(location.hash);
-  if (shared) {
-    try {
-      kit = normalizeKit(await decodeKit(shared));
-      setTimeout(() => toast(openedSharedText(kit)), 0); // T7
-    } catch {
-      setTimeout(() => toast('That share link is damaged, so your last design was opened instead.', 'error'), 0);
-    }
-    try { window.history.replaceState(null, "", location.pathname + location.search); } catch { /* ignore */ }
+/**
+ * Open the share link in `hash`, if it holds one. The person's own design
+ * stays one Undo away (and on the toast's button): opening a link must never
+ * lose it. Returns true when the hash held a link.
+ */
+async function openSharedHash(hash, { atStart = false } = {}) {
+  const shared = kitFromHash(hash);
+  if (!shared) return false;
+  try { window.history.replaceState(null, '', location.pathname + location.search); } catch { /* ignore */ }
+  let next;
+  try {
+    next = normalizeKit(await decodeKit(shared));
+  } catch {
+    setTimeout(() => toast('That share link is damaged, so your last design was opened instead.', 'error'), 0);
+    return true;
   }
+  let hadOwn = true;
+  if (atStart) {
+    // the design that was open before the link: the first undo step, so the
+    // link's design can't overwrite it for good
+    hadOwn = hadStoredKit;
+    if (hadOwn) undoHistory.push(JSON.stringify(kit));
+    kit = next;
+  } else {
+    if (commitTimer) commitNow();
+    kit = next;
+    resetZoom();
+    $('#kit-name').value = kit.name;
+    view.sel = null;
+    thumbCache.clear();
+    closeDrawer();
+    restructured();
+  }
+  const text = openedSharedText(kit); // T7
+  setTimeout(() => toast(text, hadOwn ? { action: ['Back to mine', undo] } : {}), 0);
+  return true;
+}
+
+async function init() {
+  await openSharedHash(location.hash, { atStart: true });
+  // a share link pasted into a tab that already has the studio open
+  window.addEventListener('hashchange', () => { openSharedHash(location.hash); });
   window.mimimaker = { get kit() { return kit; }, get compiled() { return compiled; }, refresh: () => restructured(), stats };
 
   $('#brand-mark').innerHTML = MARK;

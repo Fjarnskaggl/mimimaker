@@ -93,3 +93,40 @@ test('flow: a changed design survives a reload, a saved file and a share link', 
   F.assertClean(page);
   await page.context().close();
 });
+
+test('flow: opening a share link keeps your own design one Undo away, also when pasted into an open tab', async () => {
+  const page = await F.openApp(browser, URL);
+  // a link to someone else's design
+  await page.locator('#kit-name').fill('Their room');
+  await page.click('#btn-share');
+  await page.waitForFunction(() => document.querySelector('#share-url').value.includes('#kit='), null, { timeout: 5000 });
+  const link = await page.locator('#share-url').inputValue();
+  await page.click('#share-close');
+  // our own design, saved in this browser
+  await page.locator('#kit-name').fill('My own room');
+  await page.waitForTimeout(500);
+
+  // 1. open the link in this browser: ours must not be gone for good
+  await page.goto('about:blank');
+  await page.goto(link);
+  await F.ready(page);
+  assert.equal((await F.kit(page)).name, 'Their room', 'the link opens their design');
+  const back = page.locator('.mm-toast button', { hasText: 'Back to mine' });
+  await back.waitFor({ timeout: 3000 });
+  await back.click();
+  await page.waitForFunction(() => window.mimimaker.kit.name === 'My own room');
+  assert.equal(await page.locator('#kit-name').inputValue(), 'My own room', 'the header shows ours again');
+  await page.reload();
+  await F.ready(page);
+  assert.equal((await F.kit(page)).name, 'My own room', 'ours is the saved design again');
+
+  // 2. paste the link into the tab that already has the studio open
+  await page.evaluate((h) => { location.hash = h; }, new globalThis.URL(link).hash);
+  await page.waitForFunction(() => window.mimimaker.kit.name === 'Their room', null, { timeout: 5000 });
+  assert.equal(await page.locator('#kit-name').inputValue(), 'Their room', 'the pasted link opens in place');
+  assert.equal(await page.evaluate(() => location.hash), '', 'the link’s hash is cleared');
+  await page.click('#btn-undo');
+  await page.waitForFunction(() => window.mimimaker.kit.name === 'My own room');
+  F.assertClean(page);
+  await page.context().close();
+});
