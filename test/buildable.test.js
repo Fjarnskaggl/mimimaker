@@ -425,8 +425,8 @@ test('every piece cuts cleanly in every board and card material: no strip under 
 });
 
 test('in a book-nook shell, the cable cover, motor mounts and shafts are drawn too', () => {
-  for (const type of ['nook', 'twostorey']) {
-    const kit = { ...defaultKit(), items: [], openings: [], shell: { type, gap: { w: 250, h: 280, d: 200 }, clearance: 2, params: {} } };
+  for (const [type, params] of [['nook', {}], ['nook', { gable: true }], ['twostorey', {}]]) {
+    const kit = { ...defaultKit(), items: [], openings: [], shell: { type, gap: { w: 250, h: 280, d: 200 }, clearance: 2, params } };
     kit.room.ceiling = true;
     kit.lighting.enabled = true;
     kit.lighting.power = { ...kit.lighting.power, wall: 'back', pos: 150, elev: 60, kind: 'battery', supply: 'aa2' };
@@ -442,5 +442,13 @@ test('in a book-nook shell, the cable cover, motor mounts and shafts are drawn t
     const panel = parts.find((p) => p.name === 'Cable cover panel');
     const ys = c.faces3d.filter((f) => f.part === panel.id).flatMap((f) => f.polys.flat().map((q) => q[1]));
     assert.ok(Math.min(...ys) > back - 0.01, `${type}: cover panel behind the back wall (${Math.min(...ys)} vs ${back})`);
+    // under a gable roof too, the fan's shaft runs from its mount down into the blades
+    const blades = parts.find((p) => /fan blades/.test(p.name));
+    assert.ok(type !== 'nook' || blades, 'the nook keeps its fan');
+    if (blades) {
+      const bz = c.faces3d.filter((f) => f.part === blades.id).flatMap((f) => f.polys.flat().map((q) => q[2]));
+      const sz = c.faces3d.filter((f) => f.shaft).flatMap((f) => f.polys.flat().map((q) => q[2]));
+      assert.ok(sz.length && Math.min(...sz) <= Math.min(...bz) + 0.01 && Math.max(...sz) > Math.max(...bz), `${type} ${JSON.stringify(params)}: shaft ${Math.min(...sz)}–${Math.max(...sz)}, blades at ${Math.min(...bz)}`);
+    }
   }
 });
