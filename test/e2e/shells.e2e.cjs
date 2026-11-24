@@ -191,7 +191,10 @@ test('room box: a gable roof from the Room section', async () => {
   assert.equal(await page.locator('#warnings .warn.error').count(), 0, await page.locator('#warnings').innerText());
   if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, 'room-gable.png') });
   await gable.uncheck();
-  assert.equal((await kit(page)).room.roof ?? null, null);
+  assert.notEqual((await kit(page)).room.roof?.type, 'gable', 'no roof is built');
+  await gable.check();
+  assert.deepEqual((await kit(page)).room.roof, { type: 'gable', pitch: 35 }, 'ticked again, it keeps its pitch');
+  await gable.uncheck();
   // a shell brings its own roof options, so the room roof hides
   await panel(page).locator('select[data-shell=type]').selectOption('nook');
   assert.equal(await room.locator('input[data-room-roof=gable]').count(), 0);

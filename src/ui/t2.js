@@ -22,7 +22,9 @@ export function syncShellRoom(kit) {
     const next = shellPower(before, prep.room);
     // remember where the box was the first time the shell moves it, so switching the shell off puts it back
     if (!kit.shell.powerBefore && PLACE.some((k) => next[k] !== before[k])) kit.shell.powerBefore = Object.fromEntries(PLACE.filter((k) => k in before).map((k) => [k, before[k]]));
-    kit.lighting.power = next;
+    // in place: the Power fields on screen hold this object, and a new one would leave them editing a stale copy
+    if (kit.lighting.power) Object.assign(kit.lighting.power, next);
+    else kit.lighting.power = next;
   }
 }
 const PLACE = ['wall', 'pos', 'elev'];
@@ -142,6 +144,18 @@ export function shellSection(kit, ui) {
 }
 
 /**
+ * Gable roof on or off. Off keeps a pitch that was changed (as a roof of type
+ * 'none', which nothing builds), so ticking it again gives the same roof back.
+ */
+export function setGableRoof(room, on) {
+  const pitch = room.roof?.pitch ?? 40;
+  if (on) room.roof = { type: 'gable', pitch };
+  else if (pitch !== 40) room.roof = { type: 'none', pitch };
+  else delete room.roof;
+  return room;
+}
+
+/**
  * Room box roof controls, appended to the Room section (not while a shell is
  * on: shells bring their own roof options). `ui` = { h, numberField, checkField, changed, restructured }.
  */
@@ -150,7 +164,7 @@ export function appendRoofControls(kit, sectionEl, ui) {
   const { h, numberField, checkField, changed, restructured } = ui;
   const roof = kit.room.roof?.type === 'gable' ? kit.room.roof : null;
   const row = h('div', { class: 'grid2' },
-    tag(checkField('Gable roof', !!roof, (v) => { kit.room.roof = v ? { type: 'gable', pitch: 40 } : null; restructured(); }), 'data-room-roof', 'gable'),
+    tag(checkField('Gable roof', !!roof, (v) => { setGableRoof(kit.room, v); restructured(); }), 'data-room-roof', 'gable'),
     roof ? tag(numberField('Roof pitch', roof.pitch, (v) => { roof.pitch = Math.max(20, Math.min(60, v)); changed(); },
       { min: 20, max: 60, step: 5, unit: '°' }), 'data-room-roof', 'pitch') : h('span'));
   const body = sectionEl.querySelector('.section-body') || sectionEl;
