@@ -214,12 +214,14 @@ test('design tokens: mimimaker type, colours and the Mimi mark', async () => {
   const s = await page.evaluate(() => ({
     body: getComputedStyle(document.body).fontFamily,
     name: getComputedStyle(document.querySelector('#kit-name')).fontFamily,
-    mat: getComputedStyle(document.documentElement).getPropertyValue('--mat').trim(),
+    primary: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+    desk: getComputedStyle(document.body).backgroundColor,
     mark: !!document.querySelector('.brand svg.mimi-mark'),
   }));
   assert.match(s.body, /Figtree/);
   assert.match(s.name, /Bricolage Grotesque/);
-  assert.equal(s.mat.toLowerCase(), '#1d5c52');
+  assert.equal(s.primary.toLowerCase(), '#2a1d10', 'Card and chipboard: an ink main button');
+  assert.equal(s.desk, 'rgb(194, 154, 102)', 'the kraft desk');
   assert.ok(s.mark, 'the header shows the Mimi mark');
   await page.close();
 });

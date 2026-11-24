@@ -2,15 +2,15 @@
 
 > **In this repo.** The design system for the app: principles and voice (this page), the flow (`flow.md`), Mimi (`mimi.md`), tokens (`tokens.css`, `tokens.json`), components (`components/<Name>/README.md`, with a `preview.html` you can open in a browser and the shared `components/bundle.css`), and the icon, logo and Mimi SVGs (`assets/`). UI work follows it. `test/design-tokens.test.js` checks that the variables in `styles.css` match `tokens.json`, so change both together.
 
-mimimaker turns a room idea into a miniature kit you can cut on a Cricut or laser, light with LEDs and build at the kitchen table. The interface should feel like a tidy workbench: the model in the middle, the right tool within reach, everything else put away.
+mimimaker turns a room idea into a miniature kit you can cut on a Cricut or laser, light with LEDs and build at the kitchen table. The interface should feel like a tidy workbench made of card: the model in the middle on a sheet of cardboard under a lamp, the right tool within reach, everything else put away.
 
 ## Principles
 
-1. **The model is the hero.** The stage takes the space. Chrome is quiet `surface` and `line`; colour belongs to the model and the materials.
+1. **The model is the hero.** The stage takes the space. Chrome is quiet card and kraft; bright colour belongs to the model and the materials.
 2. **One thing at a time.** Show settings only for the selected thing (the Inspector). A step shows only its own tools. Rarely used settings live under **Advanced**.
 3. **Measure twice.** Every number is set in `measure` with its unit. Real-world sizes in cm, model and cutting sizes in mm, never mixed in one field.
 4. **Warm light is special.** `glow` appears only for LEDs and the Light step. It is never a button, never text, never decoration.
-5. **Made by hand.** Kraft and basswood swatches, finger-joint edges and Mimi make it feel crafted, used sparingly so the work stays the focus.
+5. **Made by hand.** Panels are thick cut card with corrugated edges, hand-cut corners and faint stitching; kraft and basswood swatches, finger joints and Mimi finish it. Texture stays on edges and backgrounds, never behind text, and labels are never tilted or stuck on like stickers.
 
 ## Content fundamentals
 
@@ -30,7 +30,15 @@ mimimaker turns a room idea into a miniature kit you can cut on a Cricut or lase
 
 ## Visual foundations
 
-**Colour.** Page `paper`, panels `surface`, wells and the stage `surface-sunken`. Text `ink`, secondary `ink-muted`. `mat` is the brand: the one primary button, the active step, selection outlines and the focus ring in light theme. Materials show as `kraft` and `basswood` swatches. Status uses `success` (blue), `warning` (amber) and `danger` (red-orange), each with its `-soft` tint and always with an icon and a word. Two themes: **Workbench** (light) and **Night workshop** (dark). Every text pair named in a token's usage meets 4.5:1 in both, and controls and focus meet 3:1.
+**Colour: Card and chipboard.** Every colour has one job, and they all come from card, kraft, ink and a ballpoint pen.
+- `paper` is the kraft desk behind everything; only `ink` text goes straight on it. `surface` is the cardstock of panels, `surface-sunken` the wells cut into them (inputs, thumbnails), and `stage` the cardboard sheet the room stands on, under a warm lamp.
+- `primary` is the one main action per view: an ink sticker by day, caramel at night.
+- `caramel` is tape: the selected tab, step, filter, segment and slot, always with its `caramel-edge` lip so the state reads at 3:1.
+- `select` is the blue ballpoint: selection outlines, the turn ring and the handles, and the `focus` ring. It is the only cool colour. There is no green or teal anywhere.
+- `flute-shade`, `flute-face` and `stitch` are the corrugated edges and stitching. Decoration only.
+- Status: `success` (dark card brown, a plain card chip), `warning` (amber) and `danger` (red-orange), each with its `-soft` tint and always with an icon and a word. `glow` is LED light only.
+
+Two themes: **Card and chipboard** (light: kraft desk, cream cardstock, an ink main button) and **Cardboard at night** (dark: cardboard on a desk at night, with a near-black desk, dark chipboard panels with a lighter corrugated edge, a warm lamp on the stage, and caramel buttons). Every text pair named in a token's usage meets 4.5:1 in both, and controls, selection and focus meet 3:1; `test/theme.test.js` checks them.
 
 **Type.** Three families, each with one job:
 - **Bricolage Grotesque** (`display`): names and moments. "Bricolage" means building from what's at hand. Use `display` for the kit name, `title` for the selected thing, `display-xl` only on the start screen.
@@ -39,9 +47,9 @@ mimimaker turns a room idea into a miniature kit you can cut on a Cricut or lase
 
 **Space and layout.** 4px base (`space-1`…`space-7`). The app shell is fixed: header (`topbar-h`) with the StepNav; a tool rail (`rail-w`) on the left that opens the library drawer (`drawer-w`); the stage; the Inspector (`inspector-w`) on the right. At most one drawer and one inspector are open. Under 900px wide, the inspector becomes a bottom sheet.
 
-**Shape.** `radius-sm` for inputs and chips, `radius-md` for buttons, cards and notices, `radius-lg` for panels, the stage and sheets, `radius-pill` for pills and toasts. Panels sit on `line` hairlines; only floating things (popovers, drawer, toasts, a dragged piece) get `shadow-float`.
+**Shape.** Corners are hand-cut, slightly uneven but never wobbly: `radius-cut-sm` for chips, segments and small buttons, `radius-cut-md` for buttons, cards and notices, `radius-cut-lg` for panels, the stage and dialogs. The plain `radius-*` tokens remain for shapes that must stay regular. A panel (`.mm-panel`) is thick card resting on the desk: `shadow-panel`, the corrugated cut edge along its bottom, and dashed `stitch` just inside its edge. A card inside a panel is die-cut (`.mm-diecut`): a dashed `line-control` edge and no fill of its own. Floating things (popovers, the drawer, dialogs, toasts) get `shadow-float`.
 
-**States.** Hover darkens to `surface-sunken`. Selected things get a 2px `mat` outline on the stage and a `mat-soft` row in lists. Clashes on the floor plan get a `danger-soft` fill and a dashed `danger` outline. Locked fields get a dashed edge on `surface-sunken` and a hint saying who owns the value. Focus is a 2px `focus` ring with a 2px offset, on every interactive element.
+**States.** Hover darkens to `surface-sunken` (or `primary-soft` for rows and cards). The selected tab, filter or segment is caramel tape. Selected things on the stage get a 2px `select` outline, and on a dark night stage the light ballpoint. Move handles: `score` across the room, `select` front to back, `warning` up, a dashed `select` ring for turning. Clashes on the floor plan get a `danger-soft` fill and a dashed `danger` outline. Locked fields get a dashed edge and a hint saying who owns the value. Focus is a 2px `focus` ring with a 2px offset, on every interactive element.
 
 **Motion.** 120ms ease-out for hovers and toggles, 220ms for drawers and sheets, no bounce. Lights fade on over 400ms in night mode. With `prefers-reduced-motion`, everything snaps.
 
@@ -53,7 +61,7 @@ A custom 20px set, drawn on a 20px grid with a 1.75px stroke and round caps and 
 
 ## Logo
 
-The mark is Mimi's head on its own: a kraft box with a finger-joint top, two lit windows and the LED antenna (Logos group). Next to the mark, set the name `mimimaker` in lowercase Bricolage Grotesque 800, `ink`, at 1.25× the mark's height. Never recolour the mark, outline it or put it on `mat`.
+The mark is Mimi's head on its own: a kraft box with a finger-joint top, two lit windows and the LED antenna (Logos group). Next to the mark, set the name `mimimaker` in lowercase Bricolage Grotesque 800, `ink`, at 1.25× the mark's height. Never recolour the mark, outline it or put it on `primary` or `caramel`.
 
 ## Mimi
 
