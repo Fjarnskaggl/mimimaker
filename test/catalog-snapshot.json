@@ -778,18 +778,18 @@
  },
  "plant": {
   "label": "Potted plant",
-  "meta": "6a51dd2b4ff12558",
+  "meta": "bb7fc70894d4405c",
   "components": [
    "box:Pot",
    "flat:Leaves"
   ],
   "cases": {
-   "defaults@board": "0903b65ea63f8fe8",
-   "defaults@card": "0903b65ea63f8fe8",
-   "min@board": "696a9f11152e7725",
-   "min@card": "696a9f11152e7725",
-   "max@board": "1005f67012e58dd7",
-   "max@card": "1005f67012e58dd7"
+   "defaults@board": "e06f1b6bae17a709",
+   "defaults@card": "d749aab27be4402e",
+   "min@board": "1ed117d9edd712e5",
+   "min@card": "d51b97ee0421c335",
+   "max@board": "9a193386f03b7149",
+   "max@card": "a857fa22867c1631"
   }
  },
  "frame": {
@@ -886,36 +886,35 @@
  },
  "pottedtree": {
   "label": "Potted tree",
-  "meta": "403a663b79daf1dc",
+  "meta": "cc8b912955461540",
   "components": [
    "box:Pot",
-   "flat:Trunk",
    "flat:Crown A",
    "flat:Crown B"
   ],
   "cases": {
-   "defaults@board": "aa4b9f51a7baa1e0",
-   "defaults@card": "aa4b9f51a7baa1e0",
-   "min@board": "677af6395d1c7c45",
-   "min@card": "677af6395d1c7c45",
-   "max@board": "e9aee8aee8a06c6a",
-   "max@card": "e9aee8aee8a06c6a"
+   "defaults@board": "39f9a73e61d4fc26",
+   "defaults@card": "d300b9d3f929ae1a",
+   "min@board": "a3311a43adc23642",
+   "min@card": "6fc86c573fd6f1f0",
+   "max@board": "129015ed82d10de9",
+   "max@card": "1172beab66cb5eb5"
   }
  },
  "planter": {
   "label": "Garden planter",
-  "meta": "9aa7880350c53354",
+  "meta": "166ae254a3cd47e4",
   "components": [
    "box:Planter",
    "flat:Greenery"
   ],
   "cases": {
-   "defaults@board": "5c232922eed466de",
-   "defaults@card": "f3ffc551f8776f3b",
-   "min@board": "c3840c49f7bac593",
-   "min@card": "06df3ef87d290ec7",
-   "max@board": "85f66613208de4fa",
-   "max@card": "922f2122d3642afc"
+   "defaults@board": "9bf7bc98680ad142",
+   "defaults@card": "9f63a352cd6e419c",
+   "min@board": "df339555ec401cc4",
+   "min@card": "058703a58a91ad50",
+   "max@board": "4658e2c143480706",
+   "max@card": "6db577e46c79a28e"
   }
  },
  "bookrow": {
@@ -1005,24 +1004,24 @@
  },
  "littleplant": {
   "label": "Little plant",
-  "meta": "eab7e5ca478c6ce3",
+  "meta": "33beeb761f85c3e3",
   "components": [
    "box:Pot",
    "flat:Leaves"
   ],
   "cases": {
-   "defaults@board": "73ee5b9126e82fbe",
-   "defaults@card": "73ee5b9126e82fbe",
-   "min@board": "f9ba56b374df456f",
-   "min@card": "f9ba56b374df456f",
-   "max@board": "1a7e988efb6b24c0",
-   "max@card": "1a7e988efb6b24c0",
-   "kind=succulent@board": "73ee5b9126e82fbe",
-   "kind=succulent@card": "73ee5b9126e82fbe",
-   "kind=fern@board": "4fd734f3b2456f40",
-   "kind=fern@card": "4fd734f3b2456f40",
-   "kind=grass@board": "5d3e410ce2c0ed9e",
-   "kind=grass@card": "5d3e410ce2c0ed9e"
+   "defaults@board": "ae02b33c3a1827ef",
+   "defaults@card": "ba67619f2a2db70a",
+   "min@board": "29c09394e33b9bec",
+   "min@card": "ea9cf06da59e4d57",
+   "max@board": "b2d485f2b70626a8",
+   "max@card": "301115ede0834428",
+   "kind=succulent@board": "ae02b33c3a1827ef",
+   "kind=succulent@card": "ba67619f2a2db70a",
+   "kind=fern@board": "e097abe5bed26314",
+   "kind=fern@card": "d51a3bcfdfa43c69",
+   "kind=grass@board": "c141e559df3c899a",
+   "kind=grass@card": "f666e481355ae85e"
   }
  }
 }

@@ -33,7 +33,8 @@ test('box art is real SVG drawn from the design', () => {
   const b = creatorBundle(kitchen(), opts);
   const front = b.files.find((f) => f.name.endsWith('-front.svg')).data;
   assert.match(front, /^<svg[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
-  assert.ok((front.match(/<path/g) || []).length > 50);
+  // > 40: pots got soil tops (#buildability), which hide a few inside faces
+  assert.ok((front.match(/<path/g) || []).length > 40);
   const top = b.files.find((f) => f.name.endsWith('-top.svg')).data;
   assert.notEqual(front, top);
 });

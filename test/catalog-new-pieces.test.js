@@ -286,10 +286,10 @@ test('filing cabinet: drawer gaps plus a scored handle on every drawer', () => {
   assert.equal(box.scores.front.length, (4 - 1) + 4 * 4);
 });
 
-test('garden planter: an open-topped trough with greenery', () => {
+test('garden planter: a trough with a soil top, its greenery on a stem through a slot', () => {
   const comps = build('planter');
   const trough = comps.find((c) => c.kind === 'box');
-  assert.ok(!trough.faces.includes('top'));
+  assert.ok(trough.faces.includes('top') && trough.holes.top.length === 1, 'soil top with a slot');
   assert.ok(trough.scores.front.length >= 2, 'plank lines');
   assert.ok(comps.some((c) => c.kind === 'flat' && c.name === 'Greenery'));
 });
