@@ -282,7 +282,8 @@ export function createViewer(THREE) {
     }
     // walls seen from outside are ghosted, as in the SVG preview, so they never hide the room
     const cam = cameraDirection(view);
-    const ink = selectInk(canvas.parentElement || canvas, night); // read once per redraw: follows the theme
+    if (dayInk == null) dayInk = selectInk(canvas.parentElement || canvas, false); // cached: read again when the theme changes
+    const ink = night ? SELECT_NIGHT : dayInk;
     for (const entry of entries) {
       const { face, mesh, ring } = entry;
       const m = mesh.material;
@@ -331,6 +332,11 @@ export function createViewer(THREE) {
   }
 
   const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(() => { if (faces) render(); }) : null;
+  // the selection ink follows the light/dark theme: forget it and redraw when the theme flips
+  let dayInk = null;
+  const scheme = globalThis.matchMedia?.('(prefers-color-scheme: dark)');
+  const onScheme = () => { dayInk = null; if (faces) render(); };
+  scheme?.addEventListener?.('change', onScheme);
 
   return {
     canvas,
@@ -512,6 +518,7 @@ export function createViewer(THREE) {
     },
     dispose() {
       resize?.disconnect();
+      scheme?.removeEventListener?.('change', onScheme);
       freeRetired();
       free(clear());
       renderer.dispose();
