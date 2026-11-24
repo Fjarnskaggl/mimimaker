@@ -289,7 +289,16 @@ function notice(tone, word, text) {
 // focused (the pointer wins); rows go away when the inspector re-renders
 // without firing pointerleave or blur, so a re-render clears both
 const listPoint = { over: null, focus: null };
-function pointAt(key, index) { listPoint[key] = index; hoverPiece(listPoint.over ?? listPoint.focus); }
+function pointAt(key, index) {
+  listPoint[key] = index;
+  hoverPiece(listPoint.over ?? listPoint.focus);
+  markPlanPoint();
+}
+/** The same on the floor plan: the row's piece gets the plan's hover look. */
+function markPlanPoint() {
+  const i = listPoint.over ?? listPoint.focus;
+  for (const g of document.querySelectorAll('.plan-canvas .plan-item')) g.classList.toggle('over', Number(g.dataset.index) === i);
+}
 
 function select(sel) {
   view.sel = sel;
@@ -305,7 +314,7 @@ function renderInspector({ keepScroll = false } = {}) {
   const sb = $('#sidebar');
   if (view.step === 'make' || view.step === 'build') { sb.replaceChildren(); return; }
   const scroll = sb.scrollTop;
-  if (listPoint.over != null || listPoint.focus != null) { listPoint.over = listPoint.focus = null; hoverPiece(null); } // its rows are about to go
+  if (listPoint.over != null || listPoint.focus != null) { listPoint.over = listPoint.focus = null; hoverPiece(null); markPlanPoint(); } // its rows are about to go
   const e = selectedEntity();
   let content;
   if (view.step === 'light') content = e?.kind === 'led' ? ledInspector(e) : lightingInspector();
@@ -789,6 +798,7 @@ function drawPlan(guides = []) {
   if (!host) return;
   const clashes = new Set(collisions(kit).flat());
   host.innerHTML = planSVG(kit, { selected: view.sel, clashes, guides });
+  markPlanPoint();
 }
 
 /** Snap reach: about 8 screen px, in plan cm. */

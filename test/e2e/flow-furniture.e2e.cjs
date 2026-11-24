@@ -311,3 +311,30 @@ test('flow: turning a piece with the ring shows where it will land in the positi
   F.assertClean(page);
   await page.context().close();
 });
+
+test('flow: on the Plan tab, hovering or focusing a pieces-list row marks that piece on the plan', async () => {
+  const page = await F.openApp(browser, URL);
+  await page.click('[data-view=plan]');
+  const marked = () => page.evaluate(() => [...document.querySelectorAll('.plan-canvas .plan-item.over')].map((g) => Number(g.dataset.index)));
+  const look = (i) => page.evaluate((k) => { const el = document.querySelector(`.plan-canvas .plan-item[data-index="${k}"] rect, .plan-canvas .plan-item[data-index="${k}"] ellipse`); const c = getComputedStyle(el); return `${c.stroke} ${c.strokeWidth}`; }, i);
+  const before = await look(3);
+  await page.hover('[data-select-item="3"]');
+  assert.deepEqual(await marked(), [3], 'the hovered row marks its piece');
+  assert.notEqual(await look(3), before, 'and the piece looks different while its row is pointed at');
+  // an overlapping piece gets the mark too, over its clash look
+  await page.evaluate(() => { const k = window.mimimaker.kit; k.items[3].x = k.items[2].x; k.items[3].y = k.items[2].y; window.mimimaker.refresh(); });
+  await page.mouse.move(2, 2);
+  assert.equal(await page.locator('.plan-canvas .plan-item.clash[data-index="3"]').count(), 1, 'the lamp now overlaps the nightstand');
+  const clash = await look(3);
+  await page.hover('[data-select-item="3"]');
+  assert.notEqual(await look(3), clash, 'an overlapping piece is marked too');
+  await page.mouse.move(2, 2);
+  assert.deepEqual(await marked(), [], 'cleared when the pointer leaves');
+  await page.focus('[data-select-item="1"]');
+  assert.deepEqual(await marked(), [1], 'a focused row marks its piece too');
+  await page.keyboard.press('Space'); // pick it: the plan redraws with it selected, and the row mark goes
+  assert.deepEqual(await marked(), []);
+  assert.equal(await page.locator('.plan-canvas .plan-item.sel[data-index="1"]').count(), 1);
+  F.assertClean(page);
+  await page.context().close();
+});
