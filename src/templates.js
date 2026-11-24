@@ -311,6 +311,7 @@ export function applyRoomType(kit, id) {
   const type = ROOM_TYPES.find((r) => r.id === id);
   if (!type) return kit;
   const next = { ...kit, ...expandKit(type.kit) };
+  delete next.shell; // a room type is a plain room: a book nook shell would hide it and keep its own size
   next.roomType = id; // remembered so the room's look survives renames and share links (T6)
   next.materials = kit.materials.map((m) => (type.colors?.[m.id] ? { ...m, color: type.colors[m.id] } : { ...m }));
   return next;

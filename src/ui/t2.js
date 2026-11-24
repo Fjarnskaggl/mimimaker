@@ -17,8 +17,15 @@ export function syncShellRoom(kit) {
   if (!prep) return;
   for (const k of ['width', 'depth', 'height', 'ceiling']) kit.room[k] = prep.room[k];
   // a shell that wires its own LEDs keeps the power box on its back wall, so the Power fields show where it is
-  if (prep.def.wiredLights && kit.lighting) kit.lighting.power = shellPower(kit.lighting.power, prep.room);
+  if (prep.def.wiredLights && kit.lighting) {
+    const before = kit.lighting.power || {};
+    const next = shellPower(before, prep.room);
+    // remember where the box was the first time the shell moves it, so switching the shell off puts it back
+    if (!kit.shell.powerBefore && PLACE.some((k) => next[k] !== before[k])) kit.shell.powerBefore = Object.fromEntries(PLACE.filter((k) => k in before).map((k) => [k, before[k]]));
+    kit.lighting.power = next;
+  }
 }
+const PLACE = ['wall', 'pos', 'elev'];
 
 /** Does this kit's shell place and wire its own LEDs (#16)? */
 export const shellWiresLights = (kit) => !!(kit?.shell && SHELLS[kit.shell.type]?.wiredLights);
@@ -27,11 +34,23 @@ export function setShellType(kit, type) {
   if (!type) {
     const before = kit.shell?.roomBefore;
     if (before) Object.assign(kit.room, before);
+    const power = kit.shell?.powerBefore;
+    if (power && kit.lighting?.power) {
+      for (const k of PLACE) delete kit.lighting.power[k];
+      Object.assign(kit.lighting.power, power);
+    }
     kit.shell = null;
     return;
   }
   if (kit.shell) {
-    kit.shell = { ...kit.shell, type, params: {} };
+    if (kit.shell.type === type) return;
+    // each shell keeps its own settings, so switching to another shell and back loses nothing
+    const { paramsBy = {}, ...rest } = kit.shell;
+    const saved = { ...paramsBy, [kit.shell.type]: kit.shell.params || {} };
+    const params = saved[type] || {};
+    delete saved[type];
+    kit.shell = { ...rest, type, params };
+    if (Object.keys(saved).some((k) => Object.keys(saved[k]).length)) kit.shell.paramsBy = saved;
   } else {
     const { width, depth, height, ceiling } = kit.room;
     kit.shell = { type, gap: { ...DEFAULT_GAP }, clearance: 2, params: {}, roomBefore: { width, depth, height, ceiling } };
