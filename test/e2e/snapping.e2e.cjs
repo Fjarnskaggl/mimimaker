@@ -111,3 +111,30 @@ test('plan: a wall piece snaps to the window’s edge along the wall', async () 
   assert.ok(Math.abs(after1.pos - (215 + w / 2)) < 1e-6, `left edge on the window's right edge (pos ${after1.pos})`);
   await page.close();
 });
+
+test('plan: Snap Off moves freely, past other pieces too, and the sidebar keeps its scroll', async () => {
+  const page = await open();
+  await page.setViewportSize({ width: 1200, height: 420 }); // a short window, so the inspector scrolls
+  await page.click('[data-view=plan]');
+  await page.selectOption('.snap select', '0');
+  await page.click('.plan-canvas [data-index="2"]');
+  await page.locator('#sidebar summary', { hasText: 'Position' }).click();
+  const scrolled = await page.evaluate(() => { const sb = document.querySelector('#sidebar'); sb.scrollTop = sb.scrollHeight; return sb.scrollTop; });
+  assert.ok(scrolled > 0, 'the sidebar can scroll');
+  const shelf = await page.evaluate(() => { const f = document.querySelector('.plan-canvas [data-index="0"] rect').getBBox(); return { x1: f.x + f.width }; });
+  const n = await item(page, 2);
+  const from = await planPoint(page, n.x + 5, n.y + 5);
+  const to = await planPoint(page, shelf.x1 + 1.5 + 5, n.y + 5 + 31.3);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.waitForTimeout(50);
+  assert.equal(await guides(page), 0, 'no guides with snapping off');
+  const top = await page.evaluate(() => document.querySelector('#sidebar').scrollTop);
+  assert.ok(top > 0, `the sidebar stays scrolled mid-drag (scrollTop ${top})`);
+  await page.mouse.up();
+  const done = await item(page, 2);
+  assert.ok(Math.abs(done.x - (shelf.x1 + 1.5)) < 1, `not pulled onto the bookshelf (x ${done.x})`);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

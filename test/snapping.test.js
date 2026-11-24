@@ -98,3 +98,21 @@ test('snapRotation: quarter turns from a drag angle', () => {
   assert.equal(snapRotation(0, -60), 270);
   assert.equal(snapRotation(270, 100), 0);
 });
+
+test('snapWallMove: with nothing in reach, the centre goes to the grid, not the left edge', () => {
+  const kit = kitWith([{ type: 'frame', wall: 'back', pos: 150, elev: 150 }]);
+  const r = snapWallMove(kit, { kind: 'item', index: 0 }, 121.3, 150, { w: 33, h: 0, grid: 5, reach: 0 });
+  assert.equal(r.pos, 120, 'centre on the 5 cm grid');
+});
+
+test('snapFloorMove: no guide when the room edge pushes the piece off the line it snapped to', () => {
+  const kit = kitWith([box(100, 40), box(200, 150)]);
+  const [w] = size(kit.items[1]);
+  // a target past the right wall: the snap lands outside, the clamp pulls it back
+  kit.room = { ...room, width: 100 + w / 2 + 1 };
+  const r = snapFloorMove(kit, 1, 100 + 0.5, 150, { grid: 0, reach: 3 });
+  for (const g of r.guides.filter((q) => q.axis === 'x')) {
+    const f = footprint({ ...kit.items[1], x: r.x, y: r.y });
+    assert.ok([f.x0, (f.x0 + f.x1) / 2, f.x1].some((v) => Math.abs(v - g.at) < 1e-6), `guide at ${g.at} touches the piece (${f.x0}–${f.x1})`);
+  }
+});
