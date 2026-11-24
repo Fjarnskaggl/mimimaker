@@ -69,6 +69,24 @@ Ranked by how badly each breaks the build. Fixed items name their PR.
 | Two-storey spiral stair | The dowel post is only in the steps text: not in 3D or the bill of materials. | Modelled as bought hardware, listed in the bill. |
 | Lighting | Cable cover, motor mounts and the base's switch mount and hatch stops are cut but not drawn; the fan has no shaft. | Drawn where they go. |
 
+## Status
+
+Every item above is fixed.
+
+| PR | What it fixed |
+| --- | --- |
+| #113 | Floor lamp: brass-tube stem in a hole in the base, and a shade spider. Adds the checker (`src/build/attach.js`), the regression test and the `rod` component for bought dowel, wire and tube. |
+| #119 | Potted plant, little plant, potted tree, garden planter: soil tops with slots, stems that stand on the pot floor, and cross-lap slits in the tree crowns. |
+| #122 | Coat stand in a slotted base. Crib with the mattress between the ends and slats of at least 3 mm. The library ladder became an A-frame step ladder (two ladders glued at the top). The fire screen is three panels angled into a zigzag. Adds a check that every floor piece stands on more than a line. |
+| #124 | Boxes too thin to finger-joint (mantel, piano legs, armchair and loveseat arms) and the row of books are laminated from stacked layers. Fireplace sill, dressing-table frame and mirror, and vanity basin margin. |
+| PR 5 | The spiral stair post is a bought dowel, drawn in 3D and listed in the bill. Motor mounts, the cable cover, the hatch stops and the switch mount are drawn where they go. |
+
+Still open:
+
+- Some boxes in 0.8 mm basswood get finger strips of 1.4 mm. These pass the fine blade, but a knife can't cut them cleanly.
+- The fan rotor and turntable hang on the motor's own shaft, so the 3D view shows no shaft.
+- With a book-nook shell, the cable cover and motor mounts are cut but not drawn.
+
 ## Guarding against regressions
 
 `test/buildable.test.js` compiles every catalogue piece at its default,

@@ -303,7 +303,8 @@ export function compileKit(kit) {
     // [T5] cable cover and motor mounts: cut, and drawn on the outside of their wall
     const stackT = {}; // thickness already stacked on the outside of each face
     const placed = (lighting.parts || []).filter((p) => p.place).sort((a, b) => a.place.layer - b.place.layer);
-    const lightMat = (p) => getMat(p.material || (p.role === 'frame' || p.role === 'mount' ? room.material : room.trimMaterial), 'Lighting');
+    const lightMats = new Map((lighting.parts || []).map((p) => [p, getMat(p.material || (p.role === 'frame' || p.role === 'mount' ? room.material : room.trimMaterial), 'Lighting')]));
+    const lightMat = (p) => lightMats.get(p);
     const layerAt = new Map();
     for (const p of placed) {
       const key = `${p.place.face}/${p.place.layer}`;
@@ -443,7 +444,7 @@ export function compileKit(kit) {
     face([...lo].reverse(), v3.mul(k, -1));
     face(hi, k);
     const h = { name: c.name, stock: c.stock, d: c.d, length, group: group.title, item: currentItem, from: a, to: b };
-    h.text = `Cut ${hardwareName(c.stock, c.d)} ${Math.round(length)} mm long for the ${c.name.toLowerCase()}.`;
+    h.text = `Cut ${hardwareName(c.stock, c.d)} ${Math.floor(length + 1e-6)} mm long for the ${c.name.toLowerCase()}.`;
     hardware.push(h);
     group.steps.push(h.text);
   }

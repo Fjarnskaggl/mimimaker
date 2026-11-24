@@ -133,6 +133,7 @@ export function compileShell(prep, { t, fingerWidth, minFeature, cutter, holes, 
   for (const r of sh.rods || []) {
     const g = groups.get(r.group);
     if (g && addRod) addRod(r, groupMat.get(r.group), g, xf, r.group);
+    else warn(`The ${r.name.toLowerCase()} (${r.d} mm ${r.stock}) couldn't be added to the ${r.group.toLowerCase()} — it's missing from the bill and the 3D view.`);
   }
   for (const s of sh.steps) groups.get(s.group)?.steps.push(s.text);
   // LED spots glow in the preview; wired ones are on the LED map too (#16)
