@@ -721,12 +721,6 @@ function drawPlan(guides = []) {
   host.innerHTML = planSVG(kit, { selected: view.sel, clashes, guides });
 }
 
-/** Height on the wall (cm) of a wall piece, opening or light, for snapping. */
-function entityHeight(e) {
-  if (e.kind === 'opening') return e.obj.height;
-  if (e.kind === 'item') return itemSize(e.obj.type, itemParams(e.obj))[2];
-  return 0;
-}
 /** Snap reach: about 8 screen px, in plan cm. */
 function planReach(canvas) {
   const k = canvas.querySelector('svg')?.getScreenCTM()?.a;
