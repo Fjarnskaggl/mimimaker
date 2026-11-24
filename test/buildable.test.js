@@ -394,3 +394,22 @@ test('every lighting and hidden-base part is drawn in 3D where it goes', () => {
   assert.ok(mounts.some((z) => Math.abs(Math.min(...z) - ceiling) < 0.01), `a mount on the ceiling at ${ceiling}: ${mounts.map((z) => Math.min(...z)).join(', ')}`);
   assert.ok(mounts.some((z) => Math.abs(Math.max(...z) - floor) < 0.01), `a mount under the floor at ${floor}`);
 });
+
+test('every piece cuts cleanly in every board and card material: no strip under the cutter minimum', () => {
+  const mats = base.materials.filter((m) => m.kind === 'board' || m.kind === 'card');
+  const bad = [];
+  for (const [type, def] of Object.entries(CATALOG)) {
+    for (const m of mats) {
+      const min = minJointFeature(null, m);
+      for (const [label, params] of sizes(def)) {
+        const c = compileKit(soloKit(base, type, params, m.id));
+        for (const p of c.parts) {
+          if (!p.polys) continue;
+          const w = narrowestStrip(p.polys);
+          if (w < min - 1e-6) bad.push(`${type} in ${m.id} ${label}: ${p.name} ${w.toFixed(2)} mm (needs ${min})`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(bad, []);
+});
