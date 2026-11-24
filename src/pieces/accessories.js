@@ -13,8 +13,8 @@ export const ACCESSORIES = [
     defaults: { count: 8, h: 24, th: 3, d: 17, seed: 7 },
     size: ['th * round(count)', 'd', 'h'],
     components: [{
-      repeat: 'round(count)', as: 'k', let: { bh: 'h * (0.68 + 0.32 * hash(k, seed))' },
-      each: { kind: 'box', name: 'Book {k + 1}', size: ['th', 'd', 'bh'], faces: 'all', solid: true, at: ['k * th', 0, 0] },
+      repeat: 'round(count)', as: 'k', let: { bh: 'h * (0.68 + 0.32 * hash(k, seed))', bt: 'max(1, floor(th / t + 0.01)) * t' },
+      each: { kind: 'box', name: 'Book {k + 1}', size: ['bt', 'd', 'bh'], faces: 'all', solid: true, at: ['k * bt', 0, 0] },
     }],
     note: 'Each book is a few card layers glued into a little block: use a coloured layer on each side for the covers and ink a title on the spine. Glue the books side by side on a shelf. Change "Variation" for a different row.',
   },

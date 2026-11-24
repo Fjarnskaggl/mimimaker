@@ -203,7 +203,8 @@ export function jointGraph(kit, compiled) {
       }
     }
     // boxes of one item glue to each other (seat ↔ arms), flats onto the first box
-    const anchors = [...boxes.values()].map((b) => b.net || b.faces.back || b.faces.bottom || Object.values(b.faces)[0] || b.shelves[0] || b.layers[0]).filter(Boolean);
+    // a jointed box anchors the piece before a laminated block (the seat, not an arm)
+    const anchors = [...boxes.values()].sort((x, y) => (x.layers.length > 0) - (y.layers.length > 0)).map((b) => b.net || b.faces.back || b.faces.bottom || Object.values(b.faces)[0] || b.shelves[0] || b.layers[0]).filter(Boolean);
     for (let k = 1; k < anchors.length; k++) join(anchors[k].id, anchors[0].id, 'flat', 'boxes of one piece');
     const firstUnit = anchors[0]?.unit;
     for (const p of flats) {

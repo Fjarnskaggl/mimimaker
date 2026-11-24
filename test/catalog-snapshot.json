@@ -932,12 +932,12 @@
    "box:Book 8"
   ],
   "cases": {
-   "defaults@board": "48590f092c07abd7",
-   "defaults@card": "48590f092c07abd7",
-   "min@board": "614aea70a23b211c",
-   "min@card": "614aea70a23b211c",
-   "max@board": "01443552e65c2143",
-   "max@card": "01443552e65c2143"
+   "defaults@board": "24c8adee4d2f47f0",
+   "defaults@card": "0ad566bcd7f40095",
+   "min@board": "900d593c7176300a",
+   "min@card": "e301e84bafaa08e9",
+   "max@board": "c778ebb9137ac7cd",
+   "max@card": "771b047bb7bc46d2"
   }
  },
  "bakery": {
