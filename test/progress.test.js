@@ -102,25 +102,31 @@ test('glue timer counts down from the step cure time and is saved with the progr
   assert.equal(formatClock(0), '0:00');
 });
 
-test('renaming the kit keeps its build progress: the key follows the steps, not the name', () => {
+test('renaming the kit keeps its build progress: the key follows its id and steps, not its name', () => {
   const { kit, steps } = setup();
+  kit.id = 'room-a';
   const renamed = { ...kit, name: `${kit.name} (mine)` };
   assert.equal(progressKey(renamed, buildSteps(renamed, compileKit(renamed))), progressKey(kit, steps));
+  assert.notEqual(progressKey({ ...kit, id: 'room-b' }, steps), progressKey(kit, steps), 'two rooms with the same steps keep separate progress');
 });
 
-test('progress saved under the old name-based key moves to the new key once', () => {
+test('progress saved under the old name-based key moves to the new key once, even after a rename', () => {
   const { kit, steps } = setup();
+  kit.id = 'room-a';
   const mem = new Map();
   const store = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
   const s = steps[0];
   saveProgress(store, legacyProgressKey(kit, steps), { current: 2, done: [s.n], parts: { [s.n]: s.parts }, timers: {} });
-  migrateProgress(store, kit, steps);
+  // renamed before the Build step ever opened: the name it had when it got its id still finds the ticks
+  const renamed = { ...kit, progressName: kit.name, name: 'Renamed' };
+  migrateProgress(store, renamed, steps);
   const p = loadProgress(store, progressKey(kit, steps), steps);
   assert.deepEqual(p.done, [s.n]);
   assert.equal(p.current, 2);
   assert.equal(store.getItem(legacyProgressKey(kit, steps)), null, 'the old copy is gone');
-  // newer progress is never overwritten by an old copy
+  // newer progress is never overwritten, and an old copy that couldn't move is kept
   saveProgress(store, legacyProgressKey(kit, steps), { current: 1, done: [], parts: {}, timers: {} });
   migrateProgress(store, kit, steps);
   assert.deepEqual(loadProgress(store, progressKey(kit, steps), steps).done, [s.n]);
+  assert.notEqual(store.getItem(legacyProgressKey(kit, steps)), null, 'not deleted without being moved');
 });

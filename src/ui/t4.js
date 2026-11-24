@@ -129,6 +129,7 @@ export function buildCompanion(page, kit, compiled) {
   const steps = buildSteps(kit, compiled);
   if (!steps.length) return null;
   migrateProgress(store(), kit, steps); // ticks saved under the old name-based key
+  delete kit.progressName; // looked for once
   const key = progressKey(kit, steps);
   const partById = new Map(compiled.parts.map((p) => [p.id, p]));
   const matOf = new Map(compiled.groups.map((g) => [g.title, g.material]));

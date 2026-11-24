@@ -168,5 +168,11 @@ test('renaming the room mid-build keeps the ticked steps', async () => {
   await page.click('[data-step=build]');
   if (!(await page.locator('.t4-build').isVisible())) await page.click('.t4-mode [data-mode=steps]');
   assert.match(await page.locator('.t4-summary').innerText(), /1 of \d+ steps done/, 'and a reload');
+  // a new room from Start doesn't inherit them, even with the same steps
+  await page.evaluate(() => { document.querySelector('#btn-new').click(); document.querySelector('#start-blank').click(); });
+  await page.evaluate(() => { document.querySelector('#btn-new').click(); document.querySelector('#start .rt-card[data-room]').click(); });
+  await page.click('[data-step=build]');
+  if (!(await page.locator('.t4-build').isVisible())) await page.click('.t4-mode [data-mode=steps]');
+  assert.match(await page.locator('.t4-summary').innerText(), /0 of \d+ steps done/, 'a new room starts fresh');
   await context.close();
 });
