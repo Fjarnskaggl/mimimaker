@@ -84,15 +84,15 @@ export const BEDROOM = [
     params: [num('w', 'Length', 60, 130), num('d', 'Width', 40, 70), num('h', 'Height', 60, 100), cnt('slats', 'Slats per side', 6, 12)],
     defaults: { w: 100, d: 55, h: 85, slats: 8 },
     let: {
-      r: 'max(2, h * 0.1)', n: 'round(slats)', inner: 'w - 2 * r', sw: 'inner * 0.4 / n', gap: 'inner * 0.6 / (n + 1)',
+      r: 'max(3, h * 0.1)', inner: 'w - 2 * t - 2 * r', n: 'max(1, min(round(slats), floor((inner - 3) / 6)))', sw: 'inner / (2 * n + 1)',
       bz: 'h * 0.35', bh: 'max(3, 2 * t, h * 0.06)',
     },
     components: [
-      { kind: 'box', name: 'Mattress base', size: ['w', 'd', 'bh'], faces: 'all', at: [0, 0, 'bz'] },
+      { kind: 'box', name: 'Mattress base', size: ['w - 2 * t', 'd - 2 * t', 'bh'], faces: 'all', at: ['t', 't', 'bz'] },
       {
         repeat: 2, as: 's', each: {
-          kind: 'flat', name: "Side {s == 0 ? 'front' : 'back'}", plane: { upright: { y: 's * d' } },
-          polys: [{ rect: [0, 0, 'w', 'h'] }, { repeat: 'n + 1', as: 'k', each: { rect: ['r + k * (gap + sw)', 'r', 'gap', 'h - 2 * r'] } }],
+          kind: 'flat', name: "Side {s == 0 ? 'front' : 'back'}", plane: { upright: { x: 't', y: 's * (d - t)' } },
+          polys: [{ rect: [0, 0, 'w - 2 * t', 'h'] }, { repeat: 'n + 1', as: 'k', each: { rect: ['r + 2 * k * sw', 'r', 'sw', 'h - 2 * r'] } }],
         },
       },
       {
@@ -103,6 +103,6 @@ export const BEDROOM = [
         },
       },
     ],
-    note: 'Glue the mattress base between the two ends about a third of the way up, then add the slatted sides. A folded felt square makes the blanket.',
+    note: 'Glue the mattress base between the two ends about a third of the way up, then glue the slatted sides between the ends, against the mattress base. Slats are never narrower than the knife cuts cleanly, so a small crib has fewer. A folded felt square makes the blanket.',
   },
 ];

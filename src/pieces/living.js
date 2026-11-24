@@ -115,16 +115,22 @@ export const LIVING = [
     tags: ['cosy', 'screen'], difficulty: 1,
     params: [num('w', 'Width', 50, 120), num('h', 'Height', 40, 90), num('border', 'Frame', 1, 8)],
     defaults: { w: 80, h: 60, border: 3 },
-    size: ['w', 'max(2, w * 0.05)', 'h'],
-    let: { gap: 'w * 0.02', pw: '(w - 2 * gap) / 3', b: 'min(border, pw / 4)' },
-    components: [{
-      repeat: 3, as: 'k', let: { x0: 'k * (pw + gap)' },
-      each: {
-        kind: 'flat', name: 'Panel {k + 1}', plane: { upright: { y: 'max(2, w * 0.05) / 2' } },
-        polys: [{ arch: ['x0', 0, 'pw', 'h'] }, { arch: ['x0 + b', 'b', 'pw - 2 * b', 'h - 2 * b'] }],
+    size: ['w', 'w * 0.2', 'h'],
+    let: { c: 'sqrt(3) / 2', pw: 'w / (1 + 2 * c)', b: 'max(1.5, min(border, pw / 4))' },
+    components: [
+      {
+        repeat: 3, as: 'k', each: {
+          kind: 'flat', name: 'Panel {k + 1}',
+          plane: { custom: {
+            o: ['k == 0 ? 0 : k == 1 ? pw * c : pw * c + pw', 'k == 0 ? pw / 2 : 0', 0],
+            U: ['k == 1 ? 1 : c', 'k == 0 ? -0.5 : k == 2 ? 0.5 : 0', 0], V: [0, 0, 1],
+            n: ['k == 0 ? -0.5 : k == 2 ? 0.5 : 0', "k == 1 ? -1 : -c", 0],
+          } },
+          polys: [{ arch: [0, 0, 'pw', 'h'] }, { arch: ['b', 'b', 'pw - 2 * b', 'h - 2 * b'] }],
+        },
       },
-    }],
-    note: 'Cut it from black card; glue gold thread or wire mesh behind the openings, then hinge the three panels with tape so the screen stands in a zigzag in front of the fireplace.',
+    ],
+    note: 'Cut it from black card and glue gold thread or wire mesh behind the openings. Glue the two side panels to the edges of the middle one, angled back, so the screen stands on its own in front of the fireplace (a strip of tape on the back makes the hinge stronger).',
   },
   {
     id: 'lamptable', label: 'Lamp table', theme: 'Living room', placement: 'floor', mat: 'board',

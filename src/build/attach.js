@@ -262,6 +262,20 @@ export function holdCheck(nodes, anchor, { tol = TOUCH_TOL, step = 0.75 } = {}) 
   return { floating: nodes.filter((n) => !held.has(n.id)).map(({ id, name }) => ({ id, name })), contacts, anchored };
 }
 
+/** Narrowest width (mm) of the points where the nodes rest on the floor, across every direction. */
+export function footprintWidth(nodes, anchor, step = 0.75) {
+  const pts = nodes.flatMap((n) => n.slabs.flatMap((s) => samples(s, step).filter(anchor)));
+  if (!pts.length) return 0;
+  let best = Infinity;
+  for (let k = 0; k < 36; k++) {
+    const a = (k * Math.PI) / 36, ux = Math.cos(a), uy = Math.sin(a);
+    let lo = Infinity, hi = -Infinity;
+    for (const p of pts) { const d = p[0] * ux + p[1] * uy; lo = Math.min(lo, d); hi = Math.max(hi, d); }
+    best = Math.min(best, hi - lo);
+  }
+  return best;
+}
+
 /** Rests on the lowest point of these nodes. */
 export const onLowest = (nodes, tol = TOUCH_TOL) => {
   const floor = Math.min(...nodes.flatMap((n) => n.slabs.map((s) => s.box.lo[2])));
@@ -304,6 +318,9 @@ export function attachmentReport(kit, compiled, opts = {}) {
       anchor = (p) => dot(sub(p, fr.o), fr.n) <= 0.3 + (opts.tol ?? TOUCH_TOL) + 0.5; // hung 0.3 mm proud of the wall
     } else anchor = onLowest(nodes, opts.tol);
     const res = holdCheck(nodes, anchor, opts);
+    // what it stands on: the narrowest width of the floor contact (a lone
+    // upright sheet stands on a line no wider than its thickness and topples)
+    if (def.placement !== 'wall') res.footprint = footprintWidth(nodes, anchor, opts.step ?? 0.75);
     out.push({ item: index, title: g.title, type: item.type, parts: nodes.filter((n) => !n.rod).map(({ id, name }) => ({ id, name })), ...res, crossings: crossings(nodes, opts) });
   }
   return out;
