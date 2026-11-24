@@ -272,11 +272,23 @@ test('ladder is a step ladder, fire screen a zigzag, crib slats at least 3 mm, c
   assert.equal(ladder.r.contacts.length, 1, 'the two ladders lean on each other at the top');
   const screen = build('firescreen');
   assert.equal(screen.r.contacts.length, 2, 'side panels glued to the middle one');
-  const crib = build('crib', { slats: 12 });
-  const side = crib.part('Side front');
-  assert.ok(narrowestStrip(side.polys) >= 3 - 1e-6, `slats ${narrowestStrip(side.polys)}`);
-  const holes = side.polys.length - 1;
-  assert.ok(holes >= 2 && holes <= 13, `${holes} gaps`);
+  // the ladder stands on the floor (tilted boards don't sink into it), and
+  // a short ladder gets fewer rungs rather than rungs or gaps under 3 mm
+  const bottom = (c) => Math.min(...c.faces3d.filter((f) => f.item != null).flatMap((f) => f.polys.flat().flatMap((q) => [q[2], q[2] - f.n[2] * f.thickness])));
+  const floor = bottom(build('crib').c);
+  assert.ok(Math.abs(bottom(ladder.c) - floor) < 0.01, `ladder bottom at z ${bottom(ladder.c)}, floor at ${floor}`);
+  for (const h of [80, 260]) {
+    const front = build('ladder', { h, rungs: 12 }).part('Front ladder');
+    assert.ok(narrowestStrip(front.polys) >= 3 - 1e-6, `ladder h ${h}: ${narrowestStrip(front.polys)} mm`);
+  }
+  // crib: slats per side is the number of slats, capped only so a slat stays 3 mm
+  const holes = (p) => build('crib', p).part('Side front').polys.length - 1;
+  for (const slats of [2, 3, 4]) assert.equal(holes({ slats }), slats + 1, `default crib, ${slats} slats`);
+  assert.equal(holes({ w: 130, slats: 6 }), 7, 'a long crib takes the most slats');
+  for (const w of [60, 130]) {
+    const side = build('crib', { w, slats: 6 }).part('Side front');
+    assert.ok(narrowestStrip(side.polys) >= 3 - 1e-6, `crib w ${w}: slats ${narrowestStrip(side.polys)}`);
+  }
   const stand = build('coatrack');
   assert.equal(stand.part('Base top').polys.length, 2, 'slot in the base top');
   assert.deepEqual(stand.r.crossings, []);
