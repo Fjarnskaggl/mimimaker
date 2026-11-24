@@ -1,7 +1,7 @@
 // Compile a kit description into numbered parts, cut sheets, 3D preview
 // faces, assembly steps and warnings.
 
-import { buildBox, faceFrame, autoFingerWidth, minJointFeature } from './box.js';
+import { buildBox, faceFrame, autoFingerWidth, minJointFeature, FACE_NAMES } from './box.js';
 import { foldNet, tabbedRect } from './fold.js';
 import { CATALOG, itemSize } from './catalog.js';
 import { TOOL_NAMES, effectiveSheet, machineFor } from './materials.js';
@@ -428,6 +428,43 @@ export function compileKit(kit) {
     const mt = mat.thickness;
     if (mat.kind === 'fabric') {
       warn(`${title}: ${mat.name} can't make boxes — choose board or cardstock.`);
+      return;
+    }
+    // A block too thin to joint (the panels across it would be slivers the
+    // cutter can't make), or one the piece asks to be solid, is laminated:
+    // layers of the material stacked across its thinnest side.
+    const dims = [bw, bd, bh];
+    const ax = dims.indexOf(Math.min(...dims));
+    // only a closed box can become a block: an open one (a shelf, a cabinet)
+    // would lose the opening it exists for, so it just gets a warning
+    const thin = mat.kind === 'board' && c.faces.length >= 4 && dims[ax] - 2 * mt < minJointFeature(machine, mat);
+    if (thin && !c.solid && c.faces.length < 6) warn(`${title}: ${c.name} is too thin to joint in ${mat.name} (${dims[ax].toFixed(1)} mm) — make it bigger or use thinner board.`);
+    if (c.solid || (thin && c.faces.length === 6)) {
+      const nearFace = ['left', 'front', 'bottom'][ax], farFace = ['right', 'back', 'top'][ax];
+      // holes in the far face (top, right, back) go through every layer but
+      // the first, so whatever stands in them rests on that first layer, and
+      // near-face holes through every layer but the last
+      const holes = c.holes || {}, scores = c.scores || {};
+      const far = holes[farFace] || [], near = holes[nearFace] || [];
+      const k = Math.max(far.length || near.length ? 2 : 1, Math.round(dims[ax] / mt));
+      if (Math.abs(k * mt - dims[ax]) > 0.5 * mt + 1e-6) warn(`${title}: ${c.name} is ${(k * mt).toFixed(1)} mm thick in ${k} layers of ${mat.name}, not ${dims[ax].toFixed(1)} mm.`);
+      const lost = FACE_NAMES.filter((f) => f !== nearFace && f !== farFace && ((holes[f] || []).length || (scores[f] || []).length));
+      if (lost.length || (c.shelves || []).length) warn(`${title}: ${c.name} is a solid block, so its ${[...lost, ...((c.shelves || []).length ? ['shelves'] : [])].join(', ')} ${lost.length + ((c.shelves || []).length ? 1 : 0) > 1 ? 'are' : 'is'} left out.`);
+      const X = [1, 0, 0], Y = [0, 1, 0], Z = [0, 0, 1];
+      const ids = [];
+      for (let i = 0; i < k; i++) {
+        const [plane, poly] = ax === 2 ? [{ o: [0, 0, (i + 1) * mt], U: X, V: Y, n: Z }, rectPoly(0, 0, bw, bd)]
+          : ax === 0 ? [{ o: [i * mt, 0, 0], U: Y, V: Z, n: [-1, 0, 0] }, rectPoly(0, 0, bd, bh)]
+          : [{ o: [0, i * mt, 0], U: X, V: Z, n: [0, -1, 0] }, rectPoly(0, 0, bw, bh)];
+        const polys = [poly, ...(i > 0 ? far : []), ...(i < k - 1 ? near : [])];
+        // the outside layers keep the face's score lines (drawers, keys, doors)
+        const sc = [...(i === 0 ? scores[nearFace] || [] : []), ...(i === k - 1 ? scores[farFace] || [] : [])];
+        const pid = addPart(group, `${c.name} layer ${i + 1}`, mat, polys, sc);
+        parts.at(-1).build = { unit: `${group.title}/${c.name}`, role: 'layer' }; // T4: one block, glued up in a stack
+        add3d(2, polys, plane, xf, mat.color, { cull: false, thickness: mt, material: mat.id, part: pid });
+        ids.push(pid);
+      }
+      group.steps.push(`${c.name}: glue layers ${fmtIds(ids)} into a stack, edges flush, and press it flat under a book while it sets.`);
       return;
     }
     if (mat.kind === 'board') {

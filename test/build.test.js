@@ -69,7 +69,8 @@ test('armchair: three boxes, the flat back glues onto the seat, and every box is
   const node = graph.nodes.find((n) => n.id === backrest);
   assert.equal(node.role, 'flat');
   assert.ok(graph.joints.some((j) => j.kind === 'flat' && (j.a === backrest || j.b === backrest)));
-  const units = new Set(graph.nodes.filter((n) => n.group === 'Armchair' && n.role === 'panel').map((n) => n.unit));
+  // the arms are too thin to finger-joint, so they are laminated blocks
+  const units = new Set(graph.nodes.filter((n) => n.group === 'Armchair' && (n.role === 'panel' || n.role === 'layer')).map((n) => n.unit));
   assert.deepEqual([...units].sort(), ['Armchair/Left arm', 'Armchair/Right arm', 'Armchair/Seat']);
   const place = steps.find((s) => s.group === 'Armchair' && s.kind === 'place');
   assert.ok(place, 'a place-in-room step');

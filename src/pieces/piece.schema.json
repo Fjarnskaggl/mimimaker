@@ -83,7 +83,8 @@
         },
         "scores": { "type": "object", "propertyNames": { "$ref": "#/$defs/face" }, "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/scoreEntry" } } },
         "holes": { "type": "object", "propertyNames": { "$ref": "#/$defs/face" }, "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/shapeEntry" } } },
-        "when": { "$ref": "#/$defs/expr" }, "material": { "type": "string" }
+        "when": { "$ref": "#/$defs/expr" }, "material": { "type": "string" },
+        "solid": { "type": "boolean", "description": "Laminate it: layers stacked across its thinnest side instead of a jointed box. Board blocks too thin to joint are laminated anyway." }
       }
     },
     "flat": {

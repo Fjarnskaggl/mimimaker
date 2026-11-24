@@ -10,7 +10,7 @@
 //
 // nodes:  { id, name, group, unit, role, face, kind }
 //   role: panel (board box face) | piece (separate card face) | net (one-piece
-//         card net) | shelf | flat (item flat) | overlay (wallpaper, flooring)
+//         card net) | layer (one sheet of a laminated block) | shelf | flat (item flat) | overlay (wallpaper, flooring)
 //         | trim (window/door frame) | shell (a shell's built-in part)
 //         | roof (gable and roof slopes)
 //   kind: material kind — board | card | fabric
@@ -157,7 +157,7 @@ export function jointGraph(kit, compiled) {
     const info = items.get(g);
     const boxes = new Map(); // box name -> { faces, shelves, net }
     const box = (name) => {
-      if (!boxes.has(name)) boxes.set(name, { faces: {}, shelves: [], net: null, partsByFace: {} });
+      if (!boxes.has(name)) boxes.set(name, { faces: {}, shelves: [], net: null, layers: [], partsByFace: {} });
       return boxes.get(name);
     };
     // first pass: candidate box faces (a face name alone isn't enough — a box
@@ -182,6 +182,7 @@ export function jointGraph(kit, compiled) {
       const b = box(c.box);
       const unit = `${g.title}/${c.box}`;
       if (c.role === 'shelf') b.shelves.push(node(c.p, { unit, role: 'shelf' }));
+      else if (c.role === 'layer') b.layers.push(node(c.p, { unit, role: 'layer' }));
       else if (c.role === 'net') b.net = node(c.p, { unit, role: 'net' });
       else {
         const n = node(c.p, { unit, role: null, face: c.face });
@@ -190,6 +191,8 @@ export function jointGraph(kit, compiled) {
       }
     }
     for (const b of boxes.values()) {
+      // a laminated block: each layer glued flat onto the one before
+      for (let k = 1; k < b.layers.length; k++) join(b.layers[k].id, b.layers[k - 1].id, 'flat');
       const panels = Object.values(b.faces);
       const board = panels.some((n) => n.role === 'panel');
       joinFaces(b.faces, board ? 'finger' : 'glue-tab');
@@ -200,7 +203,8 @@ export function jointGraph(kit, compiled) {
       }
     }
     // boxes of one item glue to each other (seat ↔ arms), flats onto the first box
-    const anchors = [...boxes.values()].map((b) => b.net || b.faces.back || b.faces.bottom || Object.values(b.faces)[0] || b.shelves[0]).filter(Boolean);
+    // a jointed box anchors the piece before a laminated block (the seat, not an arm)
+    const anchors = [...boxes.values()].sort((x, y) => (x.layers.length > 0) - (y.layers.length > 0)).map((b) => b.net || b.faces.back || b.faces.bottom || Object.values(b.faces)[0] || b.shelves[0] || b.layers[0]).filter(Boolean);
     for (let k = 1; k < anchors.length; k++) join(anchors[k].id, anchors[0].id, 'flat', 'boxes of one piece');
     const firstUnit = anchors[0]?.unit;
     for (const p of flats) {

@@ -68,11 +68,11 @@ export const BEDROOM = [
     params: [num('w', 'Width', 60, 140), num('d', 'Depth', 30, 55), num('h', 'Height', 65, 80), num('mh', 'Mirror height', 30, 80)],
     defaults: { w: 100, d: 45, h: 75, mh: 55 },
     size: ['w', 'd', 'h + mh'],
-    let: { mw: 'w * 0.6', b: 'max(2, mw * 0.06)' },
+    let: { mw: 'w * 0.6', b: 'max(3.2, mw * 0.06)' },
     components: [
       { kind: 'box', name: 'Dressing table', size: ['w', 'd', 'h'], faces: ['top', 'left', 'right', 'back'], at: [0, 0, 0] },
       {
-        kind: 'flat', name: 'Mirror frame', plane: { upright: { y: 'd', z: 'h' } },
+        kind: 'flat', name: 'Mirror frame', plane: { upright: { y: 'd - t', z: 'h' } },
         polys: [{ arch: ['(w - mw) / 2', 0, 'mw', 'mh'] }, { arch: ['(w - mw) / 2 + b', 'b', 'mw - 2 * b', 'mh - 2 * b'] }],
       },
     ],
