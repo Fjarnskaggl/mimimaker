@@ -64,10 +64,13 @@ async function set(el, c, back) {
 const tidy = (v) => JSON.parse(JSON.stringify(v, (k, x) => (x === null || (x && typeof x === 'object' && !Array.isArray(x) && !Object.keys(x).length) ? undefined : x)));
 function differences(a, b, shown, p = '') {
   if (JSON.stringify(a) === JSON.stringify(b)) return [];
+  const obj = (x) => x && typeof x === 'object' && !Array.isArray(x);
+  if (a === undefined && obj(b)) a = {};
+  if (b === undefined && obj(a)) b = {};
   if (a && b && typeof a === 'object' && typeof b === 'object') {
     return [...new Set([...Object.keys(a), ...Object.keys(b)])].flatMap((k) => differences(a[k], b[k], shown, `${p}.${k}`));
   }
-  if (a === undefined && String(b) === String(shown)) return [];
+  if ((a === undefined && String(b) === String(shown)) || (b === undefined && String(a) === String(shown))) return [];
   return [`${p}: ${JSON.stringify(a)} → ${JSON.stringify(b)}`];
 }
 const same = (a, b, shown) => differences(tidy(a), tidy(b), shown);
@@ -189,6 +192,20 @@ test('roundtrip: a saved file opened again is the same room, build progress incl
   await page.waitForFunction(() => window.mimimaker.kit.roomType === 'bedroom');
   assert.equal((await F.kit(page)).id, id, 'the room keeps its id, which its build progress is saved under');
   fs.rmSync(dir, { recursive: true, force: true });
+  F.assertClean(page);
+  await page.context().close();
+});
+
+test('roundtrip: a whole-scene shell\'s controls, and Light under it, set back, undo, redo and reload cleanly', async () => {
+  const page = await bedroom();
+  await page.selectOption('select[data-shell=type]', 'alley');
+  await page.waitForFunction(() => window.mimimaker.kit.shell?.type === 'alley');
+  await settle(page);
+  const problems = [];
+  problems.push(...await sweep(page, 'Alley', '#sidebar [data-panel=shell]'));
+  await page.click('[data-step=light]');
+  problems.push(...await sweep(page, 'Alley lighting', '#sidebar'));
+  assert.deepEqual(problems, []);
   F.assertClean(page);
   await page.context().close();
 });

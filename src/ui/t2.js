@@ -22,7 +22,9 @@ export function syncShellRoom(kit) {
     const next = shellPower(before, prep.room);
     // remember where the box was the first time the shell moves it, so switching the shell off puts it back
     if (!kit.shell.powerBefore && PLACE.some((k) => next[k] !== before[k])) kit.shell.powerBefore = Object.fromEntries(PLACE.filter((k) => k in before).map((k) => [k, before[k]]));
-    kit.lighting.power = next;
+    // in place: the Power fields on screen hold this object, and a new one would leave them editing a stale copy
+    if (kit.lighting.power) Object.assign(kit.lighting.power, next);
+    else kit.lighting.power = next;
   }
 }
 const PLACE = ['wall', 'pos', 'elev'];

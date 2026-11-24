@@ -3,6 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DEFAULT_MATERIALS, switchBlade, TOOL_NAMES } from '../src/materials.js';
+import { defaultKit } from '../src/catalog.js';
 import { setEffect } from '../src/ui/t5.js';
 import { EFFECTS } from '../src/lighting/effects.js';
 
@@ -63,4 +64,17 @@ test('a gable roof switched off and on again keeps its pitch; off and on from no
   setGableRoof(plain, true);
   setGableRoof(plain, false);
   assert.deepEqual(plain, { width: 200 });
+});
+
+import { setShellType, syncShellRoom } from '../src/ui/t2.js';
+test('a shell that wires its LEDs keeps the same power object, so the Power fields on screen keep working', () => {
+  const kit = defaultKit();
+  setShellType(kit, 'alley');
+  const power = kit.lighting.power;
+  kit.lighting.power.supply = 'aaa2';
+  syncShellRoom(kit);
+  assert.equal(kit.lighting.power, power, 'the same object the supply picker edits');
+  power.supply = 'aa2';
+  syncShellRoom(kit);
+  assert.equal(kit.lighting.power.supply, 'aa2');
 });
