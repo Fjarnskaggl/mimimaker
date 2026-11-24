@@ -108,6 +108,8 @@ export function materialFinish(mat) {
  */
 export function faceTexture(face, kit, look = resolveLook(kit)) {
   if (face.glow) return null;
+  // a bought rod (dowel, wire, brass tube) in its own colour, not the piece's sheet
+  if (face.hardware != null) return materialFinish({ id: `rod-${face.color}`, kind: 'board', color: face.color });
   const id = faceMaterial(face, kit);
   // printed: wallpaper and floor covering (faces from older compiles: the overlay layer)
   const printed = face.print || (!face.material && face.layer === 1);

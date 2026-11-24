@@ -35,8 +35,8 @@ test('faceParts: every board panel and shell part owns a 3D face of the same sha
       assert.ok(k >= 0, `#${p.id} ${p.group} – ${p.name} has a face`);
       assert.ok(Math.abs(area3d(compiled.faces3d[k].polys[0]) - area2d(p.polys[0])) < 0.5, `#${p.id} shape matches`);
     }
-    // every solid face belongs to some part (only the LED glows don't)
-    compiled.faces3d.forEach((f, k) => { if (!f.glow) assert.ok(owner[k] != null, `face ${k} (layer ${f.layer}) has an owner`); });
+    // every solid face belongs to some part (only the LED glows and bought rods don't)
+    compiled.faces3d.forEach((f, k) => { if (!f.glow && f.hardware == null) assert.ok(owner[k] != null, `face ${k} (layer ${f.layer}) has an owner`); });
   }
 });
 

@@ -222,7 +222,7 @@ test('3D faces carry their material thickness for the WebGL viewer (#24)', () =>
   const room = r.faces3d.filter((f) => f.layer === 0);
   assert.ok(room.length && room.every((f) => f.thickness === mat(kit.room.material).thickness), 'room shell');
   kit.items.forEach((it, i) => {
-    const solid = r.faces3d.filter((f) => f.item === i && f.layer === 2);
+    const solid = r.faces3d.filter((f) => f.item === i && f.layer === 2 && f.hardware == null); // bought rods aren't cut from it
     for (const f of solid) assert.equal(f.thickness, mat(it.material).thickness, `${it.type} in ${it.material}`);
   });
   const flat = r.faces3d.filter((f) => f.layer === 1 || f.layer === 1.5 || f.glow);

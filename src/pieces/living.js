@@ -56,13 +56,25 @@ export const LIVING = [
     params: [num('w', 'Shade width', 20, 60), num('h', 'Height', 80, 200), num('shade', 'Shade height', 15, 50)],
     defaults: { w: 35, h: 160, shade: 28 },
     size: ['w', 'w', 'h'],
-    let: { base: 'w * 0.7', pole: 'max(1.5, w * 0.08)', poleH: 'h - shade * 0.6' },
+    let: {
+      base: 'w * 0.7', bh: 'max(3, h * 0.03)', d: 'max(1.5, min(3, w * 0.08))', hole: 'd / 2 + 0.1',
+      rim: 'max(1.5, w * 0.06)', arm: 'd + 3.4', q: '(w - 2 * rim - arm) / 2',
+    },
     components: [
-      { kind: 'box', name: 'Base', size: ['base', 'base', 'max(2, h * 0.03)'], faces: 'all', at: ['(w - base) / 2', '(w - base) / 2', 0] },
-      { kind: 'flat', name: 'Pole', polys: [{ rect: [0, 0, 'pole', 'poleH'] }], plane: { upright: { x: '(w - pole) / 2', y: 'w / 2' } } },
-      { kind: 'box', name: 'Shade', size: ['w', 'w', 'shade'], faces: ['front', 'back', 'left', 'right'], at: [0, 0, 'h - shade'] },
+      { kind: 'box', name: 'Base', size: ['base', 'base', 'bh'], faces: 'all', at: ['(w - base) / 2', '(w - base) / 2', 0], holes: { top: [{ circle: ['base / 2', 'base / 2', 'hole', 24] }] } },
+      { kind: 'rod', name: 'Stem', stock: 'tube', d: 'd', from: ['w / 2', 'w / 2', 't'], to: ['w / 2', 'w / 2', 'h'] },
+      { kind: 'box', name: 'Shade', size: ['w', 'w', 'shade'], faces: ['front', 'back', 'left', 'right'], at: [0, 0, 'h - t - shade'] },
+      {
+        kind: 'flat', name: 'Shade spider', plane: { floor: { z: 'h' } },
+        polys: [
+          { rect: [0, 0, 'w', 'w'] },
+          { when: 'q >= 1.5', rect: ['rim', 'rim', 'q', 'q'] }, { when: 'q >= 1.5', rect: ['w - rim - q', 'rim', 'q', 'q'] },
+          { when: 'q >= 1.5', rect: ['rim', 'w - rim - q', 'q', 'q'] }, { when: 'q >= 1.5', rect: ['w - rim - q', 'w - rim - q', 'q', 'q'] },
+          { circle: ['w / 2', 'w / 2', 'hole', 24] },
+        ],
+      },
     ],
-    note: 'Pair it with a floor LED: thread the wire up the pole and tuck the bulb inside the shade. Use vellum or thin paper for a softer glow.',
+    note: 'Fold the base and glue the stem upright through the hole in its top, standing on its floor. Fold the shade into a tube, glue the spider across its top edge, then thread the spider’s hub down the stem and glue it. Run the LED wires up inside the tube; vellum or thin paper makes the shade glow softly.',
   },
   {
     id: 'sideboard', label: 'Sideboard', theme: 'Living room', placement: 'floor', mat: 'board',

@@ -165,19 +165,20 @@
  },
  "floorlamp": {
   "label": "Floor lamp",
-  "meta": "6e292e778973fca7",
+  "meta": "12d6211984ca67a0",
   "components": [
    "box:Base",
-   "flat:Pole",
-   "box:Shade"
+   "rod:Stem",
+   "box:Shade",
+   "flat:Shade spider"
   ],
   "cases": {
-   "defaults@board": "45d39d39d9bbe91c",
-   "defaults@card": "45d39d39d9bbe91c",
-   "min@board": "ef97595b6c2970d4",
-   "min@card": "ef97595b6c2970d4",
-   "max@board": "75c5f7843f202306",
-   "max@card": "75c5f7843f202306"
+   "defaults@board": "921785a466b52c02",
+   "defaults@card": "3959ae485e65b82e",
+   "min@board": "0ea334b53512d022",
+   "min@card": "ad026b1f475f7df5",
+   "max@board": "ae5563fff559383d",
+   "max@card": "be7b728622c03188"
   }
  },
  "sideboard": {
