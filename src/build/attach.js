@@ -218,13 +218,15 @@ export function narrowestStrip(polys) {
     if (!inside([m[0] + nx * 0.01, m[1] + ny * 0.01])) continue;
     let hit = Infinity;
     for (const [c, d] of edges) {
-      if (c === a && d === b) continue;
+      if (c === a || c === b || d === a || d === b) continue; // itself, and the corners it makes with its neighbours
       const ex = d[0] - c[0], ey = d[1] - c[1];
       const den = nx * ey - ny * ex;
       if (Math.abs(den) < 1e-12) continue;
       const wx = c[0] - m[0], wy = c[1] - m[1];
       const tt = (wx * ey - wy * ex) / den, uu = (wx * ny - wy * nx) / den;
-      if (tt > 1e-6 && uu >= -1e-9 && uu <= 1 + 1e-9) hit = Math.min(hit, tt);
+      // a strip has two sides that run (nearly) parallel; a tapering tip doesn't
+      const parallel = Math.abs((b[0] - a[0]) * ex + (b[1] - a[1]) * ey) / (L * Math.hypot(ex, ey)) > Math.cos(Math.PI / 6);
+      if (parallel && tt > 1e-6 && uu >= -1e-9 && uu <= 1 + 1e-9) hit = Math.min(hit, tt);
     }
     // only strips whose sides run roughly parallel: a sharp corner isn't a strip
     if (hit < Infinity && hit < L * 4) best = Math.min(best, hit);

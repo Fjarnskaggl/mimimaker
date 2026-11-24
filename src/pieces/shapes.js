@@ -42,17 +42,47 @@ export function loopScores(pts) {
   return pts.map((p, i) => [p, pts[(i + 1) % pts.length]]);
 }
 
-/** Leafy plant silhouette (a lobed star) sitting on y=0; `lobes` sets how many leaves. */
-export function plantPoly(w, h, lobes = 3.5) {
-  const pts = [];
-  const cx = w / 2, cy = h * 0.55, n = 160;
+/**
+ * Leafy plant silhouette (a lobed star); `lobes` sets how many leaves.
+ * With a stem (`stemW` wide, `stemH` > 0) the leaves start stemH up and a
+ * stem tab runs from their underside down to y = 0, to stand in a slot.
+ * `slit` cuts a cross-lap slit `|slit|` wide down the middle to the leaves'
+ * centre: from the top when positive, from the bottom when negative.
+ * Without a stem the leaves' lowest point sits on y = 0.
+ */
+export function plantPoly(w, h, lobes = 3.5, stemW = 0, stemH = 0, slit = 0) {
+  let pts = [];
+  const cx = w / 2, n = 160;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
     const r = 0.62 + 0.38 * Math.abs(Math.cos(lobes * a));
-    pts.push([cx + Math.cos(a) * (w / 2) * r, cy + Math.sin(a) * (h * 0.45) * r]);
+    pts.push([cx + Math.cos(a) * (w / 2) * r, h * 0.55 + Math.sin(a) * (h * 0.45) * r]);
   }
+  // the leaves' lowest point sits on y = stemH (0 without a stem)
+  const lift = Math.max(0, stemH) - Math.min(...pts.map((p) => p[1]));
+  pts = pts.map(([x, y]) => [x, y + lift]);
+  const stem = stemW > 0 && stemH > 0;
+  const ys = pts.map((p) => p[1]);
+  const mid = (Math.min(...ys) + Math.max(...ys)) / 2;
+  // replace the run of points in one half (lower: angles past π) that lies within half-width hw of the middle
+  const splice = (lower, hw, make) => {
+    const idx = [];
+    pts.forEach(([x], i) => { if ((i >= n / 2) === lower && Math.abs(x - cx) <= hw) idx.push(i); });
+    if (!idx.length) { const i = lower ? (3 * n) / 4 : n / 4; idx.push(i); }
+    const i0 = idx[0], i1 = idx.at(-1);
+    pts = [...pts.slice(0, i0), ...make(pts[i0][1], pts[i1][1]), ...pts.slice(i1 + 1)];
+  };
+  // the lower half runs left to right (angles π…2π), the upper half right to
+  // left (0…π); the lower half goes first, so the upper half's indices hold
+  // each slit runs SLIT_PAST beyond the middle so the two halves meet with a hair of play
+  if (stem) splice(true, stemW / 2, (y0, y1) => [[cx - stemW / 2, y0], [cx - stemW / 2, 0], [cx + stemW / 2, 0], [cx + stemW / 2, y1]]);
+  else if (slit < 0) splice(true, -slit / 2, (y0, y1) => [[cx + slit / 2, y0], [cx + slit / 2, mid + SLIT_PAST], [cx - slit / 2, mid + SLIT_PAST], [cx - slit / 2, y1]]);
+  if (slit > 0) splice(false, slit / 2, (y0, y1) => [[cx + slit / 2, y0], [cx + slit / 2, mid - SLIT_PAST], [cx - slit / 2, mid - SLIT_PAST], [cx - slit / 2, y1]]);
   return pts;
 }
+
+/** How far a cross-lap slit runs past the middle (mm). */
+const SLIT_PAST = 0.1;
 
 /** Curtain panel of width pw and drop h with a gently wavy inner edge. */
 export function drapePoly(x0, pw, h) {
@@ -68,7 +98,7 @@ export const SHAPE_FNS = {
   arch: (x, y, w, h, r, seg) => archPoly(x, y, w, h, r, seg),
   ellipse: (cx, cy, rx, ry, seg) => ellipsePoly(cx, cy, rx, ry, seg),
   circle: (cx, cy, r, seg) => ellipsePoly(cx, cy, r, r, seg),
-  plant: (w, h, lobes) => plantPoly(w, h, lobes),
+  plant: (w, h, lobes, stemW, stemH, slit) => plantPoly(w, h, lobes, stemW, stemH, slit),
   drape: (x0, pw, h) => drapePoly(x0, pw, h),
 };
 

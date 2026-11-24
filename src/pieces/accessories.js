@@ -88,12 +88,12 @@ export const ACCESSORIES = [
     tags: ['accessory', 'plant', 'green'], difficulty: 1,
     params: [num('p', 'Pot width', 5, 25), num('h', 'Plant height', 5, 40), sel('kind', 'Leaves', ['succulent', 'fern', 'grass'])],
     defaults: { p: 10, h: 15, kind: 'succulent' },
-    size: ['p * 1.6', 'p', 'p * 0.45 + h'],
-    let: { W: 'p * 1.6', lobes: "kind == 'succulent' ? 2.5 : kind == 'fern' ? 5.5 : 9.5" },
+    size: ['p * 1.6', 'p', 'p * 0.9 + max(0.5, h * 0.05) + h * 0.9'],
+    let: { W: 'p * 1.6', lobes: "kind == 'succulent' ? 2.5 : kind == 'fern' ? 5.5 : 9.5", sw: 'max(1.5, p * 0.15)', gap: 'max(0.5, h * 0.05)', slot: 'max(1.5, t + 0.3)' },
     components: [
-      { kind: 'box', name: 'Pot', size: ['p', 'p', 'p * 0.9'], faces: ['bottom', 'front', 'back', 'left', 'right'], at: ['(W - p) / 2', 0, 0] },
-      { kind: 'flat', name: 'Leaves', plane: { upright: { y: 'p / 2', z: 'p * 0.45' } }, polys: [{ plant: ['W', 'h', 'lobes'] }] },
+      { kind: 'box', name: 'Pot', size: ['p', 'p', 'p * 0.9'], faces: 'all', at: ['(W - p) / 2', 0, 0], holes: { top: [{ rect: ['(p - sw) / 2 - 0.2', '(p + t - slot) / 2', 'sw + 0.4', 'slot'] }] } },
+      { kind: 'flat', name: 'Leaves', plane: { upright: { y: 'p / 2', z: 't' } }, polys: [{ plant: ['W', 'h', 'lobes', 'sw', 'p * 0.9 - t + gap'] }] },
     ],
-    note: 'Fold the pot, cut the leaves from green card and slot them in; dot the pot with glue and "soil". Line several up on a window sill.',
+    note: 'Fold the pot (its top is the soil), cut the leaves from green card and push the stem down through the slot to the pot floor; dot the top with glue and "soil". Line several up on a window sill.',
   },
 ];
