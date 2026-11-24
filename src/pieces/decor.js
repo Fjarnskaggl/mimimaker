@@ -78,18 +78,18 @@ export const DECOR = [
     params: [num('w', 'Spread', 30, 70), num('h', 'Height', 150, 200)],
     defaults: { w: 45, h: 175 },
     size: ['w', 'w * 0.6', 'h'],
-    let: { b: 'w * 0.6', p: 'max(2, w * 0.1)', c: 'w / 2', q: 'p / 2', h1: 'h * 0.78', rise: 'w * 0.25', bh: 'max(2 * t, 3, h * 0.03)' },
+    let: { b: 'w * 0.6', p: 'max(4, w * 0.1)', c: 'w / 2', q: 'p / 2', h1: 'h * 0.78', rise: 'w * 0.2', bh: 'max(2 * t, 3, h * 0.03)' },
     components: [
-      { kind: 'box', name: 'Base', size: ['b', 'b', 'bh'], faces: 'all', at: ['(w - b) / 2', 0, 0] },
+      { kind: 'box', name: 'Base', size: ['b', 'b', 'bh'], faces: 'all', at: ['(w - b) / 2', 0, 0], holes: { top: [{ rect: ['b / 2 - q - 0.2', '(b - t) / 2 - 0.15', 'p + 0.4', 't + 0.3'] }] } },
       {
-        kind: 'flat', name: 'Stand', plane: { upright: { y: 'b / 2' } },
+        kind: 'flat', name: 'Stand', plane: { upright: { y: '(b - t) / 2', z: 't' } },
         polys: [{ poly: [
           ['c - q', 0], ['c + q', 0], ['c + q', 'h1'], ['w', 'h1 + rise'], ['w', 'h1 + rise + p'], ['c + q', 'h1 + p'],
-          ['c + q', 'h'], ['c - q', 'h'], ['c - q', 'h1 + p'], [0, 'h1 + rise + p'], [0, 'h1 + rise'], ['c - q', 'h1'],
+          ['c + q', 'h - t'], ['c - q', 'h - t'], ['c - q', 'h1 + p'], [0, 'h1 + rise + p'], [0, 'h1 + rise'], ['c - q', 'h1'],
         ] }],
       },
     ],
-    note: 'Cut a slot in the base for the stand, or glue it upright in the middle; cut a second stand and glue it across the first for a four-armed version.',
+    note: 'Glue the base box together, push the stand down through the slot in its top until it stands on the base floor, and glue it upright.',
   },
   {
     id: 'wallclock', label: 'Wall clock', theme: 'Decor', placement: 'wall', mat: 'card',

@@ -217,19 +217,19 @@
  },
  "firescreen": {
   "label": "Fire screen",
-  "meta": "fb8ae07fecdb9594",
+  "meta": "c0a894e34787c4fd",
   "components": [
    "flat:Panel 1",
    "flat:Panel 2",
    "flat:Panel 3"
   ],
   "cases": {
-   "defaults@board": "9c9edbc191817895",
-   "defaults@card": "9c9edbc191817895",
-   "min@board": "9350513ac3b1cb20",
-   "min@card": "9350513ac3b1cb20",
-   "max@board": "4b9ff0c3f786ab04",
-   "max@card": "4b9ff0c3f786ab04"
+   "defaults@board": "f151bb92fd9f9dde",
+   "defaults@card": "f151bb92fd9f9dde",
+   "min@board": "334141dfe8bf3474",
+   "min@card": "334141dfe8bf3474",
+   "max@board": "d7f60251c3ce36c3",
+   "max@card": "d7f60251c3ce36c3"
   }
  },
  "lamptable": {
@@ -383,7 +383,7 @@
  },
  "crib": {
   "label": "Crib",
-  "meta": "fab39a2c84d26296",
+  "meta": "b5e8d84afafbff03",
   "components": [
    "box:Mattress base",
    "flat:Side front",
@@ -392,12 +392,12 @@
    "flat:End right"
   ],
   "cases": {
-   "defaults@board": "59e775ff5b03fd52",
-   "defaults@card": "59e775ff5b03fd52",
-   "min@board": "ad585db884ce1df3",
-   "min@card": "ad585db884ce1df3",
-   "max@board": "906a81af59fe9fe7",
-   "max@card": "906a81af59fe9fe7"
+   "defaults@board": "6b86c4c4f7c0c71d",
+   "defaults@card": "71bd376e2ed9fe7d",
+   "min@board": "ed24d7312234a331",
+   "min@card": "0426f89169783863",
+   "max@board": "b870eee966d6e204",
+   "max@card": "9549447fe7c18ff8"
   }
  },
  "counter": {
@@ -676,17 +676,18 @@
  },
  "ladder": {
   "label": "Library ladder",
-  "meta": "3eda8a075550de0f",
+  "meta": "03c80f2fa96e2391",
   "components": [
-   "flat:Ladder"
+   "flat:Front ladder",
+   "flat:Back ladder"
   ],
   "cases": {
-   "defaults@board": "a5fe1c14e846f333",
-   "defaults@card": "a5fe1c14e846f333",
-   "min@board": "f393e2bd7e0ea7a2",
-   "min@card": "f393e2bd7e0ea7a2",
-   "max@board": "6db5671d73501538",
-   "max@card": "6db5671d73501538"
+   "defaults@board": "550e6fffd7623f6d",
+   "defaults@card": "399207f60ed2aadb",
+   "min@board": "98b8ca6001ec94a6",
+   "min@card": "17acfc2bb77a11d9",
+   "max@board": "1062846cf82d6ecc",
+   "max@card": "f462050a94137cb5"
   }
  },
  "books": {
@@ -855,18 +856,18 @@
  },
  "coatrack": {
   "label": "Hall coat stand",
-  "meta": "04ab2c7399bc214e",
+  "meta": "72508de8be324569",
   "components": [
    "box:Base",
    "flat:Stand"
   ],
   "cases": {
-   "defaults@board": "e0b3ec16b0ebca8b",
-   "defaults@card": "e0b3ec16b0ebca8b",
-   "min@board": "a809d9196fc8a95c",
-   "min@card": "a809d9196fc8a95c",
-   "max@board": "41c8f2cef9b979c8",
-   "max@card": "41c8f2cef9b979c8"
+   "defaults@board": "97e15393a2e9ba62",
+   "defaults@card": "fc7cc019d006641c",
+   "min@board": "daea391e37dc4831",
+   "min@card": "18cbb234c0637b87",
+   "max@board": "28df337252a27f8e",
+   "max@card": "f95a84151ab7b899"
   }
  },
  "wallclock": {
