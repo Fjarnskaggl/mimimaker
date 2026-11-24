@@ -11,12 +11,13 @@ import { minJointFeature } from '../src/box.js';
 import { buildSteps } from '../src/build/steps.js';
 import { explodedFaces } from '../src/build/exploded.js';
 import { faceTexture } from '../src/textures/look.js';
+import { plantPoly } from '../src/pieces/shapes.js';
 import { billOfMaterials, bomText } from '../src/build/bom.js';
 import { faceParts } from '../src/build/exploded.js';
 import { validatePiece } from '../src/pieces/schema.js';
 
 /** Pieces from the audit still waiting for their fix (each later PR empties this). */
-const PENDING = new Set(['pottedtree', 'planter', 'plant', 'littleplant', 'coatrack', 'crib']);
+const PENDING = new Set(['coatrack', 'crib']);
 
 /** Pieces with strips narrower than the cutter manages, waiting for their fix. */
 const PENDING_STRIPS = new Set(['fireplace', 'piano', 'firescreen', 'loveseat', 'dressingtable', 'crib', 'vanity', 'ladder', 'coatrack', 'bookrow']);
@@ -173,4 +174,51 @@ test('rod components are validated', () => {
   assert.deepEqual(validatePiece(piece({ stock: 'dowel', d: 2, from: [5, 5, 0], to: [5, 5, 10] })), []);
   assert.match(validatePiece(piece({ stock: 'rope', d: 2, from: [5, 5, 0], to: [5, 5, 10] })).join(), /stock: must be one of dowel, wire, tube/);
   assert.match(validatePiece(piece({ stock: 'wire', from: [5, 5, 0], to: [5, 5, 10] })).join(), /\.d: required/);
+});
+
+test('plants stand on a stem in a slot in the soil, from the pot floor up', () => {
+  for (const [type, leafName] of [['plant', 'Leaves'], ['littleplant', 'Leaves'], ['planter', 'Greenery'], ['pottedtree', 'Crown A']]) {
+    const kit = soloKit(base, type, {}, defaultMaterialFor(CATALOG[type], base.materials));
+    const c = compileKit(kit);
+    const [r] = attachmentReport(kit, c);
+    const id = (n) => c.parts.find((p) => p.name === n)?.id;
+    const pot = c.parts.find((p) => /^(Pot|Planter) (net|top)$/.test(p.name) || p.name === 'Pot top');
+    assert.ok(pot, `${type}: ${c.parts.map((p) => p.name).join(', ')}`);
+    // the soil top has a slot in it
+    const top = c.parts.find((p) => / top$/.test(p.name)) || pot;
+    assert.ok(top.polys.length >= 2, `${type}: a slot in the soil top`);
+    // the leaves touch the pot (through the slot, standing on its floor)
+    const leaf = id(leafName);
+    assert.ok(r.contacts.some(([a, b]) => a === leaf || b === leaf), `${type}: ${leafName} touches something`);
+    assert.deepEqual(r.floating, []);
+    assert.deepEqual(r.crossings, []);
+  }
+});
+
+test('potted tree crowns cross-lap: slits cut in both, crown B held by crown A', () => {
+  const kit = soloKit(base, 'pottedtree', {}, 'card110');
+  const c = compileKit(kit);
+  const [r] = attachmentReport(kit, c);
+  const id = (n) => c.parts.find((p) => p.name === n).id;
+  assert.ok(!c.parts.some((p) => p.name === 'Trunk'), 'the trunk is part of crown A');
+  assert.ok(r.contacts.some(([a, b]) => [a, b].includes(id('Crown A')) && [a, b].includes(id('Crown B'))));
+  assert.deepEqual(r.crossings, []);
+});
+
+test('plantPoly: a stem tab down to y = 0 under the leaves, and slits from the top or bottom', () => {
+  const ys = (pts) => pts.map((p) => p[1]);
+  const plain = plantPoly(20, 30, 4);
+  assert.equal(Math.min(...ys(plain)), 0, 'the leaves sit on y = 0');
+  const stem = plantPoly(20, 30, 4, 3, 10);
+  assert.equal(Math.min(...ys(stem)), 0);
+  const foot = stem.filter((p) => p[1] === 0).map((p) => p[0]).sort((a, b) => a - b);
+  assert.deepEqual(foot, [8.5, 11.5], 'a 3 mm stem centred under the leaves');
+  const leafLow = Math.min(...ys(stem.filter((p) => p[1] > 0)));
+  assert.ok(leafLow >= 10 - 1e-9 && leafLow < 12, `leaves start 10 up (${leafLow})`);
+  // slits 1.5 wide down the middle, to just past the leaves' centre
+  const mid = (Math.min(...ys(plain)) + Math.max(...ys(plain))) / 2;
+  const top = plantPoly(20, 30, 4, 0, 0, 1.5), bottom = plantPoly(20, 30, 4, 0, 0, -1.5);
+  const slitEnd = (pts) => pts.filter(([x]) => Math.abs(x - 9.25) < 1e-9 || Math.abs(x - 10.75) < 1e-9).map((p) => p[1]);
+  assert.ok(slitEnd(top).some((y) => Math.abs(y - (mid - 0.1)) < 1e-9), 'from the top down to the middle');
+  assert.ok(slitEnd(bottom).some((y) => Math.abs(y - (mid + 0.1)) < 1e-9), 'from the bottom up to the middle');
 });
