@@ -691,7 +691,7 @@ function build3d(bar) {
   // T6: click a piece (Design) or a light (Light) to select it
   attachPicking(stage, (index, kind) => {
     if (index != null) select({ kind, index });
-    else if (view.sel?.kind === kind) select(null); // a click off them; a window picked from the list stays
+    else if (view.sel?.kind === kind || view.sel?.kind === 'led') select(null); // a click off them; a window picked from the list stays
   }, { picks: () => (view.step === 'design' ? 'item' : view.step === 'light' ? 'led' : null) });
   return h('div', { class: 'stage-wrap' }, stage, bar, foot);
 }

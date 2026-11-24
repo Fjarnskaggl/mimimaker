@@ -367,3 +367,15 @@ test('Light step in Realistic 3D: the selected light is marked, and a click on a
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('a light picked on Light clears with a click on empty space back on Design', async () => {
+  const page = await open();
+  await page.click('[data-step=light]');
+  await page.click('[data-select-led="0"]');
+  await page.click('[data-step=design]');
+  const box = await page.locator('.stage').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + 70);
+  assert.equal(await kindNow(page), 'Room');
+  assert.deepEqual(await ledRing(page), []);
+  await page.close();
+});

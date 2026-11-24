@@ -13,7 +13,7 @@ const NIGHT = { hemi: 0.1, sun: 0.06, sky: 0x8090c0, ground: 0x202028, sunColor:
 const MOON = { light: 0xa9c4ff, glow: 0x7f97c8 }; // window light at night
 const SELECT_TINT = 0x0f3a44; // emissive tint on the selected piece
 const HOVER_TINT = 0x07222a; // fainter tint on the piece under the pointer
-const SELECT_RING = 0xf6ead2; // ring round the selected light: lights are picked at night, so light ink (as the night toggle)
+const SELECT_RING = { day: 0x1d5c52, night: 0xf6ead2 }; // ring round the selected light: --mat by day, the night toggle's light ink at night
 
 /**
  * BufferGeometry for one compiler face: board panels become solids with real
@@ -141,7 +141,7 @@ export function createViewer(THREE) {
       if (glow && face.led != null && face.opacity < 1) {
         // a ring round the light's glow, shown while that light is selected
         const n = face.n, pts = face.polys[0].map((p) => new THREE.Vector3(p[0] + n[0] * 0.3, p[1] + n[1] * 0.3, p[2] + n[2] * 0.3));
-        entry.ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: SELECT_RING, depthTest: false }));
+        entry.ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: SELECT_RING.day, depthTest: false }));
         entry.ring.renderOrder = 10;
         entry.ring.visible = false;
         model.add(entry.ring);
@@ -201,7 +201,10 @@ export function createViewer(THREE) {
     const cam = cameraDirection(view);
     for (const { face, mesh, ring } of entries) {
       const m = mesh.material;
-      if (ring) ring.visible = selectedLed != null && face.led === selectedLed;
+      if (ring) {
+        ring.visible = selectedLed != null && face.led === selectedLed;
+        ring.material.color.setHex(night ? SELECT_RING.night : SELECT_RING.day);
+      }
       if (face.glow) {
         m.blending = night && face.opacity < 1 ? THREE.AdditiveBlending : THREE.NormalBlending;
         m.opacity = night && face.opacity < 1 ? 0.6 : face.opacity;

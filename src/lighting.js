@@ -179,6 +179,7 @@ export function planLighting(lighting, ctx) {
     const inBase = !base ? 0 : face === 'bottom' ? base.floorRun(u, v) : base.inRun;
     const length = pathLength(route.points) + t + inBase;
     leds.push({
+      src: i, // index in kit.lighting.leds (some lights are skipped, e.g. a ceiling light with no ceiling)
       label, name: led.name || '', mount: led.mount, face, u, v, p, color: led.color || 'warm',
       route: route.points, length, leadCm: Math.ceil((length / 10 + 3) / 5) * 5,
       effect: fx, load: effectLoad(led), misplaced,

@@ -257,7 +257,8 @@ export function compileKit(kit) {
 
   // ----------------------------------------------------------------- lights
   if (lighting.enabled && lighting.leds.length) {
-    for (const [ledIndex, led] of lighting.leds.entries()) {
+    for (const led of lighting.leds) {
+      const ledIndex = led.src; // index in kit.lighting.leds, for click-to-select
       if (led.inside) continue; // T2 shells: a shell's own LEDs already glow where they sit (#16)
       const fr = faceFrame(led.face, W, D, H, t + 0.6, 'inner');
       // >>> [T5] motion and sound: a fan rotor or turntable shows where it turns; no glow
