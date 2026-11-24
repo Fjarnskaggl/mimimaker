@@ -379,3 +379,24 @@ test('a light picked on Light clears with a click on empty space back on Design'
   assert.deepEqual(await ledRing(page), []);
   await page.close();
 });
+
+test('hovering a row in the pieces list points at that piece in 3D (sketch and Realistic 3D)', async () => {
+  for (const webgl of [false, true]) {
+    const page = await open({ webgl });
+    if (webgl) await page.waitForFunction(() => document.querySelector('.stage')?.t6viewer, null, { timeout: 10000 });
+    const now = () => page.evaluate((gl) => (gl ? [document.querySelector('.stage').t6viewer.shown().hovered].filter((v) => v != null)
+      : [...new Set([...document.querySelectorAll('.stage path.hover')].map((p) => Number(p.dataset.item)))]), webgl);
+    await page.hover('[data-select-item="3"]');
+    await page.waitForTimeout(50);
+    assert.deepEqual(await now(), [3], `the floor lamp is marked (${webgl ? 'Realistic 3D' : 'sketch'})`);
+    assert.equal(await page.evaluate(() => document.querySelector('.stage').classList.contains('t6-over-piece')), false, 'the stage cursor is left alone');
+    await page.mouse.move(2, 2); // off the list, and not over the stage
+    await page.waitForTimeout(50);
+    assert.deepEqual(await now(), [], 'cleared when the pointer leaves the row');
+    await page.focus('[data-select-item="1"]'); // keyboard too
+    await page.waitForTimeout(50);
+    assert.deepEqual(await now(), [1], 'a focused row marks its piece');
+    assert.deepEqual(page.errors, []);
+    await page.close();
+  }
+});
