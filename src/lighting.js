@@ -100,6 +100,20 @@ export function routeWire(a, b, dims, obstacles = []) {
 }
 
 /**
+ * kit.lighting as loaded from storage, a file, a link or an undo step: fills
+ * the defaults and keeps everything else it holds (the cable cover, and
+ * whatever is added later) instead of rebuilding it from a fixed list.
+ */
+export function normalizeLighting(L = {}) {
+  return {
+    ...L,
+    enabled: !!L.enabled, holeDiameter: L.holeDiameter || 3,
+    power: { wall: 'back', pos: 20, elev: 20, kind: 'battery', ...(L.power || {}) },
+    leds: Array.isArray(L.leds) ? L.leds : [],
+  };
+}
+
+/**
  * @param lighting kit.lighting
  * @param ctx { s, t, W, D, H, Wi, Di, Hi, ceiling, wallInfo, openings, shellLights?, shellObstacles?, baseT? }
  *   baseT: thickness of the board a hidden base is cut from (default t)
